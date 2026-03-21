@@ -18,9 +18,8 @@ const AIRCRAFT_INTERVAL = 15_000;       // 15 s
 const SHIP_INTERVAL = 60_000;           // 60 s
 const SATELLITE_INTERVAL = 300_000;     // 5 min
 const GPS_JAM_INTERVAL = 600_000;       // 10 min
-const RETRY_DELAY = 30_000;             // 30 s on failure
+const RETRY_BACKOFF = [10_000, 20_000, 40_000, 60_000]; // exponential backoff, capped at 60s
 const ALERT_CHECK_INTERVAL = 30_000;    // 30 s
-const MAX_RETRIES = 5;
 const ALERTED_KEYS_CLEANUP_MS = 3_600_000; // 1 hour
 
 const AIRCRAFT_CONFLICT_RADIUS_KM = 200;
@@ -53,14 +52,13 @@ export function useDataRefresh(): { refresh: () => void } {
     gpsJam: 0,
   });
 
-  /** Schedule a retry if under the max limit, tracking the timer */
+  /** Schedule a retry with exponential backoff — never gives up */
   const scheduleRetry = useCallback((source: string, fn: () => void) => {
-    if (retryCounts.current[source] >= MAX_RETRIES) {
-      console.warn(`[useDataRefresh] ${source}: max retries (${MAX_RETRIES}) reached, giving up until next interval`);
-      return;
-    }
+    const attempt = retryCounts.current[source];
+    const delay = RETRY_BACKOFF[Math.min(attempt, RETRY_BACKOFF.length - 1)];
     retryCounts.current[source]++;
-    retryTimers.current.push(setTimeout(fn, RETRY_DELAY));
+    console.warn(`[useDataRefresh] ${source}: retrying in ${delay / 1000}s... (attempt ${attempt + 1})`);
+    retryTimers.current.push(setTimeout(fn, delay));
   }, []);
 
   // Stable fetch functions so interval callbacks don't capture stale closures
@@ -73,10 +71,32 @@ export function useDataRefresh(): { refresh: () => void } {
       setAircraft(data);
       setLastRefresh('aircraft');
       retryCounts.current.aircraft = 0;
+      // Dismiss offline alert if it was active
+      const store = useStore.getState();
+      const offlineAlert = store.alerts?.find(a => a.id === 'offline-aircraft');
+      if (offlineAlert && !offlineAlert.dismissed) {
+        store.dismissAlert('offline-aircraft');
+        store.addAlert({
+          id: `online-aircraft-${Date.now()}`,
+          type: 'system',
+          severity: 'info',
+          message: 'ADS-B aircraft feed connected — live data flowing',
+          timestamp: new Date().toISOString(),
+          dismissed: false,
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] aircraft fetch failed:', message);
       setError('aircraft', message);
+      useStore.getState().addAlert({
+        id: 'offline-aircraft',
+        type: 'system',
+        severity: 'warning',
+        message: 'ADS-B aircraft feed offline — retrying every 15s',
+        timestamp: new Date().toISOString(),
+        dismissed: false,
+      });
       scheduleRetry('aircraft', () => { fetchAircraftData(); });
     } finally {
       setLoading('aircraft', false);
@@ -91,10 +111,32 @@ export function useDataRefresh(): { refresh: () => void } {
       setShips(data);
       setLastRefresh('ships');
       retryCounts.current.ships = 0;
+      // Dismiss offline alert if it was active
+      const store = useStore.getState();
+      const offlineAlert = store.alerts?.find(a => a.id === 'offline-ships');
+      if (offlineAlert && !offlineAlert.dismissed) {
+        store.dismissAlert('offline-ships');
+        store.addAlert({
+          id: `online-ships-${Date.now()}`,
+          type: 'system',
+          severity: 'info',
+          message: 'AIS vessel feed connected — live data flowing',
+          timestamp: new Date().toISOString(),
+          dismissed: false,
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] ships fetch failed:', message);
       setError('ships', message);
+      useStore.getState().addAlert({
+        id: 'offline-ships',
+        type: 'system',
+        severity: 'warning',
+        message: 'AIS vessel feed offline — retrying every 60s',
+        timestamp: new Date().toISOString(),
+        dismissed: false,
+      });
       scheduleRetry('ships', () => { fetchShipData(); });
     } finally {
       setLoading('ships', false);
@@ -109,10 +151,32 @@ export function useDataRefresh(): { refresh: () => void } {
       setSatellites(data);
       setLastRefresh('satellites');
       retryCounts.current.satellites = 0;
+      // Dismiss offline alert if it was active
+      const store = useStore.getState();
+      const offlineAlert = store.alerts?.find(a => a.id === 'offline-satellites');
+      if (offlineAlert && !offlineAlert.dismissed) {
+        store.dismissAlert('offline-satellites');
+        store.addAlert({
+          id: `online-satellites-${Date.now()}`,
+          type: 'system',
+          severity: 'info',
+          message: 'Satellite TLE feed connected — live data flowing',
+          timestamp: new Date().toISOString(),
+          dismissed: false,
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] satellites fetch failed:', message);
       setError('satellites', message);
+      useStore.getState().addAlert({
+        id: 'offline-satellites',
+        type: 'system',
+        severity: 'warning',
+        message: 'Satellite TLE feed offline — retrying every 5min',
+        timestamp: new Date().toISOString(),
+        dismissed: false,
+      });
       scheduleRetry('satellites', () => { fetchSatelliteData(); });
     } finally {
       setLoading('satellites', false);
@@ -127,10 +191,32 @@ export function useDataRefresh(): { refresh: () => void } {
       setGpsJamCells(data);
       setLastRefresh('gpsJam');
       retryCounts.current.gpsJam = 0;
+      // Dismiss offline alert if it was active
+      const store = useStore.getState();
+      const offlineAlert = store.alerts?.find(a => a.id === 'offline-gpsjam');
+      if (offlineAlert && !offlineAlert.dismissed) {
+        store.dismissAlert('offline-gpsjam');
+        store.addAlert({
+          id: `online-gpsjam-${Date.now()}`,
+          type: 'system',
+          severity: 'info',
+          message: 'GPS jamming feed connected — live data flowing',
+          timestamp: new Date().toISOString(),
+          dismissed: false,
+        });
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] gpsJam fetch failed:', message);
       setError('gpsJam', message);
+      useStore.getState().addAlert({
+        id: 'offline-gpsjam',
+        type: 'system',
+        severity: 'info',
+        message: 'GPS jamming feed offline — using static OSINT data',
+        timestamp: new Date().toISOString(),
+        dismissed: false,
+      });
       scheduleRetry('gpsJam', () => { fetchGpsJamData(); });
     } finally {
       setLoading('gpsJam', false);

@@ -61,10 +61,19 @@ export default function ServerStatus({ errors, lastRefresh }: ServerStatusProps)
       }}
     >
       <span>
-        ⚠ Backend proxy offline — showing simulated data. Start server:{' '}
+        ⚠ Data feeds offline — retrying automatically. Start server for live data:{' '}
         <code style={{ background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: 2 }}>
           npm run dev:all
         </code>
+        <span style={{ display: 'block', marginTop: 2 }}>
+          <span>✈ Aircraft: <span style={{ color: errors.aircraft ? '#ff6b6b' : '#69db7c' }}>{errors.aircraft ? 'OFFLINE' : 'ONLINE'}</span></span>
+          {' | '}
+          <span>🚢 Ships: <span style={{ color: errors.ships ? '#ff6b6b' : '#69db7c' }}>{errors.ships ? 'OFFLINE' : 'ONLINE'}</span></span>
+          {' | '}
+          <span>🛰 Satellites: <span style={{ color: errors.satellites ? '#ff6b6b' : '#69db7c' }}>{errors.satellites ? 'OFFLINE' : 'ONLINE'}</span></span>
+          {' | '}
+          <span>📡 GPS: <span style={{ color: errors.gpsJam ? '#ffd43b' : '#69db7c' }}>{errors.gpsJam ? 'STATIC' : 'ONLINE'}</span></span>
+        </span>
       </span>
       <button
         onClick={() => setDismissed(true)}

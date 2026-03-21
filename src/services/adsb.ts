@@ -102,102 +102,6 @@ function parseState(raw: (string | number | boolean | null)[]): AircraftEntity |
   };
 }
 
-// ── Simulated fallback data ──────────────────────────────────────────────────
-
-/** Small helper for jittered positions so aircraft aren't stacked exactly. */
-function jitter(base: number, range: number): number {
-  return base + (Math.random() * 2 - 1) * range;
-}
-
-interface RawSimAircraft {
-  icao24: string;
-  callsign: string;
-  country: string;
-  lat: number;
-  lng: number;
-  altitude: number;
-  velocity: number;
-  heading: number;
-  verticalRate: number;
-  onGround: boolean;
-  isMilitary: boolean;
-  squawk?: string | null;
-}
-
-function buildSimAircraft(raw: RawSimAircraft): AircraftEntity {
-  const trail: [number, number, number][] = [[raw.lat, raw.lng, raw.altitude]];
-  trailStore.set(raw.icao24, trail);
-  return {
-    icao24: raw.icao24,
-    callsign: raw.callsign,
-    country: raw.country,
-    lat: raw.lat,
-    lng: raw.lng,
-    altitude: raw.altitude,
-    velocity: raw.velocity,
-    heading: raw.heading,
-    verticalRate: raw.verticalRate,
-    onGround: raw.onGround,
-    isMilitary: raw.isMilitary,
-    squawk: raw.squawk ?? undefined,
-    trail,
-    lastContact: Date.now() - Math.floor(Math.random() * 60_000),
-  };
-}
-
-/**
- * Generate ~30 realistic simulated aircraft near global conflict zones.
- * Used as a fallback when the OpenSky API / proxy is unavailable.
- */
-export function generateSimulatedAircraft(): AircraftEntity[] {
-  const aircraft: RawSimAircraft[] = [
-
-    // ── MILITARY — Ukraine / Black Sea (RCH callsigns, USAF) ──────────
-    { icao24: 'ae1001', callsign: 'RCH401', country: 'United States', lat: jitter(49.5, 0.5), lng: jitter(24.0, 1.0), altitude: 10668, velocity: 230, heading: 90, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae1002', callsign: 'RCH892', country: 'United States', lat: jitter(50.2, 0.3), lng: jitter(22.5, 0.8), altitude: 11278, velocity: 240, heading: 105, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae1003', callsign: 'RCH210', country: 'United States', lat: jitter(48.8, 0.4), lng: jitter(25.5, 0.6), altitude: 9144, velocity: 210, heading: 75, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae1004', callsign: 'REACH55', country: 'United States', lat: jitter(51.0, 0.3), lng: jitter(20.0, 1.0), altitude: 12192, velocity: 250, heading: 95, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae1005', callsign: 'RCH117', country: 'United States', lat: jitter(47.5, 0.5), lng: jitter(27.0, 0.5), altitude: 10363, velocity: 225, heading: 80, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-
-    // ── MILITARY — Middle East (DUKE callsigns, tanker aircraft) ──────
-    { icao24: 'ae2001', callsign: 'DUKE21', country: 'United States', lat: jitter(32.5, 0.5), lng: jitter(42.0, 1.0), altitude: 8534, velocity: 190, heading: 270, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae2002', callsign: 'DUKE34', country: 'United States', lat: jitter(30.0, 0.4), lng: jitter(44.5, 0.8), altitude: 9144, velocity: 200, heading: 255, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae2003', callsign: 'DUKE07', country: 'United States', lat: jitter(28.5, 0.3), lng: jitter(47.0, 0.6), altitude: 7620, velocity: 185, heading: 290, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-
-    // ── MILITARY — Red Sea (NAVY callsigns) ───────────────────────────
-    { icao24: 'ae3001', callsign: 'NAVY01', country: 'United States', lat: jitter(14.5, 0.5), lng: jitter(42.5, 0.5), altitude: 6096, velocity: 170, heading: 180, verticalRate: -2, onGround: false, isMilitary: true, squawk: null },
-    { icao24: 'ae3002', callsign: 'NAVY44', country: 'United States', lat: jitter(13.8, 0.4), lng: jitter(43.2, 0.4), altitude: 5486, velocity: 160, heading: 195, verticalRate: 0, onGround: false, isMilitary: true, squawk: null },
-
-    // ── CIVILIAN — Airliners on major routes ──────────────────────────
-    { icao24: '3c6745', callsign: 'DLH438', country: 'Germany', lat: jitter(50.5, 0.5), lng: jitter(8.5, 1.0), altitude: 11582, velocity: 245, heading: 240, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '3c6746', callsign: 'DLH712', country: 'Germany', lat: jitter(47.0, 0.3), lng: jitter(15.0, 0.8), altitude: 12192, velocity: 250, heading: 120, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '896401', callsign: 'UAE512', country: 'United Arab Emirates', lat: jitter(26.0, 0.5), lng: jitter(50.5, 1.0), altitude: 11887, velocity: 255, heading: 310, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '896402', callsign: 'UAE205', country: 'United Arab Emirates', lat: jitter(35.0, 0.4), lng: jitter(40.0, 1.0), altitude: 12496, velocity: 260, heading: 300, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '4ca001', callsign: 'RYR112', country: 'Ireland', lat: jitter(48.5, 0.5), lng: jitter(2.5, 1.0), altitude: 11278, velocity: 235, heading: 200, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '406a01', callsign: 'BAW178', country: 'United Kingdom', lat: jitter(52.0, 0.3), lng: jitter(-1.0, 0.5), altitude: 10972, velocity: 240, heading: 260, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '780b01', callsign: 'CPA271', country: 'China', lat: jitter(42.0, 1.0), lng: jitter(75.0, 2.0), altitude: 12496, velocity: 260, heading: 50, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: 'a12345', callsign: 'DAL189', country: 'United States', lat: jitter(53.0, 0.5), lng: jitter(-20.0, 2.0), altitude: 11582, velocity: 250, heading: 80, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: 'a12346', callsign: 'AAL47', country: 'United States', lat: jitter(40.0, 0.5), lng: jitter(-50.0, 2.0), altitude: 11887, velocity: 252, heading: 70, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '471f01', callsign: 'THY33', country: 'Turkey', lat: jitter(39.5, 0.3), lng: jitter(32.0, 1.0), altitude: 11278, velocity: 238, heading: 135, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-
-    // ── CARGO — FedEx, UPS, and freight callsigns ─────────────────────
-    { icao24: 'a54001', callsign: 'FDX901', country: 'United States', lat: jitter(49.0, 0.5), lng: jitter(5.0, 1.0), altitude: 10668, velocity: 230, heading: 250, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: 'a54002', callsign: 'FDX625', country: 'United States', lat: jitter(25.5, 0.3), lng: jitter(55.0, 0.8), altitude: 11582, velocity: 242, heading: 305, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: 'a54003', callsign: 'UPS314', country: 'United States', lat: jitter(51.5, 0.4), lng: jitter(7.0, 0.8), altitude: 10363, velocity: 228, heading: 210, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: 'a54004', callsign: 'UPS877', country: 'United States', lat: jitter(33.0, 0.5), lng: jitter(45.0, 1.0), altitude: 11278, velocity: 240, heading: 275, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '4010a1', callsign: 'CLX792', country: 'Luxembourg', lat: jitter(47.5, 0.3), lng: jitter(10.0, 0.5), altitude: 10972, velocity: 235, heading: 165, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-
-    // ── MISCELLANEOUS — various locations ─────────────────────────────
-    { icao24: '300101', callsign: 'AFR681', country: 'France', lat: jitter(45.5, 0.5), lng: jitter(3.0, 1.0), altitude: 11887, velocity: 248, heading: 185, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '440101', callsign: 'KAL023', country: 'South Korea', lat: jitter(55.0, 1.0), lng: jitter(80.0, 3.0), altitude: 12496, velocity: 260, heading: 60, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '710101', callsign: 'ARG1135', country: 'Argentina', lat: jitter(-34.0, 0.5), lng: jitter(-58.0, 1.0), altitude: 5486, velocity: 150, heading: 340, verticalRate: 5, onGround: false, isMilitary: false, squawk: null },
-    { icao24: 'e40101', callsign: 'SAA205', country: 'South Africa', lat: jitter(-1.0, 1.0), lng: jitter(36.0, 1.0), altitude: 11582, velocity: 245, heading: 175, verticalRate: 0, onGround: false, isMilitary: false, squawk: null },
-    { icao24: '3e1234', callsign: 'GAF689', country: 'Germany', lat: jitter(52.5, 0.3), lng: jitter(13.5, 0.5), altitude: 3048, velocity: 120, heading: 270, verticalRate: -4, onGround: false, isMilitary: true, squawk: '7700' },
-  ];
-
-  return aircraft.map(buildSimAircraft);
-}
-
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -232,8 +136,8 @@ export async function fetchAircraft(): Promise<AircraftEntity[]> {
 
     return aircraft;
   } catch (err) {
-    console.warn('[ADS-B] Proxy unavailable, using simulated data:', (err as Error).message);
-    return generateSimulatedAircraft();
+    console.warn('[ADS-B] Offline — will retry. Reason:', (err as Error).message);
+    return [];
   }
 }
 
