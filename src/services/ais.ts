@@ -93,7 +93,7 @@ export async function fetchShips(): Promise<ShipEntity[]> {
   try {
     const res = await fetch('/api/ais/vessels', {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(5_000),
     });
 
     throwIfRateLimited(res, 'AIS');

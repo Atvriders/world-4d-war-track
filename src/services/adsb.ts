@@ -112,7 +112,10 @@ function parseState(raw: (string | number | boolean | null)[]): AircraftEntity |
  */
 export async function fetchAircraft(): Promise<AircraftEntity[]> {
   try {
-    const response = await fetch('/api/adsb/states');
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 5000);
+    const response = await fetch('/api/adsb/states', { signal: ctrl.signal });
+    clearTimeout(tid);
     throwIfRateLimited(response, 'ADS-B');
 
     if (!response.ok) {

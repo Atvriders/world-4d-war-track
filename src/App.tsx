@@ -160,60 +160,32 @@ export default function App() {
     handleFlyTo(sat.lat, sat.lng, 0.5);
   }, [handleEntityClick, handleFlyTo]);
 
-  // ── Initial data load with progress ────────────────────────────────────────
+  // ── Initial data load — static data instant, API calls in background ───────
   useEffect(() => {
     async function loadData() {
-      setLoadingStatus('Loading conflict zones...');
-      setLoadingProgress(10);
+      // Load static data immediately (no network)
       store.setConflictZones(CONFLICT_ZONES as any);
-
-      setLoadingStatus('Loading GPS interference data...');
-      setLoadingProgress(20);
       const jamCells = getStaticGpsJamHotspots();
       store.setGpsJamCells(jamCells as any);
-
-      // Generate initial alerts from jam cells
       const jamAlerts = getActiveJammingAlerts(jamCells as any);
       if (Array.isArray(jamAlerts)) {
         jamAlerts.forEach((a: any) => store.addAlert(a));
       }
 
-      setLoadingStatus('Connecting to ADS-B network...');
-      setLoadingProgress(40);
-      try {
-        const ac = await fetchAircraft();
-        store.setAircraft(ac as any);
-        store.setLastRefresh('aircraft');
-      } catch (e) {
-        console.error('ADS-B fetch failed', e);
-        store.setError('aircraft', String(e));
-      }
-
-      setLoadingStatus('Loading vessel tracking data...');
-      setLoadingProgress(60);
-      try {
-        const ships = await fetchShips();
-        store.setShips(ships as any);
-        store.setLastRefresh('ships');
-      } catch (e) {
-        console.error('AIS fetch failed', e);
-        store.setError('ships', String(e));
-      }
-
-      setLoadingStatus('Loading satellite orbital data...');
-      setLoadingProgress(80);
-      try {
-        const sats = await fetchAllSatellites();
-        store.setSatellites(sats as any);
-        store.setLastRefresh('satellites');
-      } catch (e) {
-        console.error('Satellite fetch failed', e);
-        store.setError('satellites', String(e));
-      }
-
-      setLoadingStatus('System ready.');
+      // Show app immediately — don't wait for API calls
       setLoadingProgress(100);
-      loadTimerRef.current = setTimeout(() => setIsLoaded(true), 800);
+      setLoadingStatus('System ready.');
+      loadTimerRef.current = setTimeout(() => setIsLoaded(true), 300);
+
+      // Fetch live data in background (non-blocking)
+      Promise.allSettled([
+        fetchAircraft().then(ac => { store.setAircraft(ac as any); store.setLastRefresh('aircraft'); })
+          .catch(e => store.setError('aircraft', String(e))),
+        fetchShips().then(ships => { store.setShips(ships as any); store.setLastRefresh('ships'); })
+          .catch(e => store.setError('ships', String(e))),
+        fetchAllSatellites().then(sats => { store.setSatellites(sats as any); store.setLastRefresh('satellites'); })
+          .catch(e => store.setError('satellites', String(e))),
+      ]);
     }
     loadData();
     return () => {
