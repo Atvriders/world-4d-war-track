@@ -492,7 +492,7 @@ function hexBinColor(frac: number): string {
   const r = 255;
   const g = Math.round(238 * (1 - frac));
   const b = 0;
-  return `rgba(${r},${g},${b},0.75)`;
+  return `rgba(${r},${g},${b},0.35)`;
 }
 /** Cyan-to-purple gradient for drone activity heatmap */
 function droneHeatmapColor(t: number): string {

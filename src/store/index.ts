@@ -108,7 +108,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
   warZones: true,
   conflictEvents: true,
   frontLines: true,
-  gpsJam: true,
+  gpsJam: false,
   droneActivity: false,
   seaCables: false,
   nuclearSites: true,
