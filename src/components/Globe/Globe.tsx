@@ -1323,7 +1323,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
           return null;
         })
-        .filter((entry): entry is PathEntry => entry !== null);
+        .filter(entry => entry !== null) as PathEntry[];
     },
     [layers.satelliteOrbits, satellites]
   );
