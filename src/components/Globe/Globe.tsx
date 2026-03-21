@@ -1923,8 +1923,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="/img/earth-day.jpg"
-        bumpImageUrl="/img/earth-day.jpg"
+        globeImageUrl="/img/earth-blue-marble.jpg"
+        bumpImageUrl="/img/earth-topology.png"
         backgroundImageUrl=""
         onGlobeReady={handleGlobeReady}
         atmosphereColor="#4488ff"
