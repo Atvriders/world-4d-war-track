@@ -310,9 +310,9 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
 
   const panelStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: '82px',
-    right: '16px',
-    width: collapsed ? 'auto' : '380px',
+    bottom: '126px',
+    right: '8px',
+    width: collapsed ? 'auto' : '320px',
     maxWidth: 'calc(100vw - 48px)',
     zIndex: 1200,
     display: 'flex',

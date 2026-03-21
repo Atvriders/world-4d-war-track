@@ -106,11 +106,11 @@ export default function GlobeSettings({
         title="Globe Settings"
         style={{
           position: 'fixed',
-          top: 16,
+          top: 62,
           right: 16,
           zIndex: 1100,
-          width: 36,
-          height: 36,
+          width: 30,
+          height: 30,
           borderRadius: '50%',
           background: visible ? '#1a2a1a' : 'rgba(0,0,0,0.7)',
           border: `1px solid ${visible ? '#00ff88' : '#444'}`,
@@ -132,9 +132,9 @@ export default function GlobeSettings({
         <div
           style={{
             position: 'fixed',
-            top: 60,
+            top: 96,
             right: 16,
-            zIndex: 1050,
+            zIndex: 1200,
             width: 240,
             background: 'rgba(8, 12, 8, 0.95)',
             border: '1px solid #1e3a1e',

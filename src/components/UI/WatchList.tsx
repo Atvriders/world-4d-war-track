@@ -47,8 +47,8 @@ const PANEL_WIDTH = 300;
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'fixed',
-    bottom: 140,
-    right: 16,
+    bottom: 126,
+    right: 8,
     zIndex: 1000,
     fontFamily: "'Courier New', Courier, monospace",
     display: 'flex',
