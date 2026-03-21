@@ -54,32 +54,39 @@ export default function LayerBar({ layers, onToggleLayer, counts }: LayerBarProp
           <button
             key={key}
             onClick={() => onToggleLayer(key)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.filter = 'brightness(1.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.filter = 'brightness(1)';
+            }}
             title={`${label} (${active ? 'ON' : 'OFF'})${hasCount ? ` — ${count} loaded` : ''}`}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 3,
-              height: 24,
+              height: 28,
               padding: '0 8px',
-              border: `1px solid ${active ? (dimmed ? `${color}66` : color) : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: 12,
+              border: `1px solid ${active ? (dimmed ? `${color}66` : color) : 'rgba(255,255,255,0.25)'}`,
+              borderRadius: 14,
               background: active
                 ? (dimmed ? `${color}0d` : `${color}22`)
-                : 'rgba(255,255,255,0.04)',
-              color: active ? (dimmed ? `${color}88` : color) : 'rgba(255,255,255,0.3)',
+                : 'rgba(255,255,255,0.08)',
+              color: active ? (dimmed ? `${color}88` : color) : 'rgba(255,255,255,0.6)',
               fontFamily: "'Courier New', monospace",
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
               letterSpacing: '0.03em',
               whiteSpace: 'nowrap',
               outline: 'none',
-              opacity: dimmed ? 0.5 : 1,
+              filter: 'brightness(1)',
+              opacity: dimmed ? 0.7 : 1,
               boxShadow: active && !dimmed ? `0 0 6px ${color}44` : 'none',
             }}
           >
-            <span style={{ fontSize: 12 }}>{icon}</span>
+            <span style={{ fontSize: 13 }}>{icon}</span>
             {label}
             {hasCount && (
               <span style={{

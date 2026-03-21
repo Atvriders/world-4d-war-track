@@ -901,7 +901,7 @@ function labelTextAccessor(d: object) { return (d as { name: string }).name; }
 function labelAltAccessor(d: object) { return (d as { alt: number }).alt; }
 function labelSizeAccessor(d: object) { return (d as { size: number }).size || 1.0; }
 function labelColorAccessor(d: object) { return (d as { color: string }).color; }
-function labelDotRadiusAccessor(d: object) { return (d as { _type?: string })._type ? 0.3 : 0; }
+function labelDotRadiusAccessor(d: object) { return (d as { dotRadius?: number }).dotRadius ?? 0; }
 
 function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
 function pathPointLatAccessor(pt: object) { return (pt as { lat: number }).lat; }
@@ -1203,6 +1203,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       size: number;
       _type?: string;
       _zone?: unknown;
+      dotRadius?: number;
     }> = [];
 
     // Satellite labels (top 10)
@@ -1232,26 +1233,58 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }));
     labels.push(...countryLabels);
 
-    // Aircraft labels (military only, top 10)
+    // Aircraft labels (all airborne, military first, limit 50)
     if (layers.aircraft) {
-      const acLabels = aircraft
-        .filter(a => !a.onGround && a.isMilitary)
-        .slice(0, 10)
+      const airborne = aircraft.filter(a => !a.onGround);
+      // Sort military first, then by altitude descending
+      const sorted = [...airborne].sort((a, b) => {
+        if (a.isMilitary && !b.isMilitary) return -1;
+        if (!a.isMilitary && b.isMilitary) return 1;
+        return b.altitude - a.altitude;
+      });
+      const acLabels = sorted
+        .slice(0, 50)
         .map(a => ({
-          name: a.callsign || a.icao24,
+          name: `✈ ${a.callsign || a.icao24}`,
           lat: a.lat,
           lng: a.lng,
           alt: a.altitude / 6_371_000,
-          color: 'rgba(255,80,80,0.9)',
-          size: 0.7,
+          color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
+          size: a.isMilitary ? 1.2 : 0.8,
           _type: 'aircraft',
+          dotRadius: a.isMilitary ? 0.4 : 0.2,
         }));
       labels.push(...acLabels);
     }
 
-    // Cap total labels for performance (~40 max)
-    return labels.slice(0, 40);
-  }, [satellites, layers.satellites, aircraft, layers.aircraft]);
+    // Ship labels (warships first, limit 30)
+    if (layers.ships) {
+      const sorted = [...ships].sort((a, b) => {
+        const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
+        const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
+        return bWar - aWar;
+      });
+      const shipLabels = sorted
+        .slice(0, 30)
+        .map(s => {
+          const isWarship = s.type === 'warship' || s.type === 'military';
+          return {
+            name: `🚢 ${s.name || s.mmsi}`,
+            lat: s.lat,
+            lng: s.lng,
+            alt: 0.001,
+            color: isWarship ? 'rgba(255,60,60,1.0)' : 'rgba(60,120,255,0.9)',
+            size: isWarship ? 0.9 : 0.6,
+            _type: 'ship',
+            dotRadius: 0.3,
+          };
+        });
+      labels.push(...shipLabels);
+    }
+
+    // Cap total labels for performance (~60 max)
+    return labels.slice(0, 60);
+  }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
@@ -2184,6 +2217,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           const d = label as { _type?: string };
           if (d._type === 'aircraft') {
             onEntityClick('aircraft', d);
+          } else if (d._type === 'ship') {
+            onEntityClick('ship', d);
           }
         }}
 
