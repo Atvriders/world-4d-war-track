@@ -270,7 +270,28 @@ export async function fetchAndProcessTleGroup(
   return entities;
 }
 
-// ── Fetch All Satellites ──────────────────────────────────────────────────────
+// ── Fetch Pre-computed Positions (with TLE fallback) ─────────────────────────
+
+export async function fetchSatellitePositions(): Promise<SatelliteEntity[]> {
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 5000);
+    const response = await fetch('/api/satellites/positions', { signal: ctrl.signal });
+    clearTimeout(tid);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (data.satellites && data.satellites.length > 0) {
+      return data.satellites;
+    }
+    throw new Error('No satellite data');
+  } catch (err) {
+    console.warn('[Satellites] Positions endpoint failed, trying TLE:', (err as Error).message);
+    // Fall back to TLE-based propagation
+    return fetchAllSatellites();
+  }
+}
+
+// ── Fetch All Satellites (TLE-based) ─────────────────────────────────────────
 
 export async function fetchAllSatellites(): Promise<SatelliteEntity[]> {
   try {

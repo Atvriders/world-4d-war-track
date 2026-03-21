@@ -6,7 +6,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../store';
 import { fetchAircraft } from '../services/adsb';
 import { fetchShips } from '../services/ais';
-import { fetchAllSatellites, propagateSatellite, getSatelliteGroundTrack, getFootprintRadius } from '../services/satellite';
+import { fetchSatellitePositions, propagateSatellite, getSatelliteGroundTrack, getFootprintRadius } from '../services/satellite';
 import { fetchLiveGpsJamData } from '../services/gpsJam';
 import { RateLimitError } from '../services/rateLimitError';
 import { distanceKm, pointNearConflictZone } from '../utils/geoMath';
@@ -162,7 +162,7 @@ export function useDataRefresh(): { refresh: () => void } {
     setLoading('satellites', true);
     setError('satellites', null);
     try {
-      const data = await fetchAllSatellites();
+      const data = await fetchSatellitePositions();
       setSatellites(data);
       setLastRefresh('satellites');
       retryCounts.current.satellites = 0;
