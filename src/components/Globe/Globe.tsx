@@ -1700,8 +1700,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="/img/earth-night.jpg"
-        backgroundImageUrl="/img/night-sky.png"
+        globeImageUrl={`${window.location.origin}/img/earth-night.jpg`}
+        backgroundImageUrl={`${window.location.origin}/img/night-sky.png`}
         atmosphereColor="#1a4a8a"
         atmosphereAltitude={0.15}
         showAtmosphere={layers.atmosphere}
