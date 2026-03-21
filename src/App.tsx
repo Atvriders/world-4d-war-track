@@ -25,6 +25,8 @@ import WatchList from './components/UI/WatchList';
 import EventFeed from './components/UI/EventFeed';
 import DeathTollBar from './components/UI/DeathTollBar';
 import WarImpactPanel from './components/UI/WarImpactPanel';
+import EconomyPanel from './components/UI/EconomyPanel';
+import SourcesPanel from './components/UI/SourcesPanel';
 
 import { fetchAircraft } from './services/adsb';
 import { fetchShips } from './services/ais';
@@ -88,6 +90,8 @@ export default function App() {
   const [showWatchList, setShowWatchList] = useState(false);
   const [showEventFeed, setShowEventFeed] = useState(false);
   const [showWarImpact, setShowWarImpact] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+  const [showEconomy, setShowEconomy] = useState(false);
   const [watchedEntities, setWatchedEntities] = useState<Array<{ type: 'aircraft' | 'ship' | 'satellite'; id: string; label: string; addedAt: number }>>([]);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
@@ -248,6 +252,12 @@ export default function App() {
         case 'i':
           setShowWarImpact(v => !v);
           break;
+        case 'u':
+          setShowSources(v => !v);
+          break;
+        case 'y':
+          setShowEconomy(v => !v);
+          break;
         case 'escape':
           setShowKeyboardHelp(false);
           store.setSelectedEntity(null);
@@ -296,6 +306,7 @@ export default function App() {
           <DeathTollBar
             conflictZones={conflictZones}
             onFlyTo={handleFlyTo}
+            onOpenSources={() => setShowSources(true)}
           />
 
           {/* Status bar */}
@@ -498,11 +509,46 @@ export default function App() {
             onToggle={() => setShowWarImpact(v => !v)}
           />
 
+          {/* Economy panel */}
+          <EconomyPanel
+            visible={showEconomy}
+            onToggle={() => setShowEconomy(v => !v)}
+          />
+
+          {/* Sources panel */}
+          <SourcesPanel
+            visible={showSources}
+            onClose={() => setShowSources(false)}
+          />
+
           {/* Keyboard help */}
           <KeyboardHelp
             visible={showKeyboardHelp}
             onClose={() => setShowKeyboardHelp(v => !v)}
           />
+
+          {/* Sources button */}
+          <button
+            onClick={() => setShowSources(v => !v)}
+            style={{
+              position: 'fixed',
+              bottom: 66,
+              right: 16,
+              background: 'rgba(5,15,30,0.8)',
+              border: '1px solid rgba(0,255,136,0.4)',
+              color: '#00ff88',
+              padding: '4px 8px',
+              borderRadius: '3px',
+              fontFamily: 'monospace',
+              fontSize: '11px',
+              cursor: 'pointer',
+              zIndex: 100,
+              letterSpacing: '0.05em',
+            }}
+            title="View data sources (U)"
+          >
+            Sources
+          </button>
 
           {/* Help button */}
           <button

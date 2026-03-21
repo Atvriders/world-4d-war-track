@@ -79,6 +79,12 @@ export interface ConflictZone {
     civilian?: number;
     displaced?: number;
   };
+  casualtySources?: {
+    total?: string;
+    military?: string;
+    civilian?: string;
+    displaced?: string;
+  };
   geoJSON: GeoJSONFeature;         // polygon/multipolygon of affected area
   frontlineGeoJSON?: GeoJSONFeature; // front line as LineString
   events: ConflictEvent[];
@@ -139,6 +145,7 @@ export interface LayerVisibility {
   carrierGroups: boolean;
   threatRings: boolean;
   armsFlows: boolean;
+  tradeRoutes: boolean;
   energyInfra: boolean;
   atmosphere: boolean;
 }

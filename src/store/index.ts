@@ -123,6 +123,7 @@ const DEFAULT_LAYERS: LayerVisibility = {
   carrierGroups: true,
   threatRings: false,
   armsFlows: false,
+  tradeRoutes: false,
   energyInfra: false,
   atmosphere: true,
 };

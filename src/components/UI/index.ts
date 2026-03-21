@@ -19,3 +19,4 @@ export { default as StatsOverlay } from './StatsOverlay';
 export { default as WatchList } from './WatchList';
 export { default as EventFeed } from './EventFeed';
 export { default as WarImpactPanel } from './WarImpactPanel';
+export { default as EconomyPanel } from './EconomyPanel';

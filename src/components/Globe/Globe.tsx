@@ -37,6 +37,11 @@ if (typeof document !== 'undefined' && !document.getElementById('chokepoint-puls
       50%  { transform: scale(1.6); opacity: 0.3; }
       100% { transform: scale(1);   opacity: 0.9; }
     }
+    @keyframes oil-flow-ring {
+      0%   { transform: translate(-50%, -50%) scale(1);   opacity: 0.5; }
+      50%  { transform: translate(-50%, -50%) scale(1.4); opacity: 0.12; }
+      100% { transform: translate(-50%, -50%) scale(1);   opacity: 0.5; }
+    }
     @keyframes csg-pulse {
       0%   { transform: scale(1);   opacity: 0.7; }
       50%  { transform: scale(1.15); opacity: 0.4; }
@@ -170,6 +175,7 @@ interface LayerVisibility {
   chokepoints: boolean;
   sanctionsZones: boolean;
   armsFlows: boolean;
+  tradeRoutes: boolean;
   atmosphere: boolean;
 }
 
@@ -527,7 +533,8 @@ type PathEntry =
   | { _kind: 'frontline'; zone: ConflictZone; coords: { lat: number; lng: number; alt: number }[] }
   | { _kind: 'seaCable'; cable: SeaCable; coords: { lat: number; lng: number; alt: number }[] }
   | { _kind: 'weaponRange'; site: string; weapon: string; rangeKm: number; weaponType: 'ballistic' | 'cruise' | 'drone' | 'sam' | 'rocket'; coords: { lat: number; lng: number; alt: number }[] }
-  | { _kind: 'constellation'; constellation: string; color: string; coords: { lat: number; lng: number; alt: number }[] };
+  | { _kind: 'constellation'; constellation: string; color: string; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'nuclearZone'; facility: string; zone: 'Evacuation' | 'Shelter-in-place' | 'Monitoring'; radiusKm: number; risk: NuclearSite['risk']; coords: { lat: number; lng: number; alt: number }[] };
 
 // ─── Navigation constellation helpers ──────────────────────────────────────
 
@@ -622,7 +629,34 @@ function armsFlowStroke(category: string, value: string): number {
   return 1.8;
 }
 
-type ArcEntry = ArcConnection | RefugeeArc | ArmsFlowArc;
+// ─── Trade route disruption arcs ─────────────────────────────────────────────
+
+interface TradeRouteArc {
+  _isTradeRoute: true;
+  name: string;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  status: 'disrupted' | 'active';
+  color: string;
+}
+
+const TRADE_ROUTE_ARCS: Omit<TradeRouteArc, '_isTradeRoute'>[] = [
+  // Normal Suez route (now disrupted)
+  { name: 'Suez Route (DISRUPTED)', startLat: 34.0, startLng: 11.0, endLat: 12.5, endLng: 43.3, status: 'disrupted', color: 'rgba(255,50,50,0.6)' },
+  // Cape of Good Hope reroute
+  { name: 'Cape Reroute (Active)', startLat: 34.0, startLng: 11.0, endLat: -34.4, endLng: 18.5, status: 'active', color: 'rgba(0,255,136,0.4)' },
+  { name: 'Cape Reroute East', startLat: -34.4, startLng: 18.5, endLat: 12.5, endLng: 43.3, status: 'active', color: 'rgba(0,255,136,0.4)' },
+  // Black Sea grain (disrupted)
+  { name: 'Black Sea Grain (SUSPENDED)', startLat: 46.5, startLng: 31.0, endLat: 41.0, endLng: 29.0, status: 'disrupted', color: 'rgba(255,50,50,0.6)' },
+];
+
+function isTradeRouteArc(d: object): d is TradeRouteArc {
+  return '_isTradeRoute' in d;
+}
+
+type ArcEntry = ArcConnection | RefugeeArc | ArmsFlowArc | TradeRouteArc;
 
 function isRefugeeArc(d: object): d is RefugeeArc {
   return '_isRefugee' in d;
@@ -712,12 +746,35 @@ function chokepointRiskColor(risk: Chokepoint['risk']): string {
   }
 }
 
+/** Parse oil flow string like "21M bbl/day" to numeric millions */
+function parseOilFlowM(oilFlow: string): number {
+  const match = oilFlow.match(/([\d.]+)\s*M/i);
+  return match ? parseFloat(match[1]) : 0;
+}
+
 /** Map daily traffic string to a ring size in px (16-36) */
 function chokepointRingSize(dailyTraffic: string): number {
   const match = dailyTraffic.match(/~?(\d+)/);
   if (!match) return 20;
   const n = parseInt(match[1], 10);
   return Math.min(36, Math.max(16, Math.round(12 + n * 0.28)));
+}
+
+/** Map oil flow to an outer ring size in px (0-52). Scales relative to max ~21M bbl/day */
+function oilFlowRingSize(oilFlow: string): number {
+  const m = parseOilFlowM(oilFlow);
+  if (m <= 0) return 0;
+  return Math.round(20 + (m / 21) * 32);  // 20..52 px
+}
+
+/** Pulse speed based on risk level */
+function oilFlowPulseSpeed(risk: Chokepoint['risk']): string {
+  switch (risk) {
+    case 'critical': return '0.9s';
+    case 'high':     return '1.5s';
+    case 'medium':   return '2.2s';
+    case 'low':      return '3s';
+  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -931,14 +988,41 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     [layers.weaponRanges]
   );
 
+  // Nuclear exclusion / danger zone circles
+  const nuclearZonePaths: PathEntry[] = useMemo(() => {
+    if (!layers.nuclearSites) return [];
+    const zones: { zone: 'Evacuation' | 'Shelter-in-place' | 'Monitoring'; radiusKm: number }[] = [
+      { zone: 'Evacuation', radiusKm: 30 },
+      { zone: 'Shelter-in-place', radiusKm: 100 },
+      { zone: 'Monitoring', radiusKm: 300 },
+    ];
+    const paths: PathEntry[] = [];
+    for (const site of NUCLEAR_SITES) {
+      for (const z of zones) {
+        const coords = generateCircleCoords(site.lat, site.lng, z.radiusKm);
+        // Override altitude to 0.001 to sit just above terrain
+        for (const c of coords) c.alt = 0.001;
+        paths.push({
+          _kind: 'nuclearZone',
+          facility: site.name,
+          zone: z.zone,
+          radiusKm: z.radiusKm,
+          risk: site.risk,
+          coords,
+        });
+      }
+    }
+    return paths;
+  }, [layers.nuclearSites]);
+
   const allPaths: PathEntry[] = useMemo(
-    () => [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths],
-    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths]
+    () => [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths, ...nuclearZonePaths],
+    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths, nuclearZonePaths]
   );
 
   // Satellite connection arcs: military/spy/recon → nearest conflict zone + nav → GPS jam cells
   const arcsData: ArcEntry[] = useMemo(() => {
-    if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats) return [];
+    if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats && !layers.tradeRoutes) return [];
     const milArcs = layers.satelliteConnections ? getMilitarySatelliteConnections(
       satellites as any,
       conflictZones as any,
@@ -973,8 +1057,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           type: 'communications' as const,
         }))
       : [];
-    return [...milArcs, ...jamArcs, ...refugeeArcs, ...cyberArcs];
-  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, satellites, conflictZones, gpsJamCells]);
+    // Trade route disruption arcs
+    const tradeArcs: TradeRouteArc[] = layers.tradeRoutes
+      ? TRADE_ROUTE_ARCS.map((route) => ({
+          _isTradeRoute: true as const,
+          ...route,
+        }))
+      : [];
+    return [...milArcs, ...jamArcs, ...refugeeArcs, ...cyberArcs, ...tradeArcs];
+  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, layers.tradeRoutes, satellites, conflictZones, gpsJamCells]);
 
   // Satellite footprint rings
   const ringsData: FootprintRing[] = useMemo(
@@ -1334,18 +1425,37 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       return wrapper;
     }
 
-    // ── Chokepoint marker — pulsing ring ──
+    // ── Chokepoint marker — pulsing ring + oil flow volume ring ──
     if (obj._marker === 'chokepoint') {
       const cp = d as Chokepoint & { _marker: string };
       const cpColor = chokepointRiskColor(cp.risk);
       const ringSize = chokepointRingSize(cp.dailyTraffic);
       const pulseSpeed = cp.risk === 'critical' ? '1.2s' : cp.risk === 'high' ? '1.8s' : '2.5s';
+      const flowM = parseOilFlowM(cp.oilFlow);
+      const flowRingPx = oilFlowRingSize(cp.oilFlow);
+      const flowPulse = oilFlowPulseSpeed(cp.risk);
 
       const wrapper = document.createElement('div');
       wrapper.className = 'chokepoint-marker';
       wrapper.style.position = 'relative';
       wrapper.style.cursor = 'pointer';
       wrapper.style.pointerEvents = 'auto';
+
+      // Oil flow volume ring — size correlates with bbl/day
+      if (flowM > 0) {
+        const flowRing = document.createElement('div');
+        flowRing.style.position = 'absolute';
+        flowRing.style.top = '50%';
+        flowRing.style.left = '50%';
+        flowRing.style.width = `${flowRingPx}px`;
+        flowRing.style.height = `${flowRingPx}px`;
+        flowRing.style.borderRadius = '50%';
+        flowRing.style.border = `1.5px dashed ${cpColor}88`;
+        flowRing.style.background = `radial-gradient(circle, ${cpColor}18 0%, transparent 70%)`;
+        flowRing.style.pointerEvents = 'none';
+        flowRing.style.animation = `oil-flow-ring ${flowPulse} ease-in-out infinite`;
+        wrapper.appendChild(flowRing);
+      }
 
       const ring = document.createElement('div');
       ring.style.width = `${ringSize}px`;
@@ -1370,10 +1480,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const tooltip = document.createElement('div');
       tooltip.className = 'chokepoint-tooltip';
       const rlc = cp.risk === 'critical' ? '#ff2222' : cp.risk === 'high' ? '#ff8800' : '#ffdd00';
+      const pctGlobal = flowM > 0 ? `${flowM.toFixed(1)}% of global` : 'N/A';
       tooltip.innerHTML = `<div style="color:${rlc};font-weight:bold;font-size:12px;margin-bottom:4px">${cp.name}</div>`
         + `<div>Width: <span style="color:#fff">${cp.width}</span></div>`
         + `<div>Daily Traffic: <span style="color:#fff">${cp.dailyTraffic}</span></div>`
-        + `<div>Oil Flow: <span style="color:#fff">${cp.oilFlow}</span></div>`
+        + `<div>Oil Flow: <span style="color:#fff">${cp.oilFlow}</span> <span style="color:#aab;font-size:10px">(${pctGlobal})</span></div>`
         + `<div>Risk: <span style="color:${rlc}">${cp.risk.toUpperCase()}</span></div>`
         + `<div>Threat: <span style="color:#ff8866">${cp.threat}</span></div>`;
 
@@ -1575,6 +1686,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           if (entry._kind === 'ship') return shipTrailColor(entry.ship.type);
           if (entry._kind === 'seaCable') return cableRiskColor(entry.cable.risk);
           if (entry._kind === 'constellation') return entry.color;
+          if (entry._kind === 'nuclearZone') {
+            const bright = entry.risk === 'critical';
+            if (entry.zone === 'Evacuation') return bright ? 'rgba(255,40,40,0.12)' : 'rgba(255,40,40,0.08)';
+            if (entry.zone === 'Shelter-in-place') return bright ? 'rgba(255,165,0,0.08)' : 'rgba(255,165,0,0.05)';
+            return bright ? 'rgba(255,255,0,0.05)' : 'rgba(255,255,0,0.03)';
+          }
           return '#aaaaaa';
         }}
         pathDashLength={(d: object) => {
@@ -1582,6 +1699,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           if (entry._kind === 'weaponRange') return 0.6;
           if (entry._kind === 'seaCable') return 0.4;
           if (entry._kind === 'constellation') return 0.6;
+          if (entry._kind === 'nuclearZone') {
+            if (entry.zone === 'Evacuation') return 2;     // solid (large dash, no gap)
+            if (entry.zone === 'Shelter-in-place') return 0.4; // dashed
+            return 0.15;                                       // dotted
+          }
           return 0.5;
         }}
         pathDashGap={(d: object) => {
@@ -1589,6 +1711,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           if (entry._kind === 'weaponRange') return 0.3;
           if (entry._kind === 'seaCable') return 0.2;
           if (entry._kind === 'constellation') return 0.3;
+          if (entry._kind === 'nuclearZone') {
+            if (entry.zone === 'Evacuation') return 0;        // solid
+            if (entry.zone === 'Shelter-in-place') return 0.3; // dashed
+            return 0.15;                                        // dotted
+          }
           return 0.3;
         }}
         pathStroke={(d: object) => {
@@ -1596,6 +1723,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           if (entry._kind === 'weaponRange') return 0.8;
           if (entry._kind === 'seaCable') return 1.2;
           if (entry._kind === 'constellation') return 0.8;
+          if (entry._kind === 'nuclearZone') return entry.risk === 'critical' ? 0.9 : 0.6;
           return 0.5;
         }}
         pathLabel={(d: object) => {
@@ -1605,6 +1733,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
               `<b style="color:${weaponRangeColor(entry.weaponType)}">${entry.weapon}</b><br/>` +
               `Range: ${entry.rangeKm.toLocaleString()} km<br/>` +
               `<span style="color:#888">${entry.site}</span></div>`;
+          }
+          if (entry._kind === 'nuclearZone') {
+            const zoneColors = { Evacuation: '#ff4040', 'Shelter-in-place': '#ffa500', Monitoring: '#ffff00' };
+            const zc = zoneColors[entry.zone];
+            return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${zc};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+              `<b style="color:${zc}">${entry.facility}</b><br/>` +
+              `${entry.zone} zone (${entry.radiusKm}km)</div>`;
           }
           if (entry._kind === 'seaCable') {
             const c = entry.cable;
@@ -1626,6 +1761,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         arcEndLng={(d: object) => (d as ArcConnection).endLng}
         arcColor={(d: object) => {
           if (isRefugeeArc(d)) return ['rgba(255,140,0,0.9)', 'rgba(220,40,40,0.9)'];
+          if (isTradeRouteArc(d)) {
+            const t = d as TradeRouteArc;
+            return t.status === 'disrupted'
+              ? ['rgba(255,50,50,0.8)', 'rgba(255,50,50,0.3)']
+              : ['rgba(0,255,136,0.6)', 'rgba(0,255,136,0.2)'];
+          }
           return (d as ArcConnection).color;
         }}
         arcLabel={(d: object) => {
@@ -1633,13 +1774,38 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             const r = d as RefugeeArc;
             return `<b style="color:#ff6644">${formatRefugeeCount(r.count)} displaced</b><br/>${r.from} → ${r.to}<br/><i>${r.year}</i>`;
           }
+          if (isTradeRouteArc(d)) {
+            const t = d as TradeRouteArc;
+            const statusColor = t.status === 'disrupted' ? '#ff3333' : '#00ff88';
+            const statusIcon = t.status === 'disrupted' ? '\u2716' : '\u2714';
+            return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${statusColor};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+              `<b style="color:${statusColor}">${statusIcon} ${t.name}</b><br/>` +
+              `Status: <span style="color:${statusColor};font-weight:bold">${t.status.toUpperCase()}</span><br/>` +
+              `<span style="color:#888">Trade route ${t.status === 'disrupted' ? 'blocked by conflict' : 'alternative shipping lane'}</span></div>`;
+          }
           return (d as ArcConnection).label;
         }}
         arcAltAutoScale={0.3}
-        arcStroke={(d: object) => isRefugeeArc(d) ? refugeeArcWidth((d as RefugeeArc).count) : 0.5}
-        arcDashLength={(d: object) => isRefugeeArc(d) ? 0.6 : 0.4}
-        arcDashGap={(d: object) => isRefugeeArc(d) ? 0.3 : 0.2}
-        arcDashAnimateTime={(d: object) => isRefugeeArc(d) ? 2500 : 1500}
+        arcStroke={(d: object) => {
+          if (isRefugeeArc(d)) return refugeeArcWidth((d as RefugeeArc).count);
+          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 1.8 : 1.2;
+          return 0.5;
+        }}
+        arcDashLength={(d: object) => {
+          if (isRefugeeArc(d)) return 0.6;
+          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.3 : 0.5;
+          return 0.4;
+        }}
+        arcDashGap={(d: object) => {
+          if (isRefugeeArc(d)) return 0.3;
+          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.4 : 0.2;
+          return 0.2;
+        }}
+        arcDashAnimateTime={(d: object) => {
+          if (isRefugeeArc(d)) return 2500;
+          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0 : 2000;
+          return 1500;
+        }}
 
         // ── Satellite footprint rings ──────────────────────────
         ringsData={ringsData}

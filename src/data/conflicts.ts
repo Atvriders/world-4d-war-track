@@ -21,6 +21,7 @@ interface ConflictZone {
   intensity: 'low' | 'medium' | 'high' | 'critical';
   parties: string[];
   casualties: { total?: number; military?: number; civilian?: number; displaced?: number };
+  casualtySources?: { total?: string; military?: string; civilian?: string; displaced?: string };
   geoJSON: { type: 'Feature'; geometry: { type: string; coordinates: unknown }; properties?: Record<string, unknown> };
   frontlineGeoJSON?: { type: 'Feature'; geometry: { type: string; coordinates: unknown }; properties?: Record<string, unknown> };
   events: ConflictEvent[];
@@ -45,6 +46,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       military: 600000,
       civilian: 12000,
       displaced: 10000000,
+    },
+    casualtySources: {
+      total: 'UN OHCHR / Ukrainian MOD estimates',
+      military: 'UN OHCHR / Ukrainian MOD estimates',
+      civilian: 'UN OHCHR',
+      displaced: 'UNHCR',
     },
     color: '#CC0000',
     description:
@@ -156,6 +163,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       civilian: 56500,
       displaced: 1900000,
     },
+    casualtySources: {
+      total: 'Gaza Health Ministry / UN OCHA',
+      military: 'IDF',
+      civilian: 'Gaza Health Ministry / UN OCHA',
+      displaced: 'UNRWA / UN OCHA',
+    },
     color: '#FF0000',
     description:
       'On 7 October 2023 Hamas launched a mass-casualty attack into southern Israel killing ~1,200 people and taking ~250 hostages, triggering an Israeli military campaign in Gaza. Israel conducted intensive air and ground operations across the Gaza Strip through 2024, resulting in massive civilian casualties and near-total destruction of northern Gaza. A series of ceasefire agreements in early 2025 provided brief pauses but fighting resumed; humanitarian conditions remain catastrophic.',
@@ -261,6 +274,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       civilian: 120000,
       displaced: 11000000,
     },
+    casualtySources: {
+      total: 'ACLED / WHO',
+      military: 'ACLED',
+      civilian: 'WHO',
+      displaced: 'UNHCR / IOM',
+    },
     color: '#FF6600',
     description:
       'Conflict erupted on 15 April 2023 between Sudan\'s national army (SAF) and the paramilitary Rapid Support Forces (RSF), led by General Mohamed Hamdan Dagalo "Hemeti." Fighting spread from Khartoum across Darfur and Kordofan, causing the world\'s largest internal displacement crisis. The RSF has been accused of ethnic massacres and systematic sexual violence in Darfur, drawing comparisons to the 2003–2005 genocide. No durable ceasefire has held as of 2025.',
@@ -355,6 +374,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       military: 25000,
       civilian: 25000,
       displaced: 3000000,
+    },
+    casualtySources: {
+      total: 'AAPP / ACLED',
+      military: 'ACLED',
+      civilian: 'AAPP',
+      displaced: 'UNHCR',
     },
     color: '#FF6600',
     description:
@@ -452,6 +477,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       military: 150000,
       civilian: 227000,
       displaced: 4500000,
+    },
+    casualtySources: {
+      total: 'UN Panel of Experts',
+      military: 'UN Panel of Experts',
+      civilian: 'UN Panel of Experts',
+      displaced: 'UNHCR',
     },
     color: '#FF6600',
     description:
@@ -562,6 +593,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       civilian: 4000,
       displaced: 7000000,
     },
+    casualtySources: {
+      total: 'ACLED / Kivu Security Tracker',
+      military: 'ACLED',
+      civilian: 'Kivu Security Tracker',
+      displaced: 'UNHCR / IDMC',
+    },
     color: '#FF6600',
     description:
       'The M23 rebel group, widely accused of being backed by Rwanda, relaunched its offensive in eastern Democratic Republic of Congo in late 2022. By early 2025 M23 forces captured Goma, the largest city in eastern DRC, marking the most significant territorial shift since the 1990s conflicts. SADC peacekeeping forces withdrew and Rwanda denied direct involvement despite mounting UN evidence. The conflict has triggered the world\'s most protracted displacement crisis with over 7 million IDPs.',
@@ -658,6 +695,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       military: 12000,
       civilian: 28000,
       displaced: 3600000,
+    },
+    casualtySources: {
+      total: 'ACLED',
+      military: 'ACLED',
+      civilian: 'ACLED',
+      displaced: 'UNHCR / IDMC',
     },
     color: '#FFAA00',
     description:
@@ -756,6 +799,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       civilian: 450000,
       displaced: 3400000,
     },
+    casualtySources: {
+      total: 'ACLED / UN OCHA',
+      military: 'ACLED',
+      civilian: 'UN OCHA',
+      displaced: 'UNHCR',
+    },
     color: '#FFAA00',
     description:
       'Al-Shabaab has waged an insurgency against the Somali federal government and African Union forces since 2006, holding significant rural territory across southern and central Somalia. Despite a 2022 military offensive that recaptured several towns, al-Shabaab retains the ability to conduct mass-casualty bombings in Mogadishu and attacks on military bases. The ATMIS drawdown in 2024 has created security vacuums that al-Shabaab has exploited.',
@@ -851,6 +900,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       civilian: 7200,
       displaced: 700000,
     },
+    casualtySources: {
+      total: 'BINUH / ACLED',
+      military: 'ACLED',
+      civilian: 'BINUH',
+      displaced: 'IOM',
+    },
     color: '#FFAA00',
     description:
       'Following the assassination of President Jovenel Moïse in July 2021, gang violence escalated dramatically across Haiti. The Viv Ansanm coalition controls an estimated 85% of Port-au-Prince and key national infrastructure including the main seaport and fuel terminals. A Kenya-led multinational security force deployed in 2024 has had limited impact due to resource constraints. Humanitarian access is severely restricted and gang-controlled territories experience near-total impunity.',
@@ -945,6 +1000,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       military: 1200,
       civilian: 3300,
       displaced: 1100000,
+    },
+    casualtySources: {
+      total: 'Lebanese MOH / IDF',
+      military: 'IDF',
+      civilian: 'Lebanese MOH',
+      displaced: 'UNHCR',
     },
     color: '#FF6600',
     description:
@@ -1055,6 +1116,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       civilian: 6000,
       displaced: 1500000,
     },
+    casualtySources: {
+      total: 'EHRC / ACLED',
+      military: 'ACLED',
+      civilian: 'EHRC',
+      displaced: 'UNHCR / IOM',
+    },
     color: '#FFAA00',
     description:
       'Following the November 2022 Cessation of Hostilities Agreement in Tigray, violence shifted to the Amhara region where the federal government attempted to disband regional special forces. Amhara Fano militias launched an armed resistance beginning August 2023, seizing towns and fighting ENDF in urban areas including Lalibela and Debre Tabor. The conflict continues amid internet blackouts and restricted journalist access, making casualty verification difficult.',
@@ -1151,6 +1218,12 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       military: 20000,
       civilian: 60000,
       displaced: 2000000,
+    },
+    casualtySources: {
+      total: 'SATP / ACLED',
+      military: 'SATP',
+      civilian: 'ACLED',
+      displaced: 'UNHCR / IDMC',
     },
     color: '#FFAA00',
     description:

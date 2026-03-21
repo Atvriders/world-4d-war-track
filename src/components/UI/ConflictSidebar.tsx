@@ -157,6 +157,57 @@ function getTrendIndicator(trend: 'rising' | 'falling' | 'stable'): { symbol: st
   }
 }
 
+// ── Source Indicator ──────────────────────────────────────────────────────────
+
+function SourceIndicator({ tooltip }: { tooltip: string }) {
+  const [showTip, setShowTip] = React.useState(false);
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', marginLeft: 2 }}
+      onMouseEnter={() => setShowTip(true)}
+      onMouseLeave={() => setShowTip(false)}
+    >
+      <span
+        style={{
+          color: 'rgba(0, 255, 136, 0.4)',
+          fontSize: 10,
+          cursor: 'help',
+          lineHeight: 1,
+          userSelect: 'none',
+        }}
+        title={tooltip}
+      >
+        {'\u24D8'}
+      </span>
+      {showTip && (
+        <span
+          style={{
+            position: 'absolute',
+            bottom: '100%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(5, 15, 30, 0.95)',
+            border: '1px solid rgba(0, 255, 136, 0.4)',
+            borderRadius: 3,
+            padding: '4px 8px',
+            whiteSpace: 'nowrap',
+            fontSize: 9,
+            color: '#b0c0cc',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            zIndex: 10,
+            pointerEvents: 'none',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+            marginBottom: 4,
+          }}
+        >
+          {tooltip}
+        </span>
+      )}
+    </span>
+  );
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles: Record<string, React.CSSProperties> = {
@@ -512,7 +563,7 @@ function Sparkline({ counts, trend }: { counts: number[]; trend: 'rising' | 'fal
 
 // ── Casualty Bar Chart ────────────────────────────────────────────────────────
 
-function CasualtyBar({ military, civilian, total }: { military?: number; civilian?: number; total?: number }) {
+function CasualtyBar({ military, civilian, total, militarySource, civilianSource }: { military?: number; civilian?: number; total?: number; militarySource?: string; civilianSource?: string }) {
   const mil = military ?? 0;
   const civ = civilian ?? 0;
   const sum = mil + civ || total || 1;
@@ -566,12 +617,14 @@ function CasualtyBar({ military, civilian, total }: { military?: number; civilia
           />
         )}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 1 }}>
-        <span style={{ color: '#cc5555', fontSize: 8, fontWeight: 700 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 1 }}>
+        <span style={{ color: '#cc5555', fontSize: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
           MIL {formatCasualties(military)}
+          <SourceIndicator tooltip={`Source: ${militarySource ?? 'ACLED / OSINT'}`} />
         </span>
-        <span style={{ color: '#888899', fontSize: 8, fontWeight: 700 }}>
+        <span style={{ color: '#888899', fontSize: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
           CIV {formatCasualties(civilian)}
+          <SourceIndicator tooltip={`Source: ${civilianSource ?? 'ACLED / OSINT'}`} />
         </span>
       </div>
     </div>
@@ -738,6 +791,7 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
           }}>
             KILLED
           </span>
+          <SourceIndicator tooltip={`Source: ${zone.casualtySources?.total ?? 'ACLED / OSINT'}`} />
           {deathsPerDay !== null && (
             <span style={{
               color: 'rgba(255, 100, 100, 0.45)',
@@ -756,6 +810,8 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
           military={zone.casualties.military}
           civilian={zone.casualties.civilian}
           total={zone.casualties.total}
+          militarySource={zone.casualtySources?.military}
+          civilianSource={zone.casualtySources?.civilian}
         />
 
         {/* Displaced count */}
@@ -786,6 +842,7 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
             }}>
               DISPLACED
             </span>
+            <SourceIndicator tooltip={`Source: ${zone.casualtySources?.displaced ?? 'UNHCR / IDMC'}`} />
           </div>
         )}
 

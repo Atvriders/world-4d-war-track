@@ -22,7 +22,7 @@ const SECTIONS: Section[] = [
       { key: 'G', action: 'Fly to Global view' },
       { key: 'E', action: 'Fly to Europe' },
       { key: 'M', action: 'Fly to Middle East' },
-      { key: 'U', action: 'Fly to Ukraine' },
+      { key: 'U', action: 'Toggle Data Sources' },
       { key: 'Ctrl+K', action: 'Search' },
     ],
   },

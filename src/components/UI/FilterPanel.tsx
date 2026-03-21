@@ -24,6 +24,7 @@ interface LayerVisibility {
   cyberThreats: boolean;
   refugeeFlows: boolean;
   weaponRanges: boolean;
+  tradeRoutes: boolean;
   energyInfra: boolean;
   atmosphere: boolean;
 }
@@ -432,6 +433,15 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
                   onToggle={onToggleLayer}
                   countBadge="6"
                   subLabel="Armed attacks & hijacking"
+                />
+                <LayerRow
+                  icon="🚧"
+                  label="Trade Route Disruptions"
+                  layerKey="tradeRoutes"
+                  on={layers.tradeRoutes}
+                  onToggle={onToggleLayer}
+                  countBadge="4"
+                  subLabel="Rerouted shipping lanes"
                 />
               </div>
 

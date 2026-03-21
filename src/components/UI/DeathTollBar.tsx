@@ -13,6 +13,7 @@ interface ConflictZone {
 interface DeathTollBarProps {
   conflictZones: ConflictZone[];
   onFlyTo: (lat: number, lng: number, altitude?: number) => void;
+  onOpenSources?: () => void;
 }
 
 // ── Country code → flag emoji map ─────────────────────────────────────────────
@@ -74,7 +75,7 @@ function getCentroid(zone: ConflictZone): { lat: number; lng: number } | null {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function DeathTollBar({ conflictZones, onFlyTo }: DeathTollBarProps) {
+export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: DeathTollBarProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -214,6 +215,34 @@ export default function DeathTollBar({ conflictZones, onFlyTo }: DeathTollBarPro
           {conflictItems}
           {conflictItems.map((item, i) => React.cloneElement(item, { key: `dup-${sorted[i].id}` }))}
         </div>
+
+        {/* Sources link */}
+        {onOpenSources && (
+          <span
+            onClick={onOpenSources}
+            style={{
+              color: 'rgba(0, 255, 136, 0.5)',
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              cursor: 'pointer',
+              padding: '0 10px',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+              borderLeft: '1px solid rgba(255,68,68,0.15)',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'color 0.15s',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00ff88'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0, 255, 136, 0.5)'; }}
+            title="View data sources (U)"
+          >
+            SOURCES
+          </span>
+        )}
       </div>
     </>
   );

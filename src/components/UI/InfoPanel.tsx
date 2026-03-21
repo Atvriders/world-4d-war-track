@@ -530,6 +530,23 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
         {entity.casualties.displaced !== undefined && (
           <InfoRow label="Displaced" value={formatNumber(entity.casualties.displaced)} />
         )}
+        {entity.casualtySources?.total && (
+          <div style={{
+            marginTop: 4,
+            padding: '3px 0',
+            color: 'rgba(160, 175, 190, 0.45)',
+            fontSize: 9,
+            fontStyle: 'italic',
+            letterSpacing: '0.02em',
+          }}>
+            Sources: {[
+              entity.casualtySources.total,
+              entity.casualtySources.displaced && entity.casualtySources.displaced !== entity.casualtySources.total
+                ? entity.casualtySources.displaced
+                : null,
+            ].filter(Boolean).join(' · ')}
+          </div>
+        )}
       </div>
 
       {entity.description && (
