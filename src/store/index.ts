@@ -97,17 +97,17 @@ export interface AppState {
 // === DEFAULT VALUES ===
 
 const DEFAULT_LAYERS: LayerVisibility = {
-  satellites: false,
+  satellites: true,
   satelliteOrbits: false,
   satelliteFootprints: false,
   satelliteConnections: false,
-  aircraft: false,
-  aircraftTrails: false,
-  ships: false,
+  aircraft: true,
+  aircraftTrails: true,
+  ships: true,
   shipTrails: false,
-  warZones: false,
+  warZones: true,
   conflictEvents: false,
-  frontLines: false,
+  frontLines: true,
   gpsJam: false,
   droneActivity: false,
   seaCables: false,
