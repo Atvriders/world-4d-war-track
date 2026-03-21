@@ -370,23 +370,13 @@ function satelliteColorDim(category: SatelliteEntity['category']): string {
   return base + '55'; // append alpha
 }
 
-function conflictCapColor(intensity: ConflictZone['intensity']): string {
-  switch (intensity) {
-    case 'critical': return 'rgba(255,17,17,0.06)';
-    case 'high':     return 'rgba(255,102,0,0.05)';
-    case 'medium':   return 'rgba(255,170,0,0.04)';
-    case 'low':      return 'rgba(0,255,136,0.03)';
-    default:         return 'rgba(255,170,0,0.03)';
-  }
+function conflictCapColor(_intensity: ConflictZone['intensity']): string {
+  // Transparent cap — only stroke borders visible to avoid orange tint
+  return 'rgba(0,0,0,0)';
 }
 
-function conflictSideColor(intensity: ConflictZone['intensity']): string {
-  switch (intensity) {
-    case 'critical': return 'rgba(255,17,17,0.04)';
-    case 'high':     return 'rgba(255,102,0,0.03)';
-    case 'medium':   return 'rgba(255,170,0,0.02)';
-    default:         return 'rgba(200,200,0,0.02)';
-  }
+function conflictSideColor(_intensity: ConflictZone['intensity']): string {
+  return 'rgba(0,0,0,0)';
 }
 
 function conflictStrokeColor(intensity: ConflictZone['intensity']): string {
