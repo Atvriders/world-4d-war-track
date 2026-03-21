@@ -1937,9 +1937,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         polygonCapColor={polygonCapColorAccessor}
         polygonSideColor={polygonSideColorAccessor}
         polygonStrokeColor={polygonStrokeColorAccessor}
-        polygonAltitude={0.005}
+        polygonAltitude={0}
         onPolygonClick={handleZoneClick}
-        polygonLabel={polygonLabel}
+        polygonLabel=""
+        polygonsTransitionDuration={0}
 
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
