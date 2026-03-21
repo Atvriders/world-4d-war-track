@@ -1203,6 +1203,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       size: number;
       _type?: string;
       _zone?: unknown;
+      _data?: unknown;
       dotRadius?: number;
     }> = [];
 
@@ -1282,9 +1283,93 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       labels.push(...shipLabels);
     }
 
-    // Cap total labels for performance (~60 max)
-    return labels.slice(0, 60);
-  }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships]);
+    // Nuclear sites
+    if (layers.nuclearSites) {
+      NUCLEAR_SITES.forEach(site => {
+        labels.push({
+          name: `☢ ${site.name}`,
+          lat: site.lat, lng: site.lng, alt: 0.003,
+          color: site.risk === 'critical' ? 'rgba(255,50,50,1)' : 'rgba(255,200,0,0.9)',
+          size: 0.8, dotRadius: 0.3, _type: 'nuclear',
+        });
+      });
+    }
+
+    // Military bases
+    if (layers.militaryBases) {
+      MILITARY_BASES.forEach(base => {
+        labels.push({
+          name: `◆ ${base.name}`,
+          lat: base.lat, lng: base.lng, alt: 0.002,
+          color: base.operator.includes('US') ? 'rgba(68,136,255,0.9)' :
+                 base.operator.includes('Russia') ? 'rgba(255,50,50,0.9)' : 'rgba(200,200,200,0.8)',
+          size: 0.6, dotRadius: 0.2, _type: 'base',
+        });
+      });
+    }
+
+    // Energy infrastructure
+    if (layers.energyInfra) {
+      ENERGY_FACILITIES.forEach(fac => {
+        labels.push({
+          name: `⚡ ${fac.name}`,
+          lat: fac.lat, lng: fac.lng, alt: 0.002,
+          color: fac.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,170,0,0.8)',
+          size: 0.6, dotRadius: 0.2, _type: 'energy',
+        });
+      });
+    }
+
+    // Chokepoints
+    if (layers.chokepoints) {
+      CHOKEPOINTS.forEach(cp => {
+        labels.push({
+          name: `⚓ ${cp.name}`,
+          lat: cp.lat, lng: cp.lng, alt: 0.002,
+          color: cp.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,200,0,0.8)',
+          size: 0.7, dotRadius: 0.3, _type: 'chokepoint',
+        });
+      });
+    }
+
+    // Piracy zones
+    if (layers.piracyZones) {
+      PIRACY_ZONES.forEach(pz => {
+        labels.push({
+          name: `☠ ${pz.name}`,
+          lat: pz.lat, lng: pz.lng, alt: 0.002,
+          color: 'rgba(255,80,80,0.9)',
+          size: 0.7, dotRadius: 0.3, _type: 'piracy',
+        });
+      });
+    }
+
+    // Conflict zones (war zones)
+    if (layers.warZones) {
+      conflictZones.forEach(zone => {
+        const geom = zone.geoJSON?.geometry;
+        const coords = geom?.type === 'MultiPolygon'
+          ? (geom.coordinates as number[][][][])?.[0]?.[0]
+          : (geom?.coordinates as number[][][])?.[0];
+        if (!coords || coords.length === 0) return;
+        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
+        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
+
+        labels.push({
+          name: zone.name,
+          lat: avgLat, lng: avgLng, alt: 0.005,
+          color: zone.intensity === 'critical' ? 'rgba(255,50,50,1)' :
+                 zone.intensity === 'high' ? 'rgba(255,140,0,1)' : 'rgba(255,200,0,1)',
+          size: 1.0, dotRadius: 0.4, _type: 'conflict', _data: zone,
+        });
+      });
+    }
+
+    // Cap total labels for performance (~100 max)
+    return labels.slice(0, 100);
+  }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
+      layers.nuclearSites, layers.militaryBases, layers.energyInfra, layers.chokepoints, layers.piracyZones,
+      layers.warZones, conflictZones]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
@@ -2214,11 +2299,23 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         labelDotRadius={labelDotRadiusAccessor}
         labelResolution={1}
         onLabelClick={(label: object) => {
-          const d = label as { _type?: string };
-          if (d._type === 'aircraft') {
+          const d = label as { _type?: string; _data?: unknown };
+          if (d._type === 'conflict' && d._data) {
+            onEntityClick('conflict', d._data);
+          } else if (d._type === 'aircraft') {
             onEntityClick('aircraft', d);
           } else if (d._type === 'ship') {
             onEntityClick('ship', d);
+          } else if (d._type === 'nuclear') {
+            onEntityClick('nuclear', d);
+          } else if (d._type === 'base') {
+            onEntityClick('base', d);
+          } else if (d._type === 'energy') {
+            onEntityClick('energy', d);
+          } else if (d._type === 'chokepoint') {
+            onEntityClick('chokepoint', d);
+          } else if (d._type === 'piracy') {
+            onEntityClick('piracy', d);
           }
         }}
 
