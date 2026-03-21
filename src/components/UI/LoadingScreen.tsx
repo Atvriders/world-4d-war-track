@@ -27,21 +27,20 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, status, isVisib
     return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
+  if (!isVisible) return null;
+
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        backgroundColor: '#000',
+        backgroundColor: '#000011',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         fontFamily: '"Courier New", Courier, monospace',
-        opacity: isVisible ? 1 : 0,
-        pointerEvents: isVisible ? 'all' : 'none',
-        transition: 'opacity 500ms ease-in-out',
       }}
     >
       <style>{`
