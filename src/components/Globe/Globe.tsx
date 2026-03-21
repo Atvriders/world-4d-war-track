@@ -2,6 +2,7 @@ import GlobeGLBase from 'react-globe.gl';
 // Cast to any so custom/undocumented props don't cause type errors
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GlobeGL = GlobeGLBase as any;
+import * as THREE from 'three';
 import { useRef, useEffect, useCallback, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import { formatSatelliteLabel, formatAircraftLabel, formatShipLabel, formatConflictLabel } from '../../utils/labels';
 import {
@@ -1208,16 +1209,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   );
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
-  const sharedGeo = useMemo(() => {
-    const THREE = (window as any).THREE;
-    if (!THREE) return null;
-    return {
-      aircraftGeo: new THREE.SphereGeometry(0.2, 4, 4),
-      shipGeo: new THREE.SphereGeometry(0.25, 4, 4),
-      materialCache: new Map<string, any>(),
-      THREE,
-    };
-  }, []);
+  const sharedGeo = useMemo(() => ({
+    aircraftGeo: new THREE.SphereGeometry(0.2, 4, 4),
+    aircraftMilitaryGeo: new THREE.SphereGeometry(0.3, 6, 6),
+    aircraftEmergencyGeo: new THREE.SphereGeometry(0.35, 6, 6),
+    aircraftHeliGeo: new THREE.SphereGeometry(0.22, 6, 6),
+    shipGeo: new THREE.SphereGeometry(0.25, 4, 4),
+    materialCache: new Map<string, any>(),
+  }), []);
 
   // ── Memoized objectsData ──────────────────────────────────────────────────
   const objectsData = useMemo(
@@ -1283,8 +1282,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   const objectThreeObject = useCallback((d: object) => {
     const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-    if (!sharedGeo) return null;
-    const { aircraftGeo, shipGeo, materialCache, THREE } = sharedGeo;
+    const { aircraftGeo, aircraftMilitaryGeo, aircraftEmergencyGeo, aircraftHeliGeo, shipGeo, materialCache } = sharedGeo;
     const color =
       obj._type === 'aircraft'
         ? (obj as AircraftEntity).isMilitary
