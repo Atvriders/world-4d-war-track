@@ -2,7 +2,6 @@ import GlobeGLBase from 'react-globe.gl';
 // Cast to any so custom/undocumented props don't cause type errors
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GlobeGL = GlobeGLBase as any;
-import * as THREE from 'three';
 import { useRef, useEffect, useCallback, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import { formatSatelliteLabel, formatAircraftLabel, formatShipLabel, formatConflictLabel } from '../../utils/labels';
 import {
@@ -1209,14 +1208,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   );
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
-  const sharedGeo = useMemo(() => ({
-    aircraftGeo: new THREE.SphereGeometry(0.2, 4, 4),
-    aircraftMilitaryGeo: new THREE.SphereGeometry(0.3, 6, 6),
-    aircraftEmergencyGeo: new THREE.SphereGeometry(0.35, 6, 6),
-    aircraftHeliGeo: new THREE.SphereGeometry(0.22, 6, 6),
-    shipGeo: new THREE.SphereGeometry(0.25, 4, 4),
-    materialCache: new Map<string, any>(),
-  }), []);
+  // No custom THREE objects — use built-in points layer instead to avoid duplicate Three.js instances
 
   // ── Memoized objectsData ──────────────────────────────────────────────────
   const objectsData = useMemo(
@@ -1955,24 +1947,6 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         ringColor={(d: object) => (d as FootprintRing).color}
         ringPropagationSpeed={2}
         ringRepeatPeriod={800}
-
-        // ── Custom HTML objects for aircraft + ships ───────────
-        // (uses objectsData so we can overlay on top of satellite points)
-        objectsData={objectsData}
-        objectLat={(d: object) => (d as AircraftEntity & { _type: string }).lat}
-        objectLng={(d: object) => (d as AircraftEntity & { _type: string }).lng}
-        objectAltitude={(d: object) => {
-          const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-          if (obj._type === 'aircraft') return (obj as AircraftEntity).altitude / 6_371_000;
-          return 0.001; // ships at surface
-        }}
-        objectThreeObject={objectThreeObject}
-        objectLabel={objectLabel}
-        onObjectClick={(d: object) => {
-          const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-          if (obj._type === 'aircraft') handleAircraftClick(obj);
-          else handleShipClick(obj);
-        }}
 
         // ── Military base markers (HTML elements) ───────────────
         htmlElementsData={mergedHtmlMarkers}
