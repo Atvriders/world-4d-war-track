@@ -336,12 +336,28 @@ export default function App() {
       style={{
         width: '100vw',
         height: '100vh',
-        background: '#000',
+        background: '#000011',
         overflow: 'hidden',
         position: 'relative',
         fontFamily: "'Courier New', monospace",
       }}
     >
+      {/* Globe always renders (behind loading screen) so WebGL initializes immediately */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+        <Globe
+          ref={globeRef}
+          satellites={satellites}
+          aircraft={aircraft}
+          ships={ships}
+          conflictZones={conflictZones}
+          gpsJamCells={gpsJamCells}
+          layers={layers}
+          onEntityClick={handleEntityClick}
+          timeOffset={timeOffset}
+          globeSettings={globeSettings}
+        />
+      </div>
+
       <LoadingScreen
         progress={loadingProgress}
         status={loadingStatus}
@@ -387,22 +403,6 @@ export default function App() {
             onSelect={handleEntitySelect}
             onFlyTo={handleFlyTo}
           />
-
-          {/* Main globe */}
-          <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-            <Globe
-              ref={globeRef}
-              satellites={satellites}
-              aircraft={aircraft}
-              ships={ships}
-              conflictZones={conflictZones}
-              gpsJamCells={gpsJamCells}
-              layers={layers}
-              onEntityClick={handleEntityClick}
-              timeOffset={timeOffset}
-              globeSettings={globeSettings}
-            />
-          </div>
 
           {/* Left panel */}
           <FilterPanel
