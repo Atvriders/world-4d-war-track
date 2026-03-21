@@ -59,7 +59,7 @@ export interface GeoJSONFeature {
   type: 'Feature';
   geometry: {
     type: 'Polygon' | 'MultiPolygon' | 'LineString' | 'MultiLineString' | 'Point';
-    coordinates: unknown;
+    coordinates: number[] | number[][] | number[][][] | number[][][][];
   };
   properties?: Record<string, unknown>;
 }
