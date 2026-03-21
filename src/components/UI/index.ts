@@ -16,6 +16,5 @@ export { default as GlobeSettings } from './GlobeSettings';
 export { default as HotspotsPanel } from './HotspotsPanel';
 export { default as KeyboardHelp } from './KeyboardHelp';
 export { default as StatsOverlay } from './StatsOverlay';
-// WatchList and EventFeed added when their files are available
-// export { default as WatchList } from './WatchList';
-// export { default as EventFeed } from './EventFeed';
+export { default as WatchList } from './WatchList';
+export { default as EventFeed } from './EventFeed';

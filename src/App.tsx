@@ -20,6 +20,8 @@ import GlobeSettings from './components/UI/GlobeSettings';
 import HotspotsPanel from './components/UI/HotspotsPanel';
 import StatsOverlay from './components/UI/StatsOverlay';
 import KeyboardHelp from './components/UI/KeyboardHelp';
+import WatchList from './components/UI/WatchList';
+import EventFeed from './components/UI/EventFeed';
 
 import { fetchAircraft } from './services/adsb';
 import { fetchShips } from './services/ais';
@@ -80,6 +82,9 @@ export default function App() {
   const [showGlobeSettings, setShowGlobeSettings] = useState(false);
   const [showMiniRadar, setShowMiniRadar] = useState(true);
   const [showHotspots, setShowHotspots] = useState(false);
+  const [showWatchList, setShowWatchList] = useState(false);
+  const [showEventFeed, setShowEventFeed] = useState(false);
+  const [watchedEntities, setWatchedEntities] = useState<Array<{ type: 'aircraft' | 'ship' | 'satellite'; id: string; label: string; addedAt: number }>>([]);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -476,6 +481,36 @@ export default function App() {
             onReset={() => setGlobeSettings(DEFAULT_GLOBE_SETTINGS)}
             visible={showGlobeSettings}
             onToggle={() => setShowGlobeSettings(v => !v)}
+          />
+
+          {/* Watch list */}
+          <WatchList
+            watchedEntities={watchedEntities}
+            aircraft={aircraft}
+            ships={ships}
+            satellites={satellites}
+            onFlyTo={handleFlyTo}
+            onRemove={(id) => setWatchedEntities(prev => prev.filter(e => e.id !== id))}
+            onAdd={(type, id) => {
+              const t = type as 'aircraft' | 'ship' | 'satellite';
+              if (watchedEntities.some(e => e.id === id)) return;
+              const label = t === 'aircraft'
+                ? aircraft.find(a => a.icao24 === id)?.callsign ?? id
+                : t === 'ship'
+                ? ships.find(s => s.mmsi === id)?.name ?? id
+                : satellites.find(s => s.id === id)?.name ?? id;
+              setWatchedEntities(prev => [...prev, { type: t, id, label, addedAt: Date.now() }]);
+            }}
+            visible={showWatchList}
+            onToggle={() => setShowWatchList(v => !v)}
+          />
+
+          {/* Event feed */}
+          <EventFeed
+            conflictZones={conflictZones}
+            onFlyTo={handleFlyTo}
+            visible={showEventFeed}
+            onToggle={() => setShowEventFeed(v => !v)}
           />
 
           {/* Keyboard help */}
