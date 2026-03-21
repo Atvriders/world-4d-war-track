@@ -1,16 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import type { Alert } from '../../types';
 
-export interface Alert {
-  id: string;
-  type: 'gps-jam' | 'military-aircraft' | 'warship' | 'conflict-event' | 'satellite-pass' | 'system';
-  severity: 'info' | 'warning' | 'critical';
-  message: string;
-  lat?: number;
-  lng?: number;
-  entityId?: string;
-  timestamp: string;
-  dismissed: boolean;
-}
+export type { Alert };
 
 interface AlertPanelProps {
   alerts: Alert[];
@@ -24,6 +15,7 @@ const TYPE_ICONS: Record<Alert['type'], string> = {
   'warship': '🚢',
   'conflict-event': '⚔️',
   'satellite-pass': '🛰️',
+  'emergency-squawk': '🚨',
   'system': 'ℹ️',
 };
 

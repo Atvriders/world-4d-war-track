@@ -130,10 +130,10 @@ interface ConflictZone {
   };
   geoJSON: {
     type: 'Feature';
-    geometry: { type: string; coordinates: unknown };
+    geometry: { type: string; coordinates: number[] | number[][] | number[][][] | number[][][][] };
     properties?: Record<string, unknown>;
   };
-  events: unknown[];
+  events: { id: string; date: string; type: string; lat: number; lng: number; description: string; fatalities: number; source: string }[];
   description: string;
   color: string;
 }
@@ -328,6 +328,7 @@ interface GlobeProps {
   layers: LayerVisibility;
   onEntityClick: (type: string, entity: unknown) => void;
   timeOffset: number;
+  globeSettings?: Record<string, unknown>;
 }
 
 // ─── Ref handle exposed to parent ────────────────────────────────────────────
@@ -373,6 +374,8 @@ function conflictCapColor(intensity: ConflictZone['intensity']): string {
     case 'critical': return 'rgba(255,17,17,0.25)';
     case 'high':     return 'rgba(255,102,0,0.2)';
     case 'medium':   return 'rgba(255,170,0,0.15)';
+    case 'low':      return 'rgba(0,255,136,0.10)';
+    default:         return 'rgba(255,170,0,0.10)';
   }
 }
 
