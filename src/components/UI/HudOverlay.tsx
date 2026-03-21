@@ -83,7 +83,7 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
         style={{
           ...BASE,
           top: 10,
-          left: 12,
+          left: 52,
           fontSize: '10.5px',
           lineHeight: '1.55',
           color: '#00ccaa',
@@ -100,7 +100,7 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
         style={{
           ...BASE,
           bottom: 48,
-          left: 12,
+          left: 52,
           fontSize: '10px',
           lineHeight: '1.6',
           color: '#00ff88',

@@ -56,7 +56,7 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
   const panelStyle: React.CSSProperties = {
     position: 'fixed',
     top: '120px',
-    left: '220px',
+    left: '300px',
     width: '380px',
     maxWidth: 'calc(100vw - 240px)',
     maxHeight: 'calc(100vh - 140px)',

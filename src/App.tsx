@@ -578,7 +578,7 @@ export default function App() {
             onClick={() => setShowSources(v => !v)}
             style={{
               position: 'fixed',
-              bottom: 66,
+              bottom: 96,
               right: 16,
               background: 'rgba(5,15,30,0.8)',
               border: '1px solid rgba(0,255,136,0.4)',
@@ -601,7 +601,7 @@ export default function App() {
             onClick={() => setShowKeyboardHelp(v => !v)}
             style={{
               position: 'fixed',
-              bottom: 100,
+              bottom: 130,
               right: 16,
               background: 'rgba(5,15,30,0.8)',
               border: '1px solid rgba(0,255,136,0.4)',
