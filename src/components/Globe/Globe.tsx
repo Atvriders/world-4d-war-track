@@ -328,7 +328,8 @@ interface GlobeProps {
   layers: LayerVisibility;
   onEntityClick: (type: string, entity: unknown) => void;
   timeOffset: number;
-  globeSettings?: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  globeSettings?: any;
 }
 
 // ─── Ref handle exposed to parent ────────────────────────────────────────────
