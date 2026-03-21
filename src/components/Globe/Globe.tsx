@@ -913,6 +913,15 @@ function satPointRadiusAccessor(d: object) {
   return 0.45;
 }
 
+// Label accessors (country names + satellite diamonds + airspace closures)
+function labelLatAccessor(d: object) { return (d as { lat: number }).lat; }
+function labelLngAccessor(d: object) { return (d as { lng: number }).lng; }
+function labelTextAccessor(d: object) { return (d as { name: string }).name; }
+function labelAltAccessor(d: object) { return (d as { alt: number }).alt; }
+function labelSizeAccessor(d: object) { return (d as { size: number }).size || 1.0; }
+function labelColorAccessor(d: object) { return (d as { color: string }).color; }
+function labelDotRadiusAccessor() { return 0.3; }
+
 function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
 function pathPointLatAccessor(pt: object) { return (pt as { lat: number }).lat; }
 function pathPointLngAccessor(pt: object) { return (pt as { lng: number }).lng; }
@@ -2123,13 +2132,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         // ── Satellite name labels (diamond markers) ─────────────────
         labelsData={allLabels}
-        labelLat={(d: object) => (d as { lat: number }).lat}
-        labelLng={(d: object) => (d as { lng: number }).lng}
-        labelText={(d: object) => (d as { name: string }).name}
-        labelAltitude={(d: object) => (d as { alt: number }).alt}
-        labelSize={(d: object) => (d as { size: number }).size || 1.0}
-        labelColor={(d: object) => (d as { color: string }).color}
-        labelDotRadius={() => 0.3}
+        labelLat={labelLatAccessor}
+        labelLng={labelLngAccessor}
+        labelText={labelTextAccessor}
+        labelAltitude={labelAltAccessor}
+        labelSize={labelSizeAccessor}
+        labelColor={labelColorAccessor}
+        labelDotRadius={labelDotRadiusAccessor}
         labelResolution={2}
 
         // HTML elements disabled — isBehindGlobe crash in three-render-objects

@@ -27,7 +27,7 @@ export default function LayerBar({ layers, onToggleLayer }: LayerBarProps) {
     <div
       style={{
         position: 'fixed',
-        bottom: 8,
+        bottom: 42,
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
