@@ -5,12 +5,14 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: {
-      // three@0.183 (pulled in by globe.gl) has ./webgpu and ./tsl exports
-      // that don't exist in three@0.165. Stub them out with empty modules.
-      'three/webgpu': path.resolve(__dirname, 'src/stubs/three-webgpu.js'),
-      'three/tsl': path.resolve(__dirname, 'src/stubs/three-tsl.js'),
-    },
+    alias: [
+      // Stubs MUST come before the three alias to intercept sub-path imports
+      { find: 'three/webgpu', replacement: path.resolve(__dirname, 'src/stubs/three-webgpu.js') },
+      { find: 'three/tsl', replacement: path.resolve(__dirname, 'src/stubs/three-tsl.js') },
+      // Force ALL three imports to the SAME copy — prevents "Multiple instances"
+      { find: 'three', replacement: path.resolve(__dirname, 'node_modules/three') },
+    ],
+    dedupe: ['three'],
   },
   server: {
     port: 3000,
