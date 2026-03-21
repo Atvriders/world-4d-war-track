@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
 const IMAGERY_URLS = {
-  satellite: 'https://unpkg.com/three-globe/example/img/earth-night.jpg',
-  dark: 'https://unpkg.com/three-globe/example/img/earth-dark.jpg',
-  terrain: 'https://unpkg.com/three-globe/example/img/earth-day.jpg',
+  satellite: 'https://unpkg.com/three-globe@2.45.1/example/img/earth-night.jpg',
+  dark: 'https://unpkg.com/three-globe@2.45.1/example/img/earth-dark.jpg',
+  terrain: 'https://unpkg.com/three-globe@2.45.1/example/img/earth-day.jpg',
 };
 
 const ATMOSPHERE_COLORS = [
