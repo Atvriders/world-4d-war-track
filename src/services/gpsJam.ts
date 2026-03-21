@@ -42,18 +42,6 @@ export function getStaticGpsJamHotspots(): GpsJamCell[] {
   ];
 }
 
-export async function fetchGpsJamData(): Promise<GpsJamCell[]> {
-  try {
-    const response = await fetch('/api/gpsjam/current');
-    if (!response.ok) {
-      throw new Error(`Backend returned ${response.status}`);
-    }
-    return await response.json() as GpsJamCell[];
-  } catch {
-    return getStaticGpsJamHotspots();
-  }
-}
-
 function haversineDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);

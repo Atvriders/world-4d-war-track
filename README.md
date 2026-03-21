@@ -27,7 +27,7 @@ World 4D War Track aggregates open-source intelligence (OSINT) and public APIs t
 | ✈️ ADS-B Aircraft | 1,200+ aircraft worldwide | 15 seconds |
 | 🛰️ Satellites | 400+ satellites with orbital paths | 5 minutes |
 | 🚢 AIS Vessels | 80+ vessels incl. warships | 60 seconds |
-| ⚔️ Conflict Zones | 12 active conflicts (2025) | Daily |
+| ⚔️ Conflict Zones | 12 active conflicts (2025–2026) | Daily |
 | 📡 GPS Interference | 15 confirmed hotspots | Static / OSINT |
 
 ---
@@ -72,7 +72,7 @@ World 4D War Track aggregates open-source intelligence (OSINT) and public APIs t
 - Coverage focused on major shipping lanes and strategic chokepoints (Strait of Hormuz, Bab-el-Mandeb, South China Sea, GIUK Gap)
 
 ### ⚔️ Conflict Zones
-- **12 active conflicts** as of 2025 — see full list below
+- **12 active conflicts** as of 2025–2026 — see full list below
 - Color-coded intensity rings: 🔴 critical / 🟠 high / 🟡 medium / 🟢 low
 - Conflict events with precise location, event type (airstrike, artillery, drone, naval, missile), and casualty data
 - Front line overlays (Ukraine/Russia contact line)
@@ -114,7 +114,7 @@ World 4D War Track aggregates open-source intelligence (OSINT) and public APIs t
 
 ---
 
-## ⚔️ Active Conflicts Tracked (as of 2025)
+## ⚔️ Active Conflicts Tracked (as of 2025–2026)
 
 | # | Conflict | Status | Intensity |
 |---|---|---|---|

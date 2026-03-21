@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { getOrbitClass } from '../../utils/geoMath';
 
 export interface SatelliteEntity {
   id: string;
@@ -24,14 +25,6 @@ interface SatellitePanelProps {
   onFlyTo: (lat: number, lng: number) => void;
   visible: boolean;
   onToggle: () => void;
-}
-
-// ── Orbit classification ──────────────────────────────────────────────────────
-function getOrbitBand(alt: number): 'LEO' | 'MEO' | 'GEO' | 'HEO' {
-  if (alt < 2000) return 'LEO';
-  if (alt < 35000) return 'MEO';
-  if (alt < 36500) return 'GEO';
-  return 'HEO';
 }
 
 // ── Category meta ─────────────────────────────────────────────────────────────
@@ -144,10 +137,10 @@ const SatellitePanel: React.FC<SatellitePanelProps> = ({
   const counts = useMemo(() => {
     const military  = satellites.filter(s => s.category === 'military' || s.category === 'spy' || s.category === 'reconnaissance').length;
     const navigation = satellites.filter(s => s.category === 'navigation').length;
-    const leo = satellites.filter(s => getOrbitBand(s.alt) === 'LEO').length;
-    const meo = satellites.filter(s => getOrbitBand(s.alt) === 'MEO').length;
-    const geo = satellites.filter(s => getOrbitBand(s.alt) === 'GEO').length;
-    const heo = satellites.filter(s => getOrbitBand(s.alt) === 'HEO').length;
+    const leo = satellites.filter(s => getOrbitClass(s.alt) === 'LEO').length;
+    const meo = satellites.filter(s => getOrbitClass(s.alt) === 'MEO').length;
+    const geo = satellites.filter(s => getOrbitClass(s.alt) === 'GEO').length;
+    const heo = satellites.filter(s => getOrbitClass(s.alt) === 'HEO').length;
     return { military, navigation, leo, meo, geo, heo };
   }, [satellites]);
 
@@ -553,7 +546,7 @@ const SatellitePanel: React.FC<SatellitePanelProps> = ({
               )
               : filteredList.map(sat => {
                   const meta = CATEGORY_META[sat.category];
-                  const orbit = getOrbitBand(sat.alt);
+                  const orbit = getOrbitClass(sat.alt);
                   const isHovered = hoveredId === sat.id;
                   const nameShort = sat.name.length > 20 ? sat.name.slice(0, 19) + '…' : sat.name;
 

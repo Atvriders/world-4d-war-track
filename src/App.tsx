@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from './store';
+import { useDataRefresh, useAlertGenerator, useGlobeTime } from './hooks';
 
 import Globe from './components/Globe/Globe';
 import StatusBar from './components/UI/StatusBar';
@@ -87,7 +88,11 @@ export default function App() {
   const [watchedEntities, setWatchedEntities] = useState<Array<{ type: 'aircraft' | 'ship' | 'satellite'; id: string; label: string; addedAt: number }>>([]);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
-  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // ── Custom hooks for data refresh, alert generation, and globe time ───────
+  useDataRefresh();
+  useAlertGenerator();
+  const { currentTime } = useGlobeTime();
 
   // ── Globe ref ───────────────────────────────────────────────────────────────
   const globeRef = useRef<any>(null);
@@ -95,12 +100,6 @@ export default function App() {
 
   const handleFlyTo = useCallback((lat: number, lng: number, altitude = 1.0) => {
     globeRef.current?.pointOfView({ lat, lng, altitude }, 1500);
-  }, []);
-
-  // ── Clock tick ──────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
   }, []);
 
   // ── Entity click handlers ───────────────────────────────────────────────────
@@ -206,59 +205,6 @@ export default function App() {
       if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Periodic refresh ────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    const aircraftTimer = setInterval(async () => {
-      try {
-        store.setAircraft(await fetchAircraft() as any);
-        store.setLastRefresh('aircraft');
-      } catch (e) {
-        store.setError('aircraft', String(e));
-      }
-    }, 15000);
-
-    const shipTimer = setInterval(async () => {
-      try {
-        store.setShips(await fetchShips() as any);
-        store.setLastRefresh('ships');
-      } catch (e) {
-        store.setError('ships', String(e));
-      }
-    }, 60000);
-
-    const satTimer = setInterval(async () => {
-      try {
-        store.setSatellites(await fetchAllSatellites() as any);
-        store.setLastRefresh('satellites');
-      } catch (e) {
-        store.setError('satellites', String(e));
-      }
-    }, 300000);
-
-    const gpsJamTimer = setInterval(() => {
-      try {
-        const cells = getStaticGpsJamHotspots();
-        store.setGpsJamCells(cells as any);
-        store.setLastRefresh('gpsJam');
-        const alerts = getActiveJammingAlerts(cells as any);
-        if (Array.isArray(alerts)) {
-          alerts.forEach((a: any) => store.addAlert(a));
-        }
-      } catch (e) {
-        store.setError('gpsJam', String(e));
-      }
-    }, 600000);
-
-    return () => {
-      clearInterval(aircraftTimer);
-      clearInterval(shipTimer);
-      clearInterval(satTimer);
-      clearInterval(gpsJamTimer);
-    };
-  }, [isLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
   useEffect(() => {

@@ -3,6 +3,14 @@ import GlobeGLBase from 'react-globe.gl';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GlobeGL = GlobeGLBase as any;
 import { useRef, useEffect, useCallback, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
+import { formatSatelliteLabel, formatAircraftLabel, formatShipLabel, formatConflictLabel } from '../../utils/labels';
+import {
+  getMilitarySatelliteConnections,
+  getGpsJamConnections,
+  getSatelliteFootprints,
+  type ArcConnection,
+  type FootprintRing,
+} from '../../utils/satelliteConnections';
 
 // ─── Inline interfaces (mirrors types/index.ts to avoid circular deps) ────────
 
@@ -212,31 +220,7 @@ function hexBinColor(frac: number): string {
   return `rgba(${r},${g},${b},0.75)`;
 }
 
-/** Returns conflict zone centroid (rough average of first polygon ring) */
-function zoneCentroid(zone: ConflictZone): { lat: number; lng: number } | null {
-  try {
-    const geo = zone.geoJSON.geometry;
-    let ring: [number, number][] | null = null;
-    if (geo.type === 'Polygon') {
-      ring = (geo.coordinates as [number, number][][])[0];
-    } else if (geo.type === 'MultiPolygon') {
-      ring = (geo.coordinates as [number, number][][][])[0][0];
-    }
-    if (!ring || ring.length === 0) return null;
-    const avg = ring.reduce(
-      (acc, pt) => ({ lat: acc.lat + pt[1], lng: acc.lng + pt[0] }),
-      { lat: 0, lng: 0 }
-    );
-    return { lat: avg.lat / ring.length, lng: avg.lng / ring.length };
-  } catch {
-    return null;
-  }
-}
-
-/** Escape HTML to prevent XSS in label callbacks */
-function esc(s: string): string {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// zoneCentroid replaced by getConflictCenter from utils/satelliteConnections
 
 // ─── Path entry union (satellite ground tracks + aircraft trails) ─────────────
 
@@ -344,42 +328,25 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     [satelliteTrackPaths, aircraftTrailPaths]
   );
 
-  // Satellite connection arcs (military/spy/recon → nearest conflict zone)
-  const militaryCats: SatelliteEntity['category'][] = ['military', 'spy', 'reconnaissance'];
-  const arcsData = useMemo(
+  // Satellite connection arcs: military/spy/recon → nearest conflict zone + nav → GPS jam cells
+  const arcsData: ArcConnection[] = useMemo(() => {
+    if (!layers.satelliteConnections) return [];
+    const milArcs = getMilitarySatelliteConnections(
+      satellites as any,
+      conflictZones as any,
+      20
+    );
+    const jamArcs = getGpsJamConnections(satellites as any, gpsJamCells as any);
+    return [...milArcs, ...jamArcs];
+  }, [layers.satelliteConnections, satellites, conflictZones, gpsJamCells]);
+
+  // Satellite footprint rings
+  const ringsData: FootprintRing[] = useMemo(
     () =>
-      layers.satelliteConnections
-        ? satellites
-            .filter((s) => militaryCats.includes(s.category) && conflictZones.length > 0)
-            .flatMap((s) => {
-              // Find nearest conflict zone
-              let nearest: ConflictZone | null = null;
-              let minDist = Infinity;
-              for (const zone of conflictZones) {
-                const c = zoneCentroid(zone);
-                if (!c) continue;
-                const d =
-                  Math.abs(s.lat - c.lat) + Math.abs(s.lng - c.lng);
-                if (d < minDist) {
-                  minDist = d;
-                  nearest = zone;
-                }
-              }
-              if (!nearest) return [];
-              const c = zoneCentroid(nearest)!;
-              return [
-                {
-                  startLat: s.lat,
-                  startLng: s.lng,
-                  startAlt: s.alt / 6371,
-                  endLat: c.lat,
-                  endLng: c.lng,
-                  endAlt: 0,
-                },
-              ];
-            })
+      layers.satelliteFootprints
+        ? getSatelliteFootprints(satellites as any, ['military', 'spy', 'reconnaissance', 'navigation'])
         : [],
-    [layers.satelliteConnections, satellites, conflictZones]
+    [layers.satelliteFootprints, satellites]
   );
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
@@ -438,34 +405,22 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   const pointLabel = useCallback((d: object) => {
     const s = d as SatelliteEntity;
-    return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-      <b>${esc(s.name)}</b><br/>
-      Alt: ${s.alt.toFixed(0)} km | ${esc(s.category)}
-    </div>`;
+    return formatSatelliteLabel(s);
   }, []);
 
   const polygonLabel = useCallback((d: object) => {
     const z = d as ConflictZone;
-    return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-      <b>${esc(z.name)}</b><br/>
-      Intensity: ${esc(z.intensity)} | Status: ${esc(z.status)}
-    </div>`;
+    return formatConflictLabel(z);
   }, []);
 
   const objectLabel = useCallback((d: object) => {
     const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
     if (obj._type === 'aircraft') {
       const a = obj as AircraftEntity;
-      return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-        <b>${esc(a.callsign || a.icao24)}</b><br/>
-        Alt: ${(a.altitude / 1000).toFixed(1)} km | ${esc(a.country)}${a.isMilitary ? ' ✈ military' : ''}
-      </div>`;
+      return formatAircraftLabel(a);
     }
     const s = obj as ShipEntity;
-    return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-      <b>${esc(s.name || s.mmsi)}</b><br/>
-      ${esc(s.type)} | ${esc(s.flag)} | ${s.speed} kn
-    </div>`;
+    return formatShipLabel(s);
   }, []);
 
   const objectThreeObject = useCallback((d: object) => {
@@ -561,15 +516,28 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         pathDashGap={0.3}
         pathStroke={0.5}
 
-        // ── Connection arcs ────────────────────────────────────
+        // ── Connection arcs (military → conflict, nav → GPS jam) ──
         arcsData={arcsData}
-        arcStartLat={(d: object) => (d as typeof arcsData[0]).startLat}
-        arcStartLng={(d: object) => (d as typeof arcsData[0]).startLng}
-        arcEndLat={(d: object) => (d as typeof arcsData[0]).endLat}
-        arcEndLng={(d: object) => (d as typeof arcsData[0]).endLng}
-        arcColor={() => 'rgba(0,255,136,0.4)'}
+        arcStartLat={(d: object) => (d as ArcConnection).startLat}
+        arcStartLng={(d: object) => (d as ArcConnection).startLng}
+        arcEndLat={(d: object) => (d as ArcConnection).endLat}
+        arcEndLng={(d: object) => (d as ArcConnection).endLng}
+        arcColor={(d: object) => (d as ArcConnection).color}
+        arcLabel={(d: object) => (d as ArcConnection).label}
         arcAltAutoScale={0.3}
         arcStroke={0.5}
+        arcDashLength={0.4}
+        arcDashGap={0.2}
+        arcDashAnimateTime={1500}
+
+        // ── Satellite footprint rings ──────────────────────────
+        ringsData={ringsData}
+        ringLat={(d: object) => (d as FootprintRing).lat}
+        ringLng={(d: object) => (d as FootprintRing).lng}
+        ringMaxR={(d: object) => (d as FootprintRing).maxR}
+        ringColor={(d: object) => (d as FootprintRing).color}
+        ringPropagationSpeed={2}
+        ringRepeatPeriod={800}
 
         // ── Custom HTML objects for aircraft + ships ───────────
         // (uses objectsData so we can overlay on top of satellite points)

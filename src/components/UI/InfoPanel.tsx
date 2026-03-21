@@ -6,6 +6,7 @@ import {
   ConflictZone,
   ConflictEvent,
 } from '../../types';
+import { headingToCompass, getOrbitClass } from '../../utils/geoMath';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,17 +23,6 @@ interface InfoPanelProps {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function headingToCompass(deg: number): string {
-  const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-  return dirs[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16];
-}
-
-function altToOrbitClass(altKm: number): string {
-  if (altKm < 2000) return 'LEO';
-  if (altKm < 35786) return 'MEO';
-  return 'GEO';
-}
 
 function metersToFeet(m: number): number {
   return Math.round(m * 3.28084);
@@ -379,7 +369,7 @@ function SatelliteInfo({ entity, onFlyTo }: { entity: SatelliteEntity; onFlyTo: 
         <SectionHead>Position</SectionHead>
         <InfoRow label="Latitude" value={`${entity.lat.toFixed(2)}°`} />
         <InfoRow label="Longitude" value={`${entity.lng.toFixed(2)}°`} />
-        <InfoRow label="Altitude" value={`${entity.alt.toLocaleString()} km · ${altToOrbitClass(entity.alt)}`} />
+        <InfoRow label="Altitude" value={`${entity.alt.toLocaleString()} km · ${getOrbitClass(entity.alt)}`} />
       </div>
 
       <div style={styles.section}>

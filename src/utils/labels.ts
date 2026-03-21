@@ -1,6 +1,8 @@
 // Tooltip/label HTML formatting utilities for react-globe.gl label system
 // All labels use inline styles only (no CSS classes)
 
+import { headingToCompass, getOrbitClass } from './geoMath';
+
 // Escape user-supplied strings to prevent XSS in label HTML
 function esc(s: string | undefined | null): string {
   if (!s) return '';
@@ -18,20 +20,6 @@ const BASE_STYLE_END = `;padding:8px 10px;font-family:'Courier New',monospace;co
 // Helper to create base tooltip wrapper HTML
 export function tooltipWrapper(content: string, borderColor: string = '#00ff88'): string {
   return `<div style="${BASE_STYLE}${borderColor}${BASE_STYLE_END}">${content}</div>`;
-}
-
-// Heading degrees -> cardinal/intercardinal direction
-function headingToCompass(deg: number): string {
-  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
-}
-
-// Orbit classification by altitude (km)
-function orbitClass(altKm: number): string {
-  if (altKm < 2000) return 'LEO';
-  if (altKm < 35786) return 'MEO';
-  if (altKm < 36000) return 'GEO';
-  return 'HEO';
 }
 
 // Meters to feet
@@ -141,7 +129,7 @@ export function formatSatelliteLabel(sat: {
   const nameColor = isMilitary ? '#ff4444' : isNav ? '#44ff44' : '#00ff88';
 
   const altKm = Math.round(sat.alt);
-  const orbit = orbitClass(altKm);
+  const orbit = getOrbitClass(altKm);
   const velKms = sat.velocity.toFixed(2);
   const footprintKm = Math.round(sat.footprintRadius);
 

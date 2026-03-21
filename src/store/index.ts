@@ -1,145 +1,31 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import type {
+  SatelliteEntity,
+  AircraftEntity,
+  ShipEntity,
+  GeoJSONFeature,
+  ConflictEvent,
+  ConflictZone,
+  GpsJamCell,
+  Alert,
+  LayerVisibility,
+  SelectedEntity,
+} from '../types';
 
-// === INLINE INTERFACES ===
-
-export interface SatelliteEntity {
-  id: string;
-  name: string;
-  category: 'military' | 'navigation' | 'commercial' | 'weather' | 'starlink' | 'spy' | 'reconnaissance' | 'iss' | 'other';
-  country: string;
-  lat: number;
-  lng: number;
-  alt: number;
-  velocity: number;
-  heading: number;
-  tle1: string;
-  tle2: string;
-  footprintRadius: number;
-  isActive: boolean;
-  groundTrack: [number, number][];
-  lastUpdated: number;
-}
-
-export interface AircraftEntity {
-  icao24: string;
-  callsign: string;
-  country: string;
-  lat: number;
-  lng: number;
-  altitude: number;
-  velocity: number;
-  heading: number;
-  verticalRate: number;
-  onGround: boolean;
-  isMilitary: boolean;
-  squawk?: string;
-  trail: [number, number, number][];
-  lastContact: number;
-}
-
-export interface ShipEntity {
-  mmsi: string;
-  name: string;
-  country: string;
-  lat: number;
-  lng: number;
-  speed: number;
-  heading: number;
-  course: number;
-  type: 'cargo' | 'tanker' | 'military' | 'warship' | 'passenger' | 'fishing' | 'tug' | 'research' | 'other';
-  length?: number;
-  flag: string;
-  destination?: string;
-  trail: [number, number][];
-  lastContact: number;
-}
-
-export interface GeoJSONFeature {
-  type: 'Feature';
-  geometry: {
-    type: 'Polygon' | 'MultiPolygon' | 'LineString' | 'MultiLineString' | 'Point';
-    coordinates: number[] | number[][] | number[][][] | number[][][][];
-  };
-  properties?: Record<string, unknown>;
-}
-
-export interface ConflictEvent {
-  id: string;
-  date: string;
-  type: 'airstrike' | 'ground-battle' | 'artillery' | 'naval' | 'drone' | 'missile' | 'explosion' | 'other';
-  lat: number;
-  lng: number;
-  description: string;
-  fatalities: number;
-  source: string;
-}
-
-export interface ConflictZone {
-  id: string;
-  name: string;
-  countries: string[];
-  startDate: string;
-  status: 'active' | 'ceasefire' | 'escalating' | 'de-escalating';
-  intensity: 'low' | 'medium' | 'high' | 'critical';
-  parties: string[];
-  casualties: {
-    total?: number;
-    military?: number;
-    civilian?: number;
-    displaced?: number;
-  };
-  geoJSON: GeoJSONFeature;
-  frontlineGeoJSON?: GeoJSONFeature;
-  events: ConflictEvent[];
-  description: string;
-  color: string;
-}
-
-export interface GpsJamCell {
-  lat: number;
-  lng: number;
-  level: number;
-  radius: number;
-  date: string;
-  confirmed: boolean;
-  type: 'spoofing' | 'jamming' | 'unknown';
-  source?: string;
-}
-
-export interface Alert {
-  id: string;
-  type: 'gps-jam' | 'military-aircraft' | 'warship' | 'conflict-event' | 'satellite-pass' | 'system';
-  severity: 'info' | 'warning' | 'critical';
-  message: string;
-  lat?: number;
-  lng?: number;
-  entityId?: string;
-  timestamp: string;
-  dismissed: boolean;
-}
-
-export interface LayerVisibility {
-  satellites: boolean;
-  satelliteOrbits: boolean;
-  satelliteFootprints: boolean;
-  satelliteConnections: boolean;
-  aircraft: boolean;
-  aircraftTrails: boolean;
-  ships: boolean;
-  shipTrails: boolean;
-  warZones: boolean;
-  conflictEvents: boolean;
-  frontLines: boolean;
-  gpsJam: boolean;
-  atmosphere: boolean;
-}
-
-export interface SelectedEntity {
-  type: 'satellite' | 'aircraft' | 'ship' | 'conflict' | 'event';
-  id: string;
-  data: SatelliteEntity | AircraftEntity | ShipEntity | ConflictZone | ConflictEvent;
-}
+// Re-export types so existing imports from the store still work
+export type {
+  SatelliteEntity,
+  AircraftEntity,
+  ShipEntity,
+  GeoJSONFeature,
+  ConflictEvent,
+  ConflictZone,
+  GpsJamCell,
+  Alert,
+  LayerVisibility,
+  SelectedEntity,
+};
 
 // === APP STATE ===
 
@@ -200,14 +86,12 @@ export interface AppState {
   clearAlerts: () => void;
   setSelectedEntity: (entity: SelectedEntity | null) => void;
   toggleLayer: (key: keyof LayerVisibility) => void;
-  setLayerVisibility: (key: keyof LayerVisibility, visible: boolean) => void;
   setTimeOffset: (offset: number) => void;
   setIsPlaying: (playing: boolean) => void;
   setPlaySpeed: (speed: number) => void;
   setLoading: (key: keyof AppState['isLoading'], val: boolean) => void;
   setError: (key: keyof AppState['errors'], err: string | null) => void;
   setLastRefresh: (key: keyof AppState['lastRefresh']) => void;
-  updateGlobeSettings: (settings: Partial<AppState['globeSettings']>) => void;
 }
 
 // === DEFAULT VALUES ===
@@ -321,15 +205,6 @@ export const useStore = create<AppState>()(
           'toggleLayer'
         ),
 
-      setLayerVisibility: (key, visible) =>
-        set(
-          (state) => ({
-            layers: { ...state.layers, [key]: visible },
-          }),
-          false,
-          'setLayerVisibility'
-        ),
-
       setTimeOffset: (offset) =>
         set({ timeOffset: offset }, false, 'setTimeOffset'),
 
@@ -366,14 +241,6 @@ export const useStore = create<AppState>()(
           'setLastRefresh'
         ),
 
-      updateGlobeSettings: (settings) =>
-        set(
-          (state) => ({
-            globeSettings: { ...state.globeSettings, ...settings },
-          }),
-          false,
-          'updateGlobeSettings'
-        ),
     }),
     { name: 'world-4d-war-track' }
   )

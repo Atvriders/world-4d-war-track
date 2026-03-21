@@ -1,4 +1,4 @@
-// Static conflict zone data — all major active wars/conflicts as of 2025
+// Static conflict zone data — all major active wars/conflicts as of 2025–2026
 // Interfaces defined inline; canonical types live in src/types/
 
 interface ConflictEvent {

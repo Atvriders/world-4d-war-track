@@ -1,6 +1,6 @@
 {
   "name": "world-4d-war-track-server",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "start": "node src/server.js",

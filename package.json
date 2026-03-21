@@ -1,6 +1,12 @@
 {
   "name": "world-4d-war-track",
   "version": "0.1.0",
+  "description": "Real-time 4D global intelligence dashboard — live aircraft, vessels, satellites, conflict zones, and GPS jamming on an interactive 3D globe",
+  "author": "Atvriders",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Atvriders/world-4d-war-track.git"
+  },
   "private": true,
   "type": "module",
   "scripts": {

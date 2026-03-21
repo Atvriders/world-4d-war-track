@@ -30,17 +30,12 @@ export function kmToDeg(km: number): number {
   return km / KM_PER_DEGREE;
 }
 
-/** Convert degrees to km */
-export function degToKm(deg: number): number {
-  return deg * KM_PER_DEGREE;
-}
-
 // ---------------------------------------------------------------------------
-// Bounding box helpers
+// Bounding box helpers (internal — used by pointNearConflictZone)
 // ---------------------------------------------------------------------------
 
 /** Check if a point is inside a bounding box [minLat, maxLat, minLng, maxLng] */
-export function pointInBbox(
+function pointInBbox(
   lat: number,
   lng: number,
   bbox: [number, number, number, number]
@@ -53,7 +48,7 @@ export function pointInBbox(
  * Get bounding box of a GeoJSON polygon (or multi-polygon) feature.
  * Returns [minLat, maxLat, minLng, maxLng] or null if geometry is unrecognised.
  */
-export function getGeoBbox(geoJSON: {
+function getGeoBbox(geoJSON: {
   geometry: { coordinates: unknown; type: string };
 }): [number, number, number, number] | null {
   const { type, coordinates } = geoJSON.geometry;
@@ -125,35 +120,8 @@ export function getOrbitClass(altKm: number): string {
 }
 
 // ---------------------------------------------------------------------------
-// Formatting — altitude, speed, heading, time
+// Formatting — heading
 // ---------------------------------------------------------------------------
-
-/** Format altitude in meters for display. e.g. 10000 → "10,000 m (32,808 ft)" */
-export function formatAltitude(meters: number): string {
-  const ft = Math.round(meters * 3.28084);
-  return `${Math.round(meters).toLocaleString()} m (${ft.toLocaleString()} ft)`;
-}
-
-/**
- * Format satellite altitude in km for display.
- * e.g. 400 → "400 km (LEO)"
- */
-export function formatSatAltitude(km: number): string {
-  const orbitClass = getOrbitClass(km);
-  return `${km.toLocaleString()} km (${orbitClass})`;
-}
-
-/** Format speed in m/s for display. e.g. 250 → "250 m/s (486 kts)" */
-export function formatSpeed(ms: number): string {
-  const kts = Math.round(ms * 1.94384);
-  return `${Math.round(ms).toLocaleString()} m/s (${kts.toLocaleString()} kts)`;
-}
-
-/** Format satellite velocity in km/s. e.g. 7.66 → "7.66 km/s (27,576 km/h)" */
-export function formatSatVelocity(kms: number): string {
-  const kmh = Math.round(kms * 3600);
-  return `${kms.toFixed(2)} km/s (${kmh.toLocaleString()} km/h)`;
-}
 
 /** Convert heading degrees to compass direction. e.g. 45 → "NE", 180 → "S" */
 export function headingToCompass(heading: number): string {
@@ -165,135 +133,4 @@ export function headingToCompass(heading: number): string {
   ];
   const index = Math.round(((heading % 360) + 360) % 360 / 22.5) % 16;
   return directions[index];
-}
-
-/** Format elapsed time since epoch ms. e.g. "2 min ago", "5 sec ago", "1 hr ago" */
-export function timeAgo(epochMs: number): string {
-  const diffMs = Date.now() - epochMs;
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return `${diffSec} sec ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  return `${diffHr} hr ago`;
-}
-
-/** Convert epoch ms to readable UTC time string. e.g. "14:32:07 UTC" */
-export function formatUtcTime(epochMs: number): string {
-  const d = new Date(epochMs);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  const ss = String(d.getUTCSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss} UTC`;
-}
-
-// ---------------------------------------------------------------------------
-// Math helpers
-// ---------------------------------------------------------------------------
-
-/** Clamp a value between min and max */
-export function clamp(val: number, min: number, max: number): number {
-  return Math.min(Math.max(val, min), max);
-}
-
-// ---------------------------------------------------------------------------
-// Great circle path
-// ---------------------------------------------------------------------------
-
-/**
- * Calculate a great circle path between two points.
- * Returns an array of [lat, lng] tuples with `steps` intermediate points.
- */
-export function greatCirclePath(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-  steps = 50
-): [number, number][] {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const toDeg = (r: number) => (r * 180) / Math.PI;
-
-  const φ1 = toRad(lat1);
-  const λ1 = toRad(lng1);
-  const φ2 = toRad(lat2);
-  const λ2 = toRad(lng2);
-
-  // Angular distance
-  const d =
-    2 *
-    Math.asin(
-      Math.sqrt(
-        Math.sin((φ2 - φ1) / 2) ** 2 +
-          Math.cos(φ1) * Math.cos(φ2) * Math.sin((λ2 - λ1) / 2) ** 2
-      )
-    );
-
-  const path: [number, number][] = [];
-  const n = Math.max(steps, 2);
-
-  for (let i = 0; i <= n; i++) {
-    const f = i / n;
-
-    if (d < 1e-10) {
-      // Points are essentially the same
-      path.push([lat1, lng1]);
-      continue;
-    }
-
-    const A = Math.sin((1 - f) * d) / Math.sin(d);
-    const B = Math.sin(f * d) / Math.sin(d);
-
-    const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2);
-    const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2);
-    const z = A * Math.sin(φ1) + B * Math.sin(φ2);
-
-    const φ = Math.atan2(z, Math.sqrt(x * x + y * y));
-    const λ = Math.atan2(y, x);
-
-    path.push([toDeg(φ), toDeg(λ)]);
-  }
-
-  return path;
-}
-
-// ---------------------------------------------------------------------------
-// Satellite elevation angle
-// ---------------------------------------------------------------------------
-
-/**
- * Calculate the elevation angle (degrees above horizon) from a ground point
- * to a satellite given its sub-satellite lat/lng and altitude in km.
- */
-export function elevationAngle(
-  groundLat: number,
-  groundLng: number,
-  satLat: number,
-  satLng: number,
-  satAltKm: number
-): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-
-  // Central angle between ground point and sub-satellite point
-  const dLat = toRad(satLat - groundLat);
-  const dLng = toRad(satLng - groundLng);
-  const φ1 = toRad(groundLat);
-  const φ2 = toRad(satLat);
-
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(φ1) * Math.cos(φ2) * Math.sin(dLng / 2) ** 2;
-  const centralAngle = 2 * Math.asin(Math.sqrt(a)); // radians
-
-  const Re = EARTH_RADIUS_KM;
-  const Rs = Re + satAltKm;
-
-  // Elevation angle formula
-  // el = atan((cos(centralAngle) - Re/Rs) / sin(centralAngle))
-  if (centralAngle < 1e-10) return 90;
-
-  return (
-    Math.atan2(Math.cos(centralAngle) - Re / Rs, Math.sin(centralAngle)) *
-    (180 / Math.PI)
-  );
 }

@@ -70,59 +70,6 @@ body {
   50% { text-shadow: 0 0 12px rgba(0, 255, 136, 0.9), 0 0 20px rgba(0, 255, 136, 0.3); }
 }
 
-.blink { animation: blink 1s step-end infinite; }
-.pulse { animation: pulse 2s infinite; }
-.glow { animation: glowPulse 2s ease-in-out infinite; }
-.fade-in { animation: fadeIn 0.3s ease forwards; }
-.slide-in-right { animation: slideInRight 0.3s ease forwards; }
-.slide-in-left { animation: slideInLeft 0.3s ease forwards; }
-.critical-pulse { animation: criticalPulse 1.5s ease-in-out infinite; }
-
-.text-primary { color: var(--color-primary); }
-.text-danger { color: var(--color-danger); }
-.text-warning { color: var(--color-warning); }
-.text-dim { color: var(--color-text-dim); }
-.text-mono { font-family: var(--font-mono); }
-.text-sm { font-size: 11px; }
-.text-xs { font-size: 10px; }
-
-.badge {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 0.5px;
-}
-.badge-danger { background: rgba(255,51,51,0.2); color: #ff3333; border: 1px solid rgba(255,51,51,0.4); }
-.badge-warning { background: rgba(255,170,0,0.2); color: #ffaa00; border: 1px solid rgba(255,170,0,0.4); }
-.badge-success { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.4); }
-.badge-info { background: rgba(0,136,255,0.2); color: #4488ff; border: 1px solid rgba(0,136,255,0.4); }
-
-.panel {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  backdrop-filter: blur(8px);
-}
-
-.btn {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-primary);
-  padding: 4px 10px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  cursor: pointer;
-  border-radius: 3px;
-  transition: var(--transition);
-}
-.btn:hover { background: rgba(0,255,136,0.1); border-color: var(--color-primary); }
-.btn-danger { border-color: rgba(255,51,51,0.4); color: #ff3333; }
-.btn-danger:hover { background: rgba(255,51,51,0.1); }
-.btn:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
 *:focus-visible {
   outline: 2px solid rgba(0, 255, 136, 0.6);
   outline-offset: 2px;
@@ -160,6 +107,3 @@ body::after {
   );
 }
 
-@media (max-width: 768px) {
-  .btn { padding: 8px 14px; font-size: 13px; min-height: 44px; }
-}

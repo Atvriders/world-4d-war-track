@@ -157,7 +157,7 @@ function footprintColorForCategory(category: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Exported helper: getConflictCenter
+// Internal helper: getConflictCenter
 // ---------------------------------------------------------------------------
 
 /**
@@ -168,7 +168,7 @@ function footprintColorForCategory(category: string): string {
  * - MultiPolygon → average of outer-ring vertices of the first polygon
  * - Fallback → [0, 0]
  */
-export function getConflictCenter(zone: ConflictZone): [number, number] {
+function getConflictCenter(zone: ConflictZone): [number, number] {
   const geometry = zone.geoJSON?.geometry;
   if (!geometry) return [0, 0];
 
@@ -207,7 +207,7 @@ export function getConflictCenter(zone: ConflictZone): [number, number] {
 }
 
 // ---------------------------------------------------------------------------
-// Exported helper: isSatelliteOverhead
+// Internal helper: isSatelliteOverhead
 // ---------------------------------------------------------------------------
 
 /**
@@ -219,7 +219,7 @@ export function getConflictCenter(zone: ConflictZone): [number, number] {
  * where γ is the central angle between the sub-satellite point and the
  * observer.
  */
-export function isSatelliteOverhead(
+function isSatelliteOverhead(
   satLat: number,
   satLng: number,
   satAltKm: number,
