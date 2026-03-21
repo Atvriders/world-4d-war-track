@@ -1153,16 +1153,35 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       controls.maxDistance = 1000;
 
       // Polar angle: 0 = north pole (top-down), PI/2 = equator (horizon), PI = south pole
-      // Allow tilting from near-horizon (looking up at sky) to straight down
+      // Allow tilting from near-horizon (looking up at sky) to past-horizon (see sky/satellites)
       controls.minPolarAngle = 0.2;
-      controls.maxPolarAngle = Math.PI * 0.75;
+      controls.maxPolarAngle = Math.PI * 0.85;
+
+      // Auto-tilt camera upward as user zooms in so sky/satellites become visible
+      const handleControlsChange = () => {
+        const ctrl = globeRef.current?.controls();
+        if (!ctrl || !ctrl.object) return;
+
+        const distance = ctrl.object.position.length();
+        // distance > 500 → polar ≈ PI/2 (equator-level, looking at globe)
+        // distance < 200 → polar ≈ PI*0.65 (tilted up toward sky)
+        const t = Math.max(0, Math.min(1, (500 - distance) / 300));
+        const targetPolar = Math.PI * 0.5 + t * 0.15;
+
+        // Widen constraints toward target so camera drifts naturally
+        ctrl.minPolarAngle = Math.min(0.2, targetPolar - 0.3);
+        ctrl.maxPolarAngle = Math.max(Math.PI * 0.85, targetPolar + 0.3);
+      };
+
+      controls.addEventListener('change', handleControlsChange);
+      return () => controls.removeEventListener('change', handleControlsChange);
     }
   }, []);
 
-  // Initial camera position — focused on Ukraine/Middle East conflict zone
+  // Initial camera position — closer in so horizon + satellites are visible
   useEffect(() => {
     if (globeRef.current) {
-      globeRef.current.pointOfView({ lat: 38, lng: 35, altitude: 1.5 }, 0);
+      globeRef.current.pointOfView({ lat: 38, lng: 35, altitude: 1.2 }, 0);
     }
   }, []);
 
@@ -1203,6 +1222,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       color: string;
       size: number;
       _type?: string;
+      _zone?: unknown;
     }> = [];
 
     if (layers.satellites) {
@@ -1279,9 +1299,34 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       labels.push(...shipLabels);
     }
 
+    // Conflict zone labels (clickable to open info panel)
+    if (layers.warZones) {
+      const conflictLabels = conflictZones.map(zone => {
+        const geom = zone.geoJSON?.geometry;
+        const coords = geom?.type === 'MultiPolygon'
+          ? (geom.coordinates as number[][][][])[0][0]
+          : (geom?.coordinates as number[][][])?.[0];
+        if (!coords || coords.length === 0) return null;
+        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
+        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
+        return {
+          name: `⚔ ${zone.name}`,
+          lat: avgLat,
+          lng: avgLng,
+          alt: 0.005,
+          color: zone.intensity === 'critical' ? 'rgba(255,50,50,0.9)' :
+                 zone.intensity === 'high' ? 'rgba(255,140,0,0.9)' : 'rgba(255,200,0,0.9)',
+          size: 1.3,
+          _type: 'conflict',
+          _zone: zone,
+        };
+      }).filter(Boolean);
+      labels.push(...(conflictLabels as typeof labels));
+    }
+
     // Cap total labels for performance
     return labels.slice(0, 80);
-  }, [satellites, layers.satellites, layers.airspaceClosures, aircraft, ships, layers.aircraft, layers.ships]);
+  }, [satellites, layers.satellites, layers.airspaceClosures, layers.warZones, conflictZones, aircraft, ships, layers.aircraft, layers.ships]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
@@ -1637,7 +1682,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // ── Globe ready handler ─────────────────────────────────────────────────────
   const handleGlobeReady = useCallback(() => {
-    globeRef.current?.pointOfView({ lat: 38, lng: 35, altitude: 1.5 });
+    globeRef.current?.pointOfView({ lat: 38, lng: 35, altitude: 1.2 });
   }, []);
 
   // ── Click handlers ──────────────────────────────────────────────────────────
@@ -2210,6 +2255,16 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         labelColor={labelColorAccessor}
         labelDotRadius={labelDotRadiusAccessor}
         labelResolution={1}
+        onLabelClick={(label: object) => {
+          const d = label as { _type?: string; _zone?: unknown };
+          if (d._type === 'conflict' && d._zone) {
+            onEntityClick('conflict', d._zone);
+          } else if (d._type === 'aircraft') {
+            onEntityClick('aircraft', d);
+          } else if (d._type === 'ship') {
+            onEntityClick('ship', d);
+          }
+        }}
 
         // HTML elements disabled — isBehindGlobe crash in three-render-objects
         // htmlElementsData={mergedHtmlMarkers}

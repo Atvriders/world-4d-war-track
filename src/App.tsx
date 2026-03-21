@@ -564,6 +564,13 @@ export default function App() {
           <LayerBar
             layers={layers}
             onToggleLayer={(k) => store.toggleLayer(k)}
+            counts={{
+              aircraft: aircraft.length,
+              satellites: satellites.length,
+              ships: ships.length,
+              warZones: conflictZones.length,
+              gpsJam: gpsJamCells.length,
+            }}
           />
 
           {/* Sources button */}
