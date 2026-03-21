@@ -916,7 +916,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
   onSelect,
   onFlyTo,
 }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('deaths');
 
   const sorted = useMemo(() => {
@@ -937,90 +937,153 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
     { key: 'alpha', label: 'A-Z' },
   ];
 
+  // Collapsed tab strip
+  if (!open) {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          right: 320,
+          transform: 'translateY(-50%)',
+          zIndex: 999,
+          fontFamily: "'Courier New', Courier, monospace",
+          pointerEvents: 'all',
+        }}
+      >
+        <button
+          onClick={() => setOpen(true)}
+          title="Expand conflict sidebar"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+            padding: '12px 6px',
+            background: 'rgba(8, 12, 20, 0.97)',
+            border: '1px solid rgba(0, 255, 100, 0.28)',
+            borderRight: 'none',
+            borderRadius: '6px 0 0 6px',
+            cursor: 'pointer',
+            boxShadow: '-3px 0 14px rgba(0,0,0,0.5)',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0, 255, 100, 0.08)';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(8, 12, 20, 0.97)';
+          }}
+        >
+          <span style={{ fontSize: 14, lineHeight: 1 }}>{'\u2694\uFE0F'}</span>
+          <span
+            style={{
+              writingMode: 'vertical-rl',
+              textOrientation: 'mixed',
+              color: '#ff6666',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              whiteSpace: 'nowrap',
+              lineHeight: 1,
+            }}
+          >
+            {conflictZones.length} conflicts
+          </span>
+          <span
+            style={{
+              color: 'rgba(0, 255, 100, 0.8)',
+              fontSize: 11,
+              lineHeight: 1,
+            }}
+          >
+            {'\u25C0'}
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
       <div
         style={{
           ...styles.panel,
-          width: open ? PANEL_WIDTH : 0,
+          width: PANEL_WIDTH,
         }}
       >
-        {open && (
-          <>
-            {/* Header */}
-            <div style={styles.header}>
-              <div style={styles.headerTop}>
-                <span style={styles.headerTitle}>{'\u2694'} Active Conflicts</span>
-                <span style={styles.countBadge}>{conflictZones.length}</span>
-              </div>
-              <div style={styles.sortRow}>
-                {sortButtons.map(({ key, label }) => (
-                  <button
-                    key={key}
-                    style={{
-                      ...styles.sortBtn,
-                      ...(sortMode === key ? styles.sortBtnActive : {}),
-                    }}
-                    onClick={() => setSortMode(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.headerTop}>
+            <span style={styles.headerTitle}>{'\u2694'} Active Conflicts</span>
+            <span style={styles.countBadge}>{conflictZones.length}</span>
+          </div>
+          <div style={styles.sortRow}>
+            {sortButtons.map(({ key, label }) => (
+              <button
+                key={key}
+                style={{
+                  ...styles.sortBtn,
+                  ...(sortMode === key ? styles.sortBtnActive : {}),
+                }}
+                onClick={() => setSortMode(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-            {/* Global toll banner */}
-            <GlobalTollBanner zones={conflictZones} />
+        {/* Global toll banner */}
+        <GlobalTollBanner zones={conflictZones} />
 
-            {/* Conflict list */}
-            <div style={styles.scrollArea}>
-              {sorted.map((zone) => {
-                const centroid = getConflictCentroid(zone);
-                return (
-                  <ConflictCard
-                    key={zone.id}
-                    zone={zone}
-                    isSelected={zone.id === selectedConflictId}
-                    onSelect={() => onSelect(zone)}
-                    onFlyTo={() => {
-                      if (centroid) onFlyTo(centroid.lat, centroid.lng);
-                    }}
-                  />
-                );
-              })}
-              {sorted.length === 0 && (
-                <div style={{
-                  color: 'rgba(120, 150, 135, 0.5)',
-                  fontSize: 10,
-                  textAlign: 'center',
-                  padding: '24px 12px',
-                  letterSpacing: '0.08em',
-                }}>
-                  NO ACTIVE CONFLICTS
-                </div>
-              )}
+        {/* Conflict list */}
+        <div style={styles.scrollArea}>
+          {sorted.map((zone) => {
+            const centroid = getConflictCentroid(zone);
+            return (
+              <ConflictCard
+                key={zone.id}
+                zone={zone}
+                isSelected={zone.id === selectedConflictId}
+                onSelect={() => onSelect(zone)}
+                onFlyTo={() => {
+                  if (centroid) onFlyTo(centroid.lat, centroid.lng);
+                }}
+              />
+            );
+          })}
+          {sorted.length === 0 && (
+            <div style={{
+              color: 'rgba(120, 150, 135, 0.5)',
+              fontSize: 10,
+              textAlign: 'center',
+              padding: '24px 12px',
+              letterSpacing: '0.08em',
+            }}>
+              NO ACTIVE CONFLICTS
             </div>
+          )}
+        </div>
 
-            {/* Footer */}
-            <div style={styles.footer}>
-              <div style={styles.footerText}>
-                Data: ACLED / OSINT | Updated daily
-              </div>
-            </div>
-          </>
-        )}
+        {/* Footer */}
+        <div style={styles.footer}>
+          <div style={styles.footerText}>
+            Data: ACLED / OSINT | Updated daily
+          </div>
+        </div>
       </div>
 
-      {/* Collapse / expand toggle on the left edge of the panel */}
+      {/* Collapse toggle on the left edge of the expanded panel */}
       <button
         style={{
           ...styles.collapseBtn,
-          right: open ? PANEL_WIDTH : 0,
+          right: PANEL_WIDTH,
         }}
-        onClick={() => setOpen((v) => !v)}
-        title={open ? 'Collapse conflict sidebar' : 'Expand conflict sidebar'}
+        onClick={() => setOpen(false)}
+        title="Collapse conflict sidebar"
       >
-        {open ? '\u25B6' : '\u25C0'}
+        {'\u25B6'}
       </button>
     </div>
   );

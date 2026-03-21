@@ -122,7 +122,7 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
         display: 'inline-flex',
         alignItems: 'center',
         gap: 4,
-        padding: '0 12px',
+        padding: '0 8px',
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: 'opacity 0.15s',
@@ -132,8 +132,8 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
       title={`${zone.name} — ${(zone.casualties.total ?? 0).toLocaleString()} deaths (click to fly)`}
     >
-      <span style={{ fontSize: 12 }}>{countryFlags(zone.countries)}</span>
-      <span style={{ color: '#ff4444', fontWeight: 700, fontSize: 11, fontFamily: "'Courier New', monospace" }}>
+      <span style={{ fontSize: 10 }}>{countryFlags(zone.countries)}</span>
+      <span style={{ color: '#ff4444', fontWeight: 700, fontSize: 10, fontFamily: "'Courier New', monospace" }}>
         {formatDeaths(zone.casualties.total ?? 0)}
       </span>
     </span>
@@ -155,10 +155,10 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
           top: 0,
           left: 0,
           right: 0,
-          height: 28,
+          height: 24,
           zIndex: 1100,
-          background: 'rgba(10,0,0,0.85)',
-          borderBottom: '1px solid rgba(255,40,40,0.35)',
+          background: 'rgba(10,0,0,0.55)',
+          borderBottom: '1px solid rgba(255,40,40,0.25)',
           display: 'flex',
           alignItems: 'center',
           fontFamily: "'Courier New', monospace",
@@ -171,21 +171,21 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
-            padding: '0 12px',
+            gap: 4,
+            padding: '0 8px',
             borderRight: '1px solid rgba(255,68,68,0.3)',
             flexShrink: 0,
             height: '100%',
           }}
         >
-          <span style={{ color: '#888', fontSize: 9, letterSpacing: 1, textTransform: 'uppercase' }}>
-            GLOBAL CONFLICT DEATHS:
+          <span style={{ color: '#888', fontSize: 8, letterSpacing: 1, textTransform: 'uppercase' }}>
+            DEATHS:
           </span>
           <span
             style={{
               color: '#ff4444',
               fontWeight: 800,
-              fontSize: 14,
+              fontSize: 11,
               letterSpacing: 0.5,
               animation: 'deathPulse 2.5s ease-in-out infinite',
             }}
@@ -195,7 +195,7 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
         </div>
 
         {/* Separator */}
-        <span style={{ color: 'rgba(255,68,68,0.3)', padding: '0 4px', flexShrink: 0, fontSize: 11 }}>|</span>
+        <span style={{ color: 'rgba(255,68,68,0.3)', padding: '0 4px', flexShrink: 0, fontSize: 9 }}>|</span>
 
         {/* Scrolling per-conflict strip */}
         <div
@@ -227,7 +227,7 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
               cursor: 'pointer',
-              padding: '0 10px',
+              padding: '0 8px',
               flexShrink: 0,
               whiteSpace: 'nowrap',
               borderLeft: '1px solid rgba(255,68,68,0.15)',

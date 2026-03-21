@@ -224,7 +224,7 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, isNew, onDismiss, onFlyTo 
 };
 
 const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [newAlertIds, setNewAlertIds] = useState<Set<string>>(new Set());
   const prevAlertIdsRef = useRef<Set<string>>(new Set());
   const dismissTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
@@ -251,6 +251,13 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
         incoming.forEach(id => next.add(id));
         return next;
       });
+
+      // Auto-expand if a new critical alert arrives
+      const hasCritical = alerts.some(a => incoming.has(a.id) && a.severity === 'critical');
+      if (hasCritical) {
+        setCollapsed(false);
+      }
+
       // Remove "new" flag after animation completes
       const timer = setTimeout(() => {
         setNewAlertIds(prev => {
@@ -305,21 +312,24 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     position: 'fixed',
     bottom: '24px',
     right: '24px',
-    width: '380px',
+    width: collapsed ? 'auto' : '380px',
     maxWidth: 'calc(100vw - 48px)',
     zIndex: 1200,
     display: 'flex',
     flexDirection: 'column',
     gap: 0,
     fontFamily: '"Share Tech Mono", "Courier New", monospace',
+    transition: 'width 0.2s ease',
   };
+
+  const criticalCount = activeAlerts.filter(a => a.severity === 'critical').length;
 
   const headerStyle: React.CSSProperties = {
     background: 'rgba(5, 15, 30, 0.97)',
     border: '1px solid rgba(255, 100, 0, 0.4)',
     borderBottom: collapsed ? undefined : '1px solid rgba(255, 100, 0, 0.22)',
     borderRadius: collapsed ? '6px' : '6px 6px 0 0',
-    padding: '8px 12px',
+    padding: collapsed ? '6px 12px' : '8px 12px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -344,65 +354,103 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
 
   return (
     <div style={panelStyle}>
-      {/* Header */}
+      {/* Header / collapsed badge */}
       <div style={headerStyle} onClick={() => setCollapsed(c => !c)}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255, 160, 60, 0.95)', letterSpacing: '0.06em' }}>
-            ⚠ ALERTS
-          </span>
-          <span
-            style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              background: totalCount > 0 ? 'rgba(255, 60, 60, 0.8)' : 'rgba(80, 110, 150, 0.5)',
-              color: '#fff',
-              borderRadius: '10px',
-              padding: '1px 7px',
-              minWidth: '20px',
-              textAlign: 'center',
-              transition: 'background 0.2s',
-            }}
-          >
-            {totalCount}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {totalCount > 0 && !collapsed && (
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                activeAlerts.forEach(a => onDismiss(a.id));
-              }}
+        {collapsed ? (
+          /* Compact badge when collapsed */
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: totalCount > 0 ? 'rgba(255, 160, 60, 0.95)' : 'rgba(120, 150, 190, 0.6)', letterSpacing: '0.06em' }}>
+              ⚠ {totalCount} {totalCount === 1 ? 'alert' : 'alerts'}
+            </span>
+            {criticalCount > 0 && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  background: 'rgba(255, 34, 34, 0.8)',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  padding: '1px 6px',
+                }}
+              >
+                {criticalCount} critical
+              </span>
+            )}
+            <span
               style={{
-                background: 'rgba(255, 80, 60, 0.12)',
-                border: '1px solid rgba(255, 80, 60, 0.3)',
-                color: 'rgba(255, 140, 120, 0.85)',
-                borderRadius: '3px',
-                padding: '2px 8px',
-                fontSize: '10px',
-                cursor: 'pointer',
-                letterSpacing: '0.04em',
-                transition: 'background 0.15s',
+                fontSize: '12px',
+                color: 'rgba(160, 185, 220, 0.5)',
+                lineHeight: 1,
+                transform: 'rotate(-90deg)',
+                display: 'inline-block',
+                marginLeft: '4px',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255, 80, 60, 0.25)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255, 80, 60, 0.12)')}
             >
-              Clear All
-            </button>
-          )}
-          <span
-            style={{
-              fontSize: '12px',
-              color: 'rgba(160, 185, 220, 0.5)',
-              lineHeight: 1,
-              transition: 'transform 0.2s',
-              transform: collapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
-              display: 'inline-block',
-            }}
-          >
-            ▼
-          </span>
-        </div>
+              ▼
+            </span>
+          </div>
+        ) : (
+          /* Full header when expanded */
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255, 160, 60, 0.95)', letterSpacing: '0.06em' }}>
+                ⚠ ALERTS
+              </span>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: totalCount > 0 ? 'rgba(255, 60, 60, 0.8)' : 'rgba(80, 110, 150, 0.5)',
+                  color: '#fff',
+                  borderRadius: '10px',
+                  padding: '1px 7px',
+                  minWidth: '20px',
+                  textAlign: 'center',
+                  transition: 'background 0.2s',
+                }}
+              >
+                {totalCount}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {totalCount > 0 && (
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    activeAlerts.forEach(a => onDismiss(a.id));
+                  }}
+                  style={{
+                    background: 'rgba(255, 80, 60, 0.12)',
+                    border: '1px solid rgba(255, 80, 60, 0.3)',
+                    color: 'rgba(255, 140, 120, 0.85)',
+                    borderRadius: '3px',
+                    padding: '2px 8px',
+                    fontSize: '10px',
+                    cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255, 80, 60, 0.25)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255, 80, 60, 0.12)')}
+                >
+                  Clear All
+                </button>
+              )}
+              <span
+                style={{
+                  fontSize: '12px',
+                  color: 'rgba(160, 185, 220, 0.5)',
+                  lineHeight: 1,
+                  transition: 'transform 0.2s',
+                  transform: 'rotate(0deg)',
+                  display: 'inline-block',
+                }}
+              >
+                ▼
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Body */}

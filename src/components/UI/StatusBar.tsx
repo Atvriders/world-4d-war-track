@@ -339,7 +339,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
       <div
         style={{
           position: 'fixed',
-          top: 28,
+          top: 24,
           left: 0,
           right: 0,
           height: 48,

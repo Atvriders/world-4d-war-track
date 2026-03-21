@@ -86,13 +86,19 @@ export default function App() {
   const [showSatellitePanel, setShowSatellitePanel] = useState(false);
   const [showGpsJamPanel, setShowGpsJamPanel] = useState(false);
   const [showGlobeSettings, setShowGlobeSettings] = useState(false);
-  const [showMiniRadar, setShowMiniRadar] = useState(true);
+  const [showMiniRadar, setShowMiniRadar] = useState(false);
   const [showHotspots, setShowHotspots] = useState(false);
   const [showWatchList, setShowWatchList] = useState(false);
   const [showEventFeed, setShowEventFeed] = useState(false);
   const [showWarImpact, setShowWarImpact] = useState(false);
   const [showSources, setShowSources] = useState(false);
   const [showEconomy, setShowEconomy] = useState(false);
+  const [showStatsOverlay, setShowStatsOverlay] = useState(false);
+  const [showConflictSidebar, setShowConflictSidebar] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
+  const [showQuickNav, setShowQuickNav] = useState(false);
+  const [showTimeControl, setShowTimeControl] = useState(false);
+  const [showAlertPanel, setShowAlertPanel] = useState(false);
   const [watchedEntities, setWatchedEntities] = useState<Array<{ type: 'aircraft' | 'ship' | 'satellite'; id: string; label: string; addedAt: number }>>([]);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
@@ -267,6 +273,39 @@ export default function App() {
         case 'y':
           setShowEconomy(v => !v);
           break;
+        case 'l':
+          setShowLegend(v => !v);
+          break;
+        case 'q':
+          setShowQuickNav(v => !v);
+          break;
+        case '1':
+          setShowStatsOverlay(v => !v);
+          break;
+        case '2':
+          setShowTimeControl(v => !v);
+          break;
+        case '3':
+          setShowAlertPanel(v => !v);
+          break;
+        case '4':
+          setShowConflictSidebar(v => !v);
+          break;
+        case '5':
+          setShowMiniRadar(v => !v);
+          break;
+        case '6':
+          setShowEventFeed(v => !v);
+          break;
+        case '7':
+          setShowWatchList(v => !v);
+          break;
+        case '8':
+          setShowHotspots(v => !v);
+          break;
+        case '9':
+          setShowGlobeSettings(v => !v);
+          break;
         case 'escape':
           setShowKeyboardHelp(false);
           store.setSelectedEntity(null);
@@ -350,7 +389,7 @@ export default function App() {
           />
 
           {/* Main globe */}
-          <div style={{ position: 'absolute', inset: 0 }}>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
             <Globe
               ref={globeRef}
               satellites={satellites}
@@ -372,7 +411,7 @@ export default function App() {
             counts={counts}
           />
 
-          {/* Right panel — conflict sidebar */}
+          {/* Right panel — conflict sidebar (starts collapsed) */}
           <ConflictSidebar
             conflictZones={conflictZones}
             selectedConflictId={selectedConflictId}
@@ -396,7 +435,7 @@ export default function App() {
             onEventClick={handleFlyTo}
           />
 
-          {/* Time control */}
+          {/* Time control — always visible */}
           <TimeControl
             timeOffset={timeOffset}
             isPlaying={isPlaying}
@@ -410,21 +449,23 @@ export default function App() {
             }}
           />
 
-          {/* Alert panel */}
+          {/* Alert panel — starts collapsed */}
           <AlertPanel
             alerts={alerts}
             onDismiss={(id) => store.dismissAlert(id)}
             onFlyTo={handleFlyTo}
           />
 
-          {/* Quick navigation */}
-          <QuickNav
-            onFlyTo={handleFlyTo}
-            conflictZones={conflictZones}
-          />
+          {/* Quick navigation (hidden by default) */}
+          {showQuickNav && (
+            <QuickNav
+              onFlyTo={handleFlyTo}
+              conflictZones={conflictZones}
+            />
+          )}
 
-          {/* Legend */}
-          <Legend />
+          {/* Legend (hidden by default) */}
+          {showLegend && <Legend />}
 
           {/* Mini radar */}
           <MiniRadar
@@ -436,14 +477,16 @@ export default function App() {
             onToggle={() => setShowMiniRadar(v => !v)}
           />
 
-          {/* Stats overlay */}
-          <StatsOverlay
-            aircraft={aircraft}
-            ships={ships}
-            satellites={satellites}
-            conflictZones={conflictZones}
-            gpsJamCells={gpsJamCells}
-          />
+          {/* Stats overlay (hidden by default) */}
+          {showStatsOverlay && (
+            <StatsOverlay
+              aircraft={aircraft}
+              ships={ships}
+              satellites={satellites}
+              conflictZones={conflictZones}
+              gpsJamCells={gpsJamCells}
+            />
+          )}
 
           {/* Satellite panel */}
           <SatellitePanel

@@ -75,7 +75,7 @@ function getZoneCenter(geoJSON: { geometry: { coordinates: unknown; type: string
 }
 
 const QuickNav: React.FC<QuickNavProps> = ({ onFlyTo, conflictZones }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Keyboard shortcuts

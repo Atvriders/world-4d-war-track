@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface StatsOverlayProps {
   aircraft: Array<{ isMilitary: boolean; altitude: number; country: string; onGround: boolean }>;
@@ -135,6 +135,8 @@ const StatsOverlay: React.FC<StatsOverlayProps> = ({
   conflictZones,
   gpsJamCells,
 }) => {
+  const [minimized, setMinimized] = useState(true);
+
   // Aircraft calculations
   const airborne = aircraft.filter(a => !a.onGround);
   const militaryAc = aircraft.filter(a => a.isMilitary);
@@ -182,97 +184,119 @@ const StatsOverlay: React.FC<StatsOverlayProps> = ({
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 900,
-        width: 200,
         background: 'rgba(2, 8, 20, 0.82)',
         border: '1px solid rgba(0, 255, 136, 0.2)',
         borderRadius: 5,
-        padding: '8px 10px',
         fontFamily: '"Courier New", Courier, monospace',
         boxSizing: 'border-box',
         backdropFilter: 'blur(4px)',
         userSelect: 'none',
-        pointerEvents: 'none',
       }}
     >
-      {/* ── AIRCRAFT ────────────────────────────────────── */}
-      <Section title="AIRCRAFT IN FLIGHT">
-        <StatRow label="Airborne" value={airborne.length.toLocaleString()} />
-        <StatRow label="Military" value={<span style={{ color: '#ff5555' }}>{militaryAc.length.toLocaleString()}</span>} />
-        <StatRow label="Avg altitude" value={`${formatAlt(avgAlt)} ft`} />
-        <StatRow
-          label="Top countries"
-          value={
-            topCountries.length === 0 ? '—' : (
-              <span style={{ fontSize: 9, letterSpacing: '0.02em' }}>
-                {topCountries.map((c, i) => (
-                  <span key={c.code}>
-                    {i > 0 && <span style={{ color: '#2a4a5a', margin: '0 2px' }}>|</span>}
-                    {c.flag} {c.count}
+      {/* Toggle header */}
+      <div
+        onClick={() => setMinimized(m => !m)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '4px 10px',
+          cursor: 'pointer',
+          borderBottom: minimized ? 'none' : '1px solid rgba(0, 255, 136, 0.12)',
+          pointerEvents: 'all',
+        }}
+      >
+        <span style={{ color: '#00ff88', fontSize: 8, fontWeight: 700, letterSpacing: '0.14em' }}>
+          STATS
+        </span>
+        <span style={{ color: 'rgba(0, 255, 136, 0.6)', fontSize: 9 }}>
+          {minimized ? '\u25BC' : '\u25B2'}
+        </span>
+      </div>
+
+      {!minimized && (
+        <div style={{ padding: '4px 10px 8px', width: 200, pointerEvents: 'none' }}>
+          {/* ── AIRCRAFT ────────────────────────────────────── */}
+          <Section title="AIRCRAFT IN FLIGHT">
+            <StatRow label="Airborne" value={airborne.length.toLocaleString()} />
+            <StatRow label="Military" value={<span style={{ color: '#ff5555' }}>{militaryAc.length.toLocaleString()}</span>} />
+            <StatRow label="Avg altitude" value={`${formatAlt(avgAlt)} ft`} />
+            <StatRow
+              label="Top countries"
+              value={
+                topCountries.length === 0 ? '\u2014' : (
+                  <span style={{ fontSize: 9, letterSpacing: '0.02em' }}>
+                    {topCountries.map((c, i) => (
+                      <span key={c.code}>
+                        {i > 0 && <span style={{ color: '#2a4a5a', margin: '0 2px' }}>|</span>}
+                        {c.flag} {c.count}
+                      </span>
+                    ))}
                   </span>
-                ))}
-              </span>
-            )
-          }
-        />
-      </Section>
+                )
+              }
+            />
+          </Section>
 
-      <SectionDivider />
+          <SectionDivider />
 
-      {/* ── MARITIME ────────────────────────────────────── */}
-      <Section title="MARITIME ACTIVITY">
-        <StatRow label="Vessels" value={ships.length.toLocaleString()} />
-        <StatRow label="Warships" value={<span style={{ color: '#ff5555' }}>{warships.length.toLocaleString()}</span>} />
-        <StatRow label="Tankers" value={tankers.length.toLocaleString()} />
-        <StatRow label="Avg speed" value={`${avgSpeed.toFixed(1)} kts`} />
-      </Section>
+          {/* ── MARITIME ────────────────────────────────────── */}
+          <Section title="MARITIME ACTIVITY">
+            <StatRow label="Vessels" value={ships.length.toLocaleString()} />
+            <StatRow label="Warships" value={<span style={{ color: '#ff5555' }}>{warships.length.toLocaleString()}</span>} />
+            <StatRow label="Tankers" value={tankers.length.toLocaleString()} />
+            <StatRow label="Avg speed" value={`${avgSpeed.toFixed(1)} kts`} />
+          </Section>
 
-      <SectionDivider />
+          <SectionDivider />
 
-      {/* ── SATELLITES ──────────────────────────────────── */}
-      <Section title="SATELLITE COVERAGE">
-        <StatRow label="Tracked" value={satellites.length.toLocaleString()} />
-        <StatRow label="Military/Spy" value={<span style={{ color: '#ff5555' }}>{milSpySats.length.toLocaleString()}</span>} />
-        <StatRow label="Navigation (GPS)" value={<span style={{ color: '#ffd700' }}>{navSats.length.toLocaleString()}</span>} />
-        <StatRow label="Coverage" value={<span style={{ color: '#00ff88' }}>Global</span>} />
-      </Section>
+          {/* ── SATELLITES ──────────────────────────────────── */}
+          <Section title="SATELLITE COVERAGE">
+            <StatRow label="Tracked" value={satellites.length.toLocaleString()} />
+            <StatRow label="Military/Spy" value={<span style={{ color: '#ff5555' }}>{milSpySats.length.toLocaleString()}</span>} />
+            <StatRow label="Navigation (GPS)" value={<span style={{ color: '#ffd700' }}>{navSats.length.toLocaleString()}</span>} />
+            <StatRow label="Coverage" value={<span style={{ color: '#00ff88' }}>Global</span>} />
+          </Section>
 
-      <SectionDivider />
+          <SectionDivider />
 
-      {/* ── CONFLICT ────────────────────────────────────── */}
-      <Section title="CONFLICT STATUS">
-        <StatRow
-          label="Active wars"
-          value={
-            <span style={{ color: conflictZones.length > 0 ? '#ff3b3b' : '#e0f8f0' }}>
-              {conflictZones.length}
-            </span>
-          }
-        />
-        <StatRow
-          label="Total casualties"
-          value={
-            <span style={{ color: '#ff7777' }}>
-              {formatLargeNumber(totalCasualties)}
-            </span>
-          }
-        />
-        <StatRow
-          label="Critical zones"
-          value={
-            <span style={{ color: criticalZones > 0 ? '#ff3b3b' : '#e0f8f0' }}>
-              {criticalZones}
-            </span>
-          }
-        />
-        <StatRow
-          label="GPS jam zones"
-          value={
-            <span style={{ color: criticalJam > 0 ? '#ffd700' : '#e0f8f0' }}>
-              {criticalJam}
-            </span>
-          }
-        />
-      </Section>
+          {/* ── CONFLICT ────────────────────────────────────── */}
+          <Section title="CONFLICT STATUS">
+            <StatRow
+              label="Active wars"
+              value={
+                <span style={{ color: conflictZones.length > 0 ? '#ff3b3b' : '#e0f8f0' }}>
+                  {conflictZones.length}
+                </span>
+              }
+            />
+            <StatRow
+              label="Total casualties"
+              value={
+                <span style={{ color: '#ff7777' }}>
+                  {formatLargeNumber(totalCasualties)}
+                </span>
+              }
+            />
+            <StatRow
+              label="Critical zones"
+              value={
+                <span style={{ color: criticalZones > 0 ? '#ff3b3b' : '#e0f8f0' }}>
+                  {criticalZones}
+                </span>
+              }
+            />
+            <StatRow
+              label="GPS jam zones"
+              value={
+                <span style={{ color: criticalJam > 0 ? '#ffd700' : '#e0f8f0' }}>
+                  {criticalJam}
+                </span>
+              }
+            />
+          </Section>
+        </div>
+      )}
     </div>
   );
 };

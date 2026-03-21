@@ -298,7 +298,7 @@ const COLLAPSED_ICONS = [
 ];
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   return (
     <div style={styles.container}>

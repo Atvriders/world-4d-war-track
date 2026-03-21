@@ -1712,8 +1712,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
-        backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
+        globeImageUrl="https://unpkg.com/three-globe/example/img/earth-night.jpg"
+        backgroundImageUrl="https://unpkg.com/three-globe/example/img/night-sky.png"
         atmosphereColor="#1a4a8a"
         atmosphereAltitude={0.15}
         showAtmosphere={layers.atmosphere}
