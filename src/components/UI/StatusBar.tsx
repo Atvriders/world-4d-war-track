@@ -294,7 +294,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const [clock, setClock] = useState<Date>(currentTime);
 
   useEffect(() => {
-    const id = setInterval(() => setClock(new Date()), 1000);
+    const id = setInterval(() => setClock(new Date()), 10000);
     return () => clearInterval(id);
   }, []);
 
@@ -327,11 +327,11 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const freshness = getFreshness(slowest);
   const freshnessConf = FRESHNESS_CONFIG[freshness];
 
-  // Hover tooltips for each data source (recalculated on every render via clock tick)
-  const aircraftTooltip = buildTooltip('aircraft', lastRefresh.aircraft, errors.aircraft);
-  const shipsTooltip = buildTooltip('ships', lastRefresh.ships, errors.ships);
-  const satellitesTooltip = buildTooltip('satellites', lastRefresh.satellites, errors.satellites);
-  const gpsJamTooltip = buildTooltip('gpsJam', lastRefresh.gpsJam, errors.gpsJam);
+  // Hover tooltips for each data source (memoized to avoid recalculating every tick)
+  const aircraftTooltip = useMemo(() => buildTooltip('aircraft', lastRefresh.aircraft, errors.aircraft), [lastRefresh.aircraft, errors.aircraft, clock]);
+  const shipsTooltip = useMemo(() => buildTooltip('ships', lastRefresh.ships, errors.ships), [lastRefresh.ships, errors.ships, clock]);
+  const satellitesTooltip = useMemo(() => buildTooltip('satellites', lastRefresh.satellites, errors.satellites), [lastRefresh.satellites, errors.satellites, clock]);
+  const gpsJamTooltip = useMemo(() => buildTooltip('gpsJam', lastRefresh.gpsJam, errors.gpsJam), [lastRefresh.gpsJam, errors.gpsJam, clock]);
 
   return (
     <>

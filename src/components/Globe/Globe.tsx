@@ -275,6 +275,11 @@ function buildComposition(groupShips: ShipEntity[]): string {
 }
 
 /** Detect carrier strike groups: same-country warships within 50km of a carrier */
+/** Fast approximate distance in km using lat/lng degree difference */
+function approxDistKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  return Math.sqrt((a.lat - b.lat) ** 2 + ((a.lng - b.lng) * Math.cos(a.lat * Math.PI / 180)) ** 2) * 111;
+}
+
 function detectCarrierGroups(ships: ShipEntity[]): CarrierStrikeGroup[] {
   const PROXIMITY_KM = 50;
   const militaryShips = ships.filter(s => s.type === 'warship' || s.type === 'military');
@@ -284,9 +289,13 @@ function detectCarrierGroups(ships: ShipEntity[]): CarrierStrikeGroup[] {
 
   for (const carrier of carriers) {
     if (assigned.has(carrier.mmsi)) continue;
-    const nearby = militaryShips.filter(s =>
+    // Fast approximate filter first, then precise haversine for final candidates
+    const candidates = militaryShips.filter(s =>
       s.country === carrier.country &&
       !assigned.has(s.mmsi) &&
+      approxDistKm(carrier, s) <= PROXIMITY_KM * 1.2
+    );
+    const nearby = candidates.filter(s =>
       haversineKm(carrier.lat, carrier.lng, s.lat, s.lng) <= PROXIMITY_KM
     );
     if (nearby.length < 2) continue;
@@ -1018,12 +1027,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     const MAX_CONNECT_KM = 12000;
 
     for (const [constellation, sats] of groups) {
-      if (sats.length < 2) continue;
+      if (sats.length < 2 || sats.length > 50) continue;
       const color = CONSTELLATION_COLORS[constellation] + '88';
 
       const sorted = [...sats].sort((a, b) => a.lng - b.lng);
 
-      // Greedy nearest-neighbor chain
+      // Greedy nearest-neighbor chain using fast approximate distance
       const connected = new Set<number>();
       connected.add(0);
       let current = 0;
@@ -1034,10 +1043,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         for (let i = 0; i < sorted.length; i++) {
           if (connected.has(i)) continue;
-          const dist = haversineKm(
-            sorted[current].lat, sorted[current].lng,
-            sorted[i].lat, sorted[i].lng
-          );
+          const dist = approxDistKm(sorted[current], sorted[i]);
           if (dist < nearestDist) {
             nearestDist = dist;
             nearestIdx = i;
@@ -1080,7 +1086,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             weapon: r.weapon,
             rangeKm: r.rangeKm,
             weaponType: r.type,
-            coords: generateCircleCoords(site.lat, site.lng, r.rangeKm),
+            coords: generateCircleCoords(site.lat, site.lng, r.rangeKm, 24),
           });
         }
       }
@@ -1100,9 +1106,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     const paths: PathEntry[] = [];
     for (const site of NUCLEAR_SITES) {
       for (const z of zones) {
-        const coords = generateCircleCoords(site.lat, site.lng, z.radiusKm);
-        // Override altitude to 0.001 to sit just above terrain
-        for (const c of coords) c.alt = 0.001;
+        // Override altitude to 0.001 to sit just above terrain (using .map to avoid mutation)
+        const coords = generateCircleCoords(site.lat, site.lng, z.radiusKm, 24)
+          .map(c => ({ lat: c.lat, lng: c.lng, alt: 0.001 }));
         paths.push({
           _kind: 'nuclearZone',
           facility: site.name,
