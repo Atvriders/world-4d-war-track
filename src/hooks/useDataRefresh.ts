@@ -8,16 +8,17 @@ import { fetchAircraft } from '../services/adsb';
 import { fetchShips } from '../services/ais';
 import { fetchAllSatellites, propagateSatellite, getSatelliteGroundTrack, getFootprintRadius } from '../services/satellite';
 import { fetchLiveGpsJamData } from '../services/gpsJam';
+import { RateLimitError } from '../services/rateLimitError';
 import { distanceKm, pointNearConflictZone } from '../utils/geoMath';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const AIRCRAFT_INTERVAL = 15_000;       // 15 s
-const SHIP_INTERVAL = 60_000;           // 60 s
-const SATELLITE_INTERVAL = 300_000;     // 5 min
-const GPS_JAM_INTERVAL = 600_000;       // 10 min
+const AIRCRAFT_INTERVAL = 60_000;       // 60 s — OpenSky free tier limit
+const SHIP_INTERVAL = 60_000;           // 60 s — AISHub is OK with this
+const SATELLITE_INTERVAL = 3_600_000;   // 60 min — CelesTrak fair use
+const GPS_JAM_INTERVAL = 600_000;       // 10 min — static data anyway
 const RETRY_BACKOFF = [10_000, 20_000, 40_000, 60_000]; // exponential backoff, capped at 60s
 const ALERT_CHECK_INTERVAL = 30_000;    // 30 s
 const ALERTED_KEYS_CLEANUP_MS = 3_600_000; // 1 hour
@@ -51,19 +52,25 @@ export function useDataRefresh(): { refresh: () => void } {
     satellites: 0,
     gpsJam: 0,
   });
+  // Prevent duplicate simultaneous requests per source
+  const inFlight = useRef<Record<string, boolean>>({ aircraft: false, ships: false, satellites: false, gpsJam: false });
 
-  /** Schedule a retry with exponential backoff — never gives up */
-  const scheduleRetry = useCallback((source: string, fn: () => void) => {
+  /** Schedule a retry with exponential backoff — never gives up.
+   *  If retryAfterMs is provided (from a 429 Retry-After header), use that instead. */
+  const scheduleRetry = useCallback((source: string, fn: () => void, retryAfterMs?: number) => {
     const attempt = retryCounts.current[source];
-    const delay = RETRY_BACKOFF[Math.min(attempt, RETRY_BACKOFF.length - 1)];
+    const backoffDelay = RETRY_BACKOFF[Math.min(attempt, RETRY_BACKOFF.length - 1)];
+    const delay = retryAfterMs != null ? Math.max(retryAfterMs, backoffDelay) : backoffDelay;
     retryCounts.current[source]++;
-    console.warn(`[useDataRefresh] ${source}: retrying in ${delay / 1000}s... (attempt ${attempt + 1})`);
+    console.warn(`[useDataRefresh] ${source}: retrying in ${delay / 1000}s... (attempt ${attempt + 1})${retryAfterMs != null ? ' [429 rate-limited]' : ''}`);
     retryTimers.current.push(setTimeout(fn, delay));
   }, []);
 
   // Stable fetch functions so interval callbacks don't capture stale closures
 
   const fetchAircraftData = useCallback(async () => {
+    if (inFlight.current.aircraft) return;
+    inFlight.current.aircraft = true;
     setLoading('aircraft', true);
     setError('aircraft', null);
     try {
@@ -93,17 +100,21 @@ export function useDataRefresh(): { refresh: () => void } {
         id: 'offline-aircraft',
         type: 'system',
         severity: 'warning',
-        message: 'ADS-B aircraft feed offline — retrying every 15s',
+        message: 'ADS-B aircraft feed offline — retrying with backoff',
         timestamp: new Date().toISOString(),
         dismissed: false,
       });
-      scheduleRetry('aircraft', () => { fetchAircraftData(); });
+      const retryAfterMs = err instanceof RateLimitError ? err.retryAfterMs : undefined;
+      scheduleRetry('aircraft', () => { fetchAircraftData(); }, retryAfterMs);
     } finally {
+      inFlight.current.aircraft = false;
       setLoading('aircraft', false);
     }
   }, [setAircraft, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   const fetchShipData = useCallback(async () => {
+    if (inFlight.current.ships) return;
+    inFlight.current.ships = true;
     setLoading('ships', true);
     setError('ships', null);
     try {
@@ -137,13 +148,17 @@ export function useDataRefresh(): { refresh: () => void } {
         timestamp: new Date().toISOString(),
         dismissed: false,
       });
-      scheduleRetry('ships', () => { fetchShipData(); });
+      const retryAfterMs = err instanceof RateLimitError ? err.retryAfterMs : undefined;
+      scheduleRetry('ships', () => { fetchShipData(); }, retryAfterMs);
     } finally {
+      inFlight.current.ships = false;
       setLoading('ships', false);
     }
   }, [setShips, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   const fetchSatelliteData = useCallback(async () => {
+    if (inFlight.current.satellites) return;
+    inFlight.current.satellites = true;
     setLoading('satellites', true);
     setError('satellites', null);
     try {
@@ -173,17 +188,21 @@ export function useDataRefresh(): { refresh: () => void } {
         id: 'offline-satellites',
         type: 'system',
         severity: 'warning',
-        message: 'Satellite TLE feed offline — retrying every 5min',
+        message: 'Satellite TLE feed offline — retrying with backoff',
         timestamp: new Date().toISOString(),
         dismissed: false,
       });
-      scheduleRetry('satellites', () => { fetchSatelliteData(); });
+      const retryAfterMs = err instanceof RateLimitError ? err.retryAfterMs : undefined;
+      scheduleRetry('satellites', () => { fetchSatelliteData(); }, retryAfterMs);
     } finally {
+      inFlight.current.satellites = false;
       setLoading('satellites', false);
     }
   }, [setSatellites, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   const fetchGpsJamData = useCallback(async () => {
+    if (inFlight.current.gpsJam) return;
+    inFlight.current.gpsJam = true;
     setLoading('gpsJam', true);
     setError('gpsJam', null);
     try {
@@ -217,8 +236,10 @@ export function useDataRefresh(): { refresh: () => void } {
         timestamp: new Date().toISOString(),
         dismissed: false,
       });
-      scheduleRetry('gpsJam', () => { fetchGpsJamData(); });
+      const retryAfterMs = err instanceof RateLimitError ? err.retryAfterMs : undefined;
+      scheduleRetry('gpsJam', () => { fetchGpsJamData(); }, retryAfterMs);
     } finally {
+      inFlight.current.gpsJam = false;
       setLoading('gpsJam', false);
     }
   }, [setGpsJamCells, setLoading, setError, setLastRefresh, scheduleRetry]);

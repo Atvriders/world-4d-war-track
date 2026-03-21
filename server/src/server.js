@@ -19,7 +19,12 @@ function getCached(key) {
     }
   }
   const c = cache.get(key);
-  return c && c.expires > Date.now() ? c.data : null;
+  if (!c) return null;
+  if (c.expires <= Date.now()) {
+    cache.delete(key); // clean up expired entries so cache.has() is accurate
+    return null;
+  }
+  return c.data;
 }
 function setCached(key, data, ttlMs) {
   cache.set(key, { data, expires: Date.now() + ttlMs });
@@ -51,14 +56,18 @@ app.get('/api/health', (req, res) => {
 });
 
 // ── GET /api/adsb/states ─────────────────────────────────────────────────────
-// Rate-limited to one outgoing request per 10 seconds
+// OpenSky allows ~4 req/hour for unauthenticated users → cache 60s
 let adsbFetchInFlight = false;
 
 app.get('/api/adsb/states', async (req, res) => {
   const CACHE_KEY = 'adsb:states';
-  const TTL_MS = 10_000;
+  const TTL_MS = 60_000; // 60 seconds
 
   const cached = getCached(CACHE_KEY);
+  if (cached === null && cache.has(CACHE_KEY)) {
+    // Cache entry exists but data is null → rate-limited backoff
+    return res.status(429).json({ error: 'Rate limited', retryAfter: 600 });
+  }
   if (cached) {
     return res.json(cached);
   }
@@ -73,9 +82,15 @@ app.get('/api/adsb/states', async (req, res) => {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch('https://opensky-network.org/api/states/all', {
-      headers: { 'User-Agent': 'World4DWarTrack/1.0' },
+      headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
       signal: controller.signal,
     });
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      const backoffMs = retryAfter ? parseInt(retryAfter) * 1000 : 600_000; // 10 min default
+      setCached(CACHE_KEY, null, backoffMs);
+      return res.status(429).json({ error: 'Rate limited', retryAfter: backoffMs / 1000 });
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     setCached(CACHE_KEY, data, TTL_MS);
@@ -108,9 +123,12 @@ app.get('/api/satellites/tle', async (req, res) => {
   }
 
   const CACHE_KEY = `tle:${group}`;
-  const TTL_MS = 5 * 60_000; // 5 minutes
+  const TTL_MS = 3_600_000; // 60 minutes — CelesTrak fair use is ~1 req per 2 hours
 
   const cached = getCached(CACHE_KEY);
+  if (cached === null && cache.has(CACHE_KEY)) {
+    return res.status(429).type('text/plain').send('Rate limited');
+  }
   if (cached) {
     return res.type('text/plain').send(cached);
   }
@@ -119,9 +137,15 @@ app.get('/api/satellites/tle', async (req, res) => {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'World4DWarTrack/1.0' },
+      headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
       signal: controller.signal,
     });
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      const backoffMs = retryAfter ? parseInt(retryAfter) * 1000 : 600_000;
+      setCached(CACHE_KEY, null, backoffMs);
+      return res.status(429).type('text/plain').send('Rate limited');
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     setCached(CACHE_KEY, text, TTL_MS);
@@ -140,6 +164,9 @@ app.get('/api/ais/vessels', async (req, res) => {
   const TTL_MS = 60_000; // 1 minute
 
   const cached = getCached(CACHE_KEY);
+  if (cached === null && cache.has(CACHE_KEY)) {
+    return res.status(429).json({ error: 'Rate limited', retryAfter: 600 });
+  }
   if (cached) {
     return res.json(cached);
   }
@@ -149,8 +176,14 @@ app.get('/api/ais/vessels', async (req, res) => {
   try {
     const response = await fetch(
       'http://data.aishub.net/ws.php?username=0&format=1&output=json&compress=0',
-      { headers: { 'User-Agent': 'World4DWarTrack/1.0' }, signal: controller.signal }
+      { headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' }, signal: controller.signal }
     );
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('Retry-After');
+      const backoffMs = retryAfter ? parseInt(retryAfter) * 1000 : 600_000;
+      setCached(CACHE_KEY, null, backoffMs);
+      return res.status(429).json({ error: 'Rate limited', retryAfter: backoffMs / 1000 });
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     setCached(CACHE_KEY, data, TTL_MS);

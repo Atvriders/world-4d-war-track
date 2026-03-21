@@ -1,6 +1,8 @@
 // AIS Marine Vessel Tracking Service
 // Fetches live vessel data from backend proxy; returns empty on failure (retry hook handles reconnection).
 
+import { throwIfRateLimited } from './rateLimitError';
+
 interface ShipEntity {
   mmsi: string;
   name: string;
@@ -93,6 +95,8 @@ export async function fetchShips(): Promise<ShipEntity[]> {
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(10_000),
     });
+
+    throwIfRateLimited(res, 'AIS');
 
     if (!res.ok) {
       throw new Error(`AIS proxy returned ${res.status}`);

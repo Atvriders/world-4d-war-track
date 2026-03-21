@@ -1,4 +1,5 @@
 import type { AircraftEntity, ConflictZone } from '../types';
+import { throwIfRateLimited } from './rateLimitError';
 
 // ── Module-scope trail store ─────────────────────────────────────────────────
 const trailStore = new Map<string, [number, number, number][]>();
@@ -112,6 +113,7 @@ function parseState(raw: (string | number | boolean | null)[]): AircraftEntity |
 export async function fetchAircraft(): Promise<AircraftEntity[]> {
   try {
     const response = await fetch('/api/adsb/states');
+    throwIfRateLimited(response, 'ADS-B');
 
     if (!response.ok) {
       throw new Error(`ADS-B fetch failed: ${response.status} ${response.statusText}`);

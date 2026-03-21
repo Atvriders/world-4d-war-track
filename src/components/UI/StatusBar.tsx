@@ -84,17 +84,17 @@ function getFreshness(slowestMs: number): 'live' | 'delayed' | 'stale' {
 
 /** Polling intervals must match useDataRefresh.ts */
 const POLLING_INTERVALS: Record<string, number> = {
-  aircraft: 15_000,
+  aircraft: 60_000,
   ships: 60_000,
-  satellites: 300_000,
+  satellites: 3_600_000,
   gpsJam: 600_000,
 };
 
 const DATA_SOURCE_NAMES: Record<string, string> = {
-  aircraft: 'OpenSky Network',
-  ships: 'AISHub',
-  satellites: 'CelesTrak',
-  gpsJam: 'Static OSINT',
+  aircraft: 'OpenSky Network (60s polling, free tier)',
+  ships: 'AISHub (60s polling)',
+  satellites: 'CelesTrak (60min polling, fair use)',
+  gpsJam: 'Static OSINT / GPSJam.org',
 };
 
 type DataSourceKey = 'aircraft' | 'ships' | 'satellites' | 'gpsJam';

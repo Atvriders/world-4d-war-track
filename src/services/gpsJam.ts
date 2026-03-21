@@ -1,3 +1,5 @@
+import { throwIfRateLimited } from './rateLimitError';
+
 interface GpsJamCell {
   lat: number;
   lng: number;
@@ -24,6 +26,7 @@ interface Alert {
 export async function fetchLiveGpsJamData(): Promise<GpsJamCell[]> {
   try {
     const res = await fetch('/api/gpsjam/current');
+    throwIfRateLimited(res, 'GPSJam');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const raw: unknown[] = await res.json();
     const cells: GpsJamCell[] = raw.map((item: any) => ({

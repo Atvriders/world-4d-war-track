@@ -1,5 +1,6 @@
 import * as satellite from 'satellite.js';
 import type { SatelliteEntity } from '../types';
+import { throwIfRateLimited } from './rateLimitError';
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -223,6 +224,7 @@ export async function fetchAndProcessTleGroup(
   const url = `/api/satellites/tle?group=${group}`;
 
   const response = await fetch(url);
+  throwIfRateLimited(response, `Satellite/${group}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch TLE group "${group}": ${response.status} ${response.statusText}`);
   }
@@ -272,22 +274,31 @@ export async function fetchAndProcessTleGroup(
 
 export async function fetchAllSatellites(): Promise<SatelliteEntity[]> {
   try {
-    const groupsToFetch: TleGroupConfig[] = TLE_GROUPS.filter(g =>
+    const groups: TleGroupConfig[] = TLE_GROUPS.filter(g =>
       ['stations', 'gps', 'military', 'weather', 'starlink'].includes(g.group)
     );
 
-    const results = await Promise.allSettled(
-      groupsToFetch.map(cfg =>
-        fetchAndProcessTleGroup(cfg.group, cfg.limit, cfg.category, cfg.country)
-      )
-    );
+    // Stagger requests with 2-second delays to avoid thundering herd on CelesTrak
+    const results: SatelliteEntity[][] = [];
+
+    for (const cfg of groups) {
+      try {
+        const sats = await fetchAndProcessTleGroup(cfg.group, cfg.limit, cfg.category, cfg.country);
+        results.push(sats);
+      } catch (err) {
+        console.warn(`[Satellites] Failed to fetch ${cfg.group}:`, (err as Error).message);
+      }
+      // Wait 2 seconds between groups to be polite to CelesTrak
+      if (cfg !== groups[groups.length - 1]) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
 
     const combined: SatelliteEntity[] = [];
     const seen = new Set<string>();
 
-    for (const result of results) {
-      if (result.status !== 'fulfilled') continue;
-      for (const entity of result.value) {
+    for (const groupEntities of results) {
+      for (const entity of groupEntities) {
         if (seen.has(entity.id)) continue;
         seen.add(entity.id);
         combined.push(entity);
