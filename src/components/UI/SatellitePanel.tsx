@@ -60,13 +60,13 @@ function formatCoord(val: number, pos: string, neg: string): string {
   return `${Math.abs(val).toFixed(2)}° ${val >= 0 ? pos : neg}`;
 }
 
-// Rough next overhead pass hint — deterministic fake based on sat id
-function nextPassHint(sat: SatelliteEntity): string {
-  const mins = ((sat.id.charCodeAt(0) * 17 + sat.id.charCodeAt(sat.id.length - 1) * 7) % 90) + 10;
-  if (mins < 60) return `~${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `~${h}h ${m}m`;
+// Last updated indicator based on real lastUpdated timestamp
+function lastSeenAgo(sat: SatelliteEntity): string {
+  if (!sat.lastUpdated) return 'No data';
+  const ago = Math.round((Date.now() - sat.lastUpdated) / 60000);
+  if (ago < 1) return 'Live';
+  if (ago < 60) return `${ago}m ago`;
+  return `${Math.floor(ago / 60)}h ${ago % 60}m ago`;
 }
 
 const SAT_PULSE_STYLE = `@keyframes satPulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.55; } }`;
@@ -457,7 +457,7 @@ const SatellitePanel: React.FC<SatellitePanelProps> = ({
                     alignItems: 'center',
                   }}
                 >
-                  <span>Next overhead: {nextPassHint(issSat)}</span>
+                  <span>Updated: {lastSeenAgo(issSat)}</span>
                   <button
                     onClick={e => { e.stopPropagation(); onFlyTo(issSat.lat, issSat.lng); }}
                     style={{
