@@ -5,10 +5,6 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: [
-      { find: 'three/webgpu', replacement: path.resolve(__dirname, 'src/stubs/three-webgpu.js') },
-      { find: 'three/tsl', replacement: path.resolve(__dirname, 'src/stubs/three-tsl.js') },
-    ],
     dedupe: ['three'],
   },
   server: {
