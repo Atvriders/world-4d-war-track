@@ -18,7 +18,7 @@ export const REFUGEE_FLOWS: RefugeeFlow[] = [
   { from: 'Syria', to: 'Turkey', startLat: 36.2, startLng: 37.2, endLat: 39.9, endLng: 32.9, count: 3600000, year: '2011-2026' },
   { from: 'Syria', to: 'Lebanon', startLat: 36.2, startLng: 37.2, endLat: 33.9, endLng: 35.5, count: 1500000, year: '2011-2026' },
   // Gaza
-  { from: 'Gaza', to: 'Egypt (Rafah)', startLat: 31.3, startLng: 34.3, endLat: 31.1, endLng: 33.8, count: 100000, year: '2023-2026' },
+  { from: 'Gaza', to: 'Egypt (Rafah)', startLat: 31.3, startLng: 34.3, endLat: 31.1, endLng: 33.8, count: 250000, year: '2023-2026' },
   // Sudan
   { from: 'Sudan', to: 'Chad', startLat: 15.6, startLng: 32.5, endLat: 12.1, endLng: 15.0, count: 600000, year: '2023-2026' },
   { from: 'Sudan', to: 'Egypt', startLat: 15.6, startLng: 32.5, endLat: 30.0, endLng: 31.2, count: 500000, year: '2023-2026' },

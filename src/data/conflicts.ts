@@ -269,16 +269,16 @@ export const CONFLICT_ZONES: ConflictZone[] = [
     intensity: 'high',
     parties: ['Sudanese Armed Forces (SAF)', 'Rapid Support Forces (RSF)'],
     casualties: {
-      total: 150000,
-      military: 30000,
-      civilian: 120000,
+      total: 300000,
+      military: 60000,
+      civilian: 240000,
       displaced: 11000000,
     },
     casualtySources: {
-      total: 'ACLED / WHO',
-      military: 'ACLED',
-      civilian: 'WHO',
-      displaced: 'UNHCR / IOM',
+      total: 'ACLED / UN OCHA',
+      military: 'ACLED / UN OCHA',
+      civilian: 'ACLED / UN OCHA',
+      displaced: 'UNHCR / IDMC',
     },
     color: '#FF6600',
     description:
@@ -543,7 +543,7 @@ export const CONFLICT_ZONES: ConflictZone[] = [
         type: 'missile',
         lat: 15.5,
         lng: 42.5,
-        description: 'Houthi ballistic missile fired at Tel Aviv intercepted by Arrow-3 over the Mediterranean; no casualties.',
+        description: 'Houthi ballistic missile fired at Tel Aviv intercepted by Arrow-3 over central Israel; no casualties.',
         fatalities: 0,
         source: 'IDF Spokesperson / Times of Israel',
       },
@@ -588,9 +588,9 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       'FDLR and allied militias',
     ],
     casualties: {
-      total: 10000,
-      military: 6000,
-      civilian: 4000,
+      total: 50000,
+      military: 20000,
+      civilian: 30000,
       displaced: 7000000,
     },
     casualtySources: {
@@ -691,9 +691,9 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       'Niger Armed Forces',
     ],
     casualties: {
-      total: 40000,
-      military: 12000,
-      civilian: 28000,
+      total: 100000,
+      military: 30000,
+      civilian: 70000,
       displaced: 3600000,
     },
     casualtySources: {
@@ -898,7 +898,7 @@ export const CONFLICT_ZONES: ConflictZone[] = [
       total: 8000,
       military: 800,
       civilian: 7200,
-      displaced: 700000,
+      displaced: 1100000,
     },
     casualtySources: {
       total: 'BINUH / ACLED',

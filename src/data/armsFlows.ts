@@ -25,6 +25,6 @@ export const ARMS_FLOWS: ArmsFlow[] = [
   { from: 'Iran', to: 'Hezbollah', startLat: 35.7, startLng: 51.4, endLat: 33.9, endLng: 35.5, supplier: 'Iran (IRGC)', recipient: 'Hezbollah', category: 'missiles', value: 'Precision missiles', active: true },
   { from: 'USA', to: 'Israel', startLat: 38.9, startLng: -77.0, endLat: 32.1, endLng: 34.8, supplier: 'United States', recipient: 'Israel', category: 'ammunition', value: '$3.8B/yr', active: true },
   // Africa
-  { from: 'UAE', to: 'Sudan RSF', startLat: 24.5, startLng: 54.7, endLat: 15.6, endLng: 32.5, supplier: 'UAE', recipient: 'RSF', category: 'vehicles', value: 'Armored vehicles', active: true },
-  { from: 'Russia', to: 'Mali', startLat: 55.75, startLng: 37.62, endLat: 12.6, endLng: -8.0, supplier: 'Russia (Wagner)', recipient: 'Mali junta', category: 'vehicles', value: 'Military equipment', active: true },
+  { from: 'UAE', to: 'Sudan RSF', startLat: 24.5, startLng: 54.7, endLat: 15.6, endLng: 32.5, supplier: 'UAE', recipient: 'RSF', category: 'vehicles', value: 'Armored vehicles (ceased Dec 2024)', active: false },
+  { from: 'Russia', to: 'Mali', startLat: 55.75, startLng: 37.62, endLat: 12.6, endLng: -8.0, supplier: 'Russia (Africa Corps)', recipient: 'Mali junta', category: 'vehicles', value: 'Military equipment (Wagner withdrew Jun 2025, replaced by Africa Corps)', active: true },
 ];

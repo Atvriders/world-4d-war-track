@@ -12,7 +12,7 @@ export const WEAPON_RANGES: WeaponRange[] = [
     operator: 'Houthis/Ansar Allah',
     lat: 15.4, lng: 44.2,
     ranges: [
-      { weapon: 'Anti-ship missiles', rangeKm: 300, type: 'cruise' },
+      { weapon: 'Anti-ship missiles (C-802 class)', rangeKm: 180, type: 'cruise' },
       { weapon: 'Ballistic missiles', rangeKm: 1500, type: 'ballistic' },
       { weapon: 'Shahed-136 drones', rangeKm: 2000, type: 'drone' },
     ]
@@ -24,7 +24,7 @@ export const WEAPON_RANGES: WeaponRange[] = [
     ranges: [
       { weapon: 'Katyusha rockets', rangeKm: 45, type: 'rocket' },
       { weapon: 'Fateh-110 missiles', rangeKm: 300, type: 'ballistic' },
-      { weapon: 'Precision missiles', rangeKm: 500, type: 'cruise' },
+      { weapon: 'Fateh-110/M-600 variants', rangeKm: 350, type: 'cruise' },
     ]
   },
   {
@@ -35,7 +35,7 @@ export const WEAPON_RANGES: WeaponRange[] = [
       { weapon: 'Shahab-3', rangeKm: 2000, type: 'ballistic' },
       { weapon: 'Khorramshahr', rangeKm: 2000, type: 'ballistic' },
       { weapon: 'Shahed-136', rangeKm: 2500, type: 'drone' },
-      { weapon: 'S-300 SAM', rangeKm: 200, type: 'sam' },
+      { weapon: 'S-300PMU2 SAM', rangeKm: 150, type: 'sam' },
     ]
   },
   {
@@ -53,8 +53,8 @@ export const WEAPON_RANGES: WeaponRange[] = [
     operator: 'Ukraine',
     lat: 50.4, lng: 30.5,
     ranges: [
-      { weapon: 'Neptun cruise missile', rangeKm: 300, type: 'cruise' },
-      { weapon: 'Long-range drones', rangeKm: 1500, type: 'drone' },
+      { weapon: 'Long Neptune cruise missile', rangeKm: 1000, type: 'cruise' },
+      { weapon: 'Lyuty/Beaver long-range UAVs', rangeKm: 1500, type: 'drone' },
       { weapon: 'HIMARS', rangeKm: 80, type: 'rocket' },
     ]
   },

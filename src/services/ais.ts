@@ -167,7 +167,7 @@ export function generateSimulatedShips(): ShipEntity[] {
     { mmsi: '232004200', name: 'HMS KENT', country: 'United Kingdom', flag: 'GB', lat: 35.00, lng: 28.70, speed: 16.1, heading: 88, length: 152 },
 
     // ── BLACK SEA (Ukraine conflict zone) ────────────────────────────────
-    { mmsi: '273456001', name: 'RFS MOSKVA REPLACEMENT', country: 'Russia', flag: 'RU', lat: 44.50, lng: 32.80, speed: 12.0, heading: 120, length: 186 },
+    { mmsi: '273456001', name: 'RFS MARSHAL USTINOV', country: 'Russia', flag: 'RU', lat: 44.50, lng: 32.80, speed: 12.0, heading: 120, length: 186 },
     { mmsi: '273456002', name: 'RFS VASILY BYKOV', country: 'Russia', flag: 'RU', lat: 45.10, lng: 33.50, speed: 14.5, heading: 270, length: 74 },
     { mmsi: '272100001', name: 'HETMAN SAGAIDACHNY', country: 'Ukraine', flag: 'UA', lat: 46.40, lng: 31.20, speed: 0.0, heading: 0, length: 123 },
     { mmsi: '636700890', name: 'BLACK SEA CARGO EXPRESS', country: 'Panama', flag: 'PA', lat: 43.80, lng: 28.50, speed: 10.5, heading: 45, length: 175, destination: 'CONSTANTA' },
@@ -177,7 +177,7 @@ export function generateSimulatedShips(): ShipEntity[] {
     { mmsi: '311456001', name: 'NATIONAL GAS TANKER', country: 'Bahamas', flag: 'BS', lat: 26.30, lng: 56.50, speed: 11.0, heading: 300, length: 315, destination: 'FUJAIRAH' },
     { mmsi: '477456002', name: 'PACIFIC VLCC CRUDE', country: 'Hong Kong', flag: 'HK', lat: 25.80, lng: 57.20, speed: 13.5, heading: 290, length: 333, destination: 'SINGAPORE' },
     { mmsi: '636456003', name: 'GULF AFRAMAX TANKER', country: 'Panama', flag: 'PA', lat: 26.60, lng: 56.00, speed: 10.8, heading: 310, length: 248, destination: 'ROTTERDAM' },
-    { mmsi: '422100001', name: 'IRAN SHAHED', country: 'Iran', flag: 'IR', lat: 26.90, lng: 55.80, speed: 8.5, heading: 180, length: 155 },
+    { mmsi: '422100001', name: 'IRIS JAMARAN', country: 'Iran', flag: 'IR', lat: 26.90, lng: 55.80, speed: 8.5, heading: 180, length: 155 },
     { mmsi: '422100002', name: 'SABALAN IRGCN', country: 'Iran', flag: 'IR', lat: 27.10, lng: 56.10, speed: 12.0, heading: 270, length: 94 },
     { mmsi: '338200001', name: 'USS BATAAN', country: 'United States', flag: 'US', lat: 25.50, lng: 57.80, speed: 14.0, heading: 285, length: 257 },
     { mmsi: '338200002', name: 'USS CARTER HALL', country: 'United States', flag: 'US', lat: 25.40, lng: 58.00, speed: 13.8, heading: 280, length: 186 },
