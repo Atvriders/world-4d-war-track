@@ -20,3 +20,4 @@ export { default as WatchList } from './WatchList';
 export { default as EventFeed } from './EventFeed';
 export { default as WarImpactPanel } from './WarImpactPanel';
 export { default as EconomyPanel } from './EconomyPanel';
+export { default as ServerStatus } from './ServerStatus';

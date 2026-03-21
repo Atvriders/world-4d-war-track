@@ -27,6 +27,7 @@ import DeathTollBar from './components/UI/DeathTollBar';
 import WarImpactPanel from './components/UI/WarImpactPanel';
 import EconomyPanel from './components/UI/EconomyPanel';
 import SourcesPanel from './components/UI/SourcesPanel';
+import ServerStatus from './components/UI/ServerStatus';
 
 import { fetchAircraft } from './services/adsb';
 import { fetchShips } from './services/ais';
@@ -97,7 +98,7 @@ export default function App() {
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
 
   // ── Custom hooks for data refresh, alert generation, and globe time ───────
-  useDataRefresh();
+  const { refresh } = useDataRefresh();
   useAlertGenerator();
   useSatelliteTimePropagation();
   const { currentTime } = useGlobeTime();
@@ -332,7 +333,11 @@ export default function App() {
             currentTime={currentTime}
             alerts={alerts}
             gpsJamCells={gpsJamCells}
+            onRetry={refresh}
           />
+
+          {/* Server connectivity banner */}
+          <ServerStatus errors={errors} lastRefresh={lastRefresh} />
 
           {/* Search bar */}
           <SearchBar

@@ -13,7 +13,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "server": "cd server && node --loader ts-node/esm src/server.ts",
+    "server": "cd server && node src/server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {

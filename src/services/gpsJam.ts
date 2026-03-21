@@ -21,6 +21,30 @@ interface Alert {
   dismissed: boolean;
 }
 
+export async function fetchLiveGpsJamData(): Promise<GpsJamCell[]> {
+  try {
+    const res = await fetch('/api/gpsjam/current');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const raw: unknown[] = await res.json();
+    const cells: GpsJamCell[] = raw.map((item: any) => ({
+      lat: Number(item.lat),
+      lng: Number(item.lng),
+      level: Number(item.level ?? item.intensity ?? 0),
+      radius: Number(item.radius ?? 100),
+      date: String(item.date ?? new Date().toISOString()),
+      confirmed: Boolean(item.confirmed ?? true),
+      type: (['spoofing', 'jamming'].includes(item.type) ? item.type : 'unknown') as GpsJamCell['type'],
+      source: item.source ?? 'GPSJam.org / live',
+    }));
+    if (cells.length === 0) throw new Error('Empty response');
+    console.log(`[GPS Jam] Live data loaded: ${cells.length} cells`);
+    return cells;
+  } catch {
+    console.log('[GPS Jam] Live data unavailable, using static hotspots');
+    return getStaticGpsJamHotspots();
+  }
+}
+
 export function getStaticGpsJamHotspots(): GpsJamCell[] {
   const now = new Date().toISOString();
   return [

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 interface AlertLike {
   severity: 'info' | 'warning' | 'critical';
@@ -23,6 +23,7 @@ interface StatusBarProps {
   currentTime: Date;
   alerts?: AlertLike[];
   gpsJamCells?: GpsJamCellLike[];
+  onRetry?: () => void;
 }
 
 const STYLES = `
@@ -41,6 +42,10 @@ const STYLES = `
   @keyframes blinkRed {
     0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(255,59,59,0.8); }
     50% { opacity: 0.3; box-shadow: 0 0 0px rgba(255,59,59,0); }
+  }
+  @keyframes dataFlash {
+    0% { background: #00ff88; box-shadow: 0 0 6px rgba(0,255,136,0.9); }
+    100% { background: #00ff88; box-shadow: 0 0 0px rgba(0,255,136,0); }
   }
 `;
 
@@ -75,6 +80,52 @@ function getFreshness(slowestMs: number): 'live' | 'delayed' | 'stale' {
   if (age < 30_000) return 'live';
   if (age < 120_000) return 'delayed';
   return 'stale';
+}
+
+/** Polling intervals must match useDataRefresh.ts */
+const POLLING_INTERVALS: Record<string, number> = {
+  aircraft: 15_000,
+  ships: 60_000,
+  satellites: 300_000,
+  gpsJam: 600_000,
+};
+
+const DATA_SOURCE_NAMES: Record<string, string> = {
+  aircraft: 'OpenSky Network',
+  ships: 'AISHub',
+  satellites: 'CelesTrak',
+  gpsJam: 'Static OSINT',
+};
+
+type DataSourceKey = 'aircraft' | 'ships' | 'satellites' | 'gpsJam';
+
+function buildTooltip(
+  key: DataSourceKey,
+  lastRefreshMs: number,
+  error: string | null,
+): string {
+  const now = Date.now();
+  const ageSec = Math.max(0, Math.floor((now - lastRefreshMs) / 1000));
+  const intervalSec = POLLING_INTERVALS[key] / 1000;
+  const nextRefreshSec = Math.max(0, Math.round(intervalSec - ageSec));
+
+  const ageStr = ageSec < 60
+    ? `${ageSec} seconds ago`
+    : ageSec < 3600
+      ? `${Math.floor(ageSec / 60)} minutes ago`
+      : `${Math.floor(ageSec / 3600)} hours ago`;
+
+  const lines = [
+    `Last updated: ${ageStr}`,
+    `Next refresh in: ${nextRefreshSec} seconds`,
+    `Source: ${DATA_SOURCE_NAMES[key]}`,
+  ];
+
+  if (error) {
+    lines.push(`Error: ${error}. Retrying in ${nextRefreshSec} seconds...`);
+  }
+
+  return lines.join('\n');
 }
 
 const FRESHNESS_CONFIG = {
@@ -113,6 +164,31 @@ const ErrorIcon: React.FC<{ title: string }> = ({ title }) => (
   </span>
 );
 
+const RetryButton: React.FC<{ onClick: () => void; loading: boolean }> = ({ onClick, loading }) => (
+  <button
+    onClick={(e) => { e.stopPropagation(); onClick(); }}
+    title="Retry"
+    style={{
+      background: 'none',
+      border: '1px solid rgba(255, 59, 59, 0.5)',
+      borderRadius: 3,
+      color: '#ff3b3b',
+      fontSize: 11,
+      lineHeight: 1,
+      padding: '1px 3px',
+      marginLeft: 3,
+      cursor: 'pointer',
+      verticalAlign: 'middle',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      animation: loading ? 'spin 1s linear infinite' : 'none',
+    }}
+  >
+    ↻
+  </button>
+);
+
 /** Blinking red dot for military items */
 const MilDot: React.FC = () => (
   <span
@@ -130,6 +206,75 @@ const MilDot: React.FC = () => (
   />
 );
 
+/** Small 8px auto-refresh indicator: spinning ring when loading, green flash on data arrival, steady dot when idle */
+const DataFlowIndicator: React.FC<{ anyLoading: boolean; lastRefresh: StatusBarProps['lastRefresh'] }> = ({
+  anyLoading,
+  lastRefresh,
+}) => {
+  const [flashing, setFlashing] = useState(false);
+  const prevRefreshRef = useRef<string>('');
+
+  useEffect(() => {
+    const key = `${lastRefresh.satellites}-${lastRefresh.aircraft}-${lastRefresh.ships}-${lastRefresh.gpsJam}`;
+    if (prevRefreshRef.current && prevRefreshRef.current !== key) {
+      setFlashing(true);
+      const timer = setTimeout(() => setFlashing(false), 500);
+      return () => clearTimeout(timer);
+    }
+    prevRefreshRef.current = key;
+  }, [lastRefresh.satellites, lastRefresh.aircraft, lastRefresh.ships, lastRefresh.gpsJam]);
+
+  if (anyLoading) {
+    return (
+      <span
+        title="Fetching data..."
+        style={{
+          display: 'inline-block',
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          border: '1.5px solid rgba(255,165,0,0.3)',
+          borderTopColor: '#ffa500',
+          animation: 'spin 0.8s linear infinite',
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+
+  if (flashing) {
+    return (
+      <span
+        title="Data received"
+        style={{
+          display: 'inline-block',
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: '#00ff88',
+          animation: 'dataFlash 0.5s ease-out forwards',
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+
+  return (
+    <span
+      title="Data stream idle"
+      style={{
+        display: 'inline-block',
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        background: '#00ff88',
+        opacity: 0.6,
+        flexShrink: 0,
+      }}
+    />
+  );
+};
+
 const StatusBar: React.FC<StatusBarProps> = ({
   satellites,
   aircraft,
@@ -144,6 +289,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   currentTime,
   alerts = [],
   gpsJamCells = [],
+  onRetry,
 }) => {
   const [clock, setClock] = useState<Date>(currentTime);
 
@@ -180,6 +326,12 @@ const StatusBar: React.FC<StatusBarProps> = ({
   // Data freshness
   const freshness = getFreshness(slowest);
   const freshnessConf = FRESHNESS_CONFIG[freshness];
+
+  // Hover tooltips for each data source (recalculated on every render via clock tick)
+  const aircraftTooltip = buildTooltip('aircraft', lastRefresh.aircraft, errors.aircraft);
+  const shipsTooltip = buildTooltip('ships', lastRefresh.ships, errors.ships);
+  const satellitesTooltip = buildTooltip('satellites', lastRefresh.satellites, errors.satellites);
+  const gpsJamTooltip = buildTooltip('gpsJam', lastRefresh.gpsJam, errors.gpsJam);
 
   return (
     <>
@@ -244,6 +396,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
             label="AIRCRAFT"
             loading={isLoading.aircraft}
             error={errors.aircraft}
+            onRetry={onRetry}
+            tooltip={aircraftTooltip}
           >
             <span style={{ color: '#4da8ff', fontSize: 15, fontWeight: 700 }}>
               {aircraft.toLocaleString()}
@@ -266,6 +420,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
             label="MARITIME"
             loading={isLoading.ships}
             error={errors.ships}
+            onRetry={onRetry}
+            tooltip={shipsTooltip}
           >
             <span style={{ color: '#ff8c00', fontSize: 15, fontWeight: 700 }}>
               {ships.toLocaleString()}
@@ -288,6 +444,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
             label="SATELLITES"
             loading={isLoading.satellites}
             error={errors.satellites}
+            onRetry={onRetry}
+            tooltip={satellitesTooltip}
           >
             <span style={{ color: '#00ff88', fontSize: 15, fontWeight: 700 }}>
               {satellites.toLocaleString()}
@@ -328,6 +486,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
             label="GPS INTRF"
             loading={isLoading.gpsJam}
             error={errors.gpsJam}
+            onRetry={onRetry}
+            tooltip={gpsJamTooltip}
           >
             <span
               style={{
@@ -455,6 +615,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
                 {freshnessConf.label}
               </span>
             )}
+            {/* Auto-refresh data flow indicator */}
+            <DataFlowIndicator anyLoading={anySyncing} lastRefresh={lastRefresh} />
           </div>
 
           {/* Date + freshness row */}
@@ -480,10 +642,12 @@ interface CounterBlockProps {
   loading: boolean;
   error: string | null;
   children: React.ReactNode;
+  onRetry?: () => void;
+  tooltip?: string;
 }
 
-const CounterBlock: React.FC<CounterBlockProps> = ({ icon, label, loading, error, children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+const CounterBlock: React.FC<CounterBlockProps> = ({ icon, label, loading, error, children, onRetry, tooltip }) => (
+  <div title={tooltip} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2, cursor: tooltip ? 'help' : undefined }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
       <span style={{ fontSize: 11 }}>{icon}</span>
       <span style={{ color: '#7a9ab0', fontSize: 9, letterSpacing: '0.1em' }}>{label}</span>
@@ -492,6 +656,7 @@ const CounterBlock: React.FC<CounterBlockProps> = ({ icon, label, loading, error
       {children}
       {loading && <LoadingDot />}
       {error && <ErrorIcon title={error} />}
+      {error && !loading && onRetry && <RetryButton onClick={onRetry} loading={loading} />}
     </div>
   </div>
 );

@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { fetchAircraft } from '../services/adsb';
 import { fetchShips } from '../services/ais';
 import { fetchAllSatellites, propagateSatellite, getSatelliteGroundTrack, getFootprintRadius } from '../services/satellite';
-import { getStaticGpsJamHotspots } from '../services/gpsJam';
+import { fetchLiveGpsJamData } from '../services/gpsJam';
 import { distanceKm, pointNearConflictZone } from '../utils/geoMath';
 
 // ---------------------------------------------------------------------------
@@ -123,7 +123,7 @@ export function useDataRefresh(): { refresh: () => void } {
     setLoading('gpsJam', true);
     setError('gpsJam', null);
     try {
-      const data = await getStaticGpsJamHotspots();
+      const data = await fetchLiveGpsJamData();
       setGpsJamCells(data);
       setLastRefresh('gpsJam');
       retryCounts.current.gpsJam = 0;
