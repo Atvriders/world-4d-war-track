@@ -155,7 +155,26 @@ app.get('/api/satellites/tle', async (req, res) => {
     setCached(CACHE_KEY, text, TTL_MS);
     res.type('text/plain').send(text);
   } catch (err) {
-    console.error(`[satellites] fetch error for group "${group}":`, err.message);
+    console.error(`[satellites] CelesTrak fetch error for group "${group}":`, err.message);
+    // Fallback: try celestrak.com mirror (different domain)
+    try {
+      const fallbackUrl = `https://celestrak.com/NORAD/elements/gp.php?GROUP=${group === 'gps' ? 'gps-ops' : group}&FORMAT=tle`;
+      const ctrl2 = new AbortController();
+      const tid2 = setTimeout(() => ctrl2.abort(), 10000);
+      const fb = await fetch(fallbackUrl, {
+        headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
+        signal: ctrl2.signal,
+      });
+      clearTimeout(tid2);
+      if (fb.ok) {
+        const text = await fb.text();
+        setCached(CACHE_KEY, text, TTL_MS);
+        console.log(`[satellites] Fallback celestrak.com succeeded for "${group}"`);
+        return res.type('text/plain').send(text);
+      }
+    } catch (fbErr) {
+      console.error(`[satellites] Fallback also failed for "${group}":`, fbErr.message);
+    }
     res.status(502).type('text/plain').send('');
   } finally {
     clearTimeout(timeoutId);
@@ -268,7 +287,20 @@ app.get('/api/satellites/positions', async (req, res) => {
           tleText = await response.text();
           setCached(tleCacheKey, tleText, 3_600_000);
         } catch {
-          continue;
+          // Fallback: try celestrak.com mirror
+          try {
+            const fbGroup = cfg.group === 'gps' ? 'gps-ops' : cfg.group;
+            const fbUrl = `https://celestrak.com/NORAD/elements/gp.php?GROUP=${fbGroup}&FORMAT=tle`;
+            const ctrl2 = new AbortController();
+            const tid2 = setTimeout(() => ctrl2.abort(), 10000);
+            const fb = await fetch(fbUrl, { signal: ctrl2.signal });
+            clearTimeout(tid2);
+            if (fb.ok) {
+              tleText = await fb.text();
+              setCached(tleCacheKey, tleText, 3_600_000);
+            }
+          } catch { /* both failed, skip group */ }
+          if (!tleText) continue;
         } finally {
           clearTimeout(timeoutId);
         }
