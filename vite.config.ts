@@ -6,11 +6,8 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: [
-      // Stubs MUST come before the three alias to intercept sub-path imports
       { find: 'three/webgpu', replacement: path.resolve(__dirname, 'src/stubs/three-webgpu.js') },
       { find: 'three/tsl', replacement: path.resolve(__dirname, 'src/stubs/three-tsl.js') },
-      // Force ALL three imports to the SAME copy — prevents "Multiple instances"
-      { find: 'three', replacement: path.resolve(__dirname, 'node_modules/three') },
     ],
     dedupe: ['three'],
   },
