@@ -10,6 +10,8 @@
 
 > **4D** = 3 spatial dimensions (interactive 3D globe) + time (satellite orbital prediction, conflict event replay, 6-hour position forecasting).
 
+> **Real-time only** — zero simulated or fake data. All dynamic entities (aircraft, ships, satellites) come from live API feeds. When a feed is offline, the map shows empty with an "OFFLINE" alert and retries automatically until connected.
+
 ---
 
 ## 📸 Screenshots
@@ -22,136 +24,132 @@
 
 World 4D War Track aggregates open-source intelligence (OSINT) and public APIs to paint a live picture of the global security environment:
 
-| Layer | Coverage | Refresh |
-|---|---|---|
-| ✈️ ADS-B Aircraft | 1,200+ aircraft worldwide | 15 seconds |
-| 🛰️ Satellites | 400+ satellites with orbital paths | 5 minutes |
-| 🚢 AIS Vessels | 80+ vessels incl. warships | 60 seconds |
-| ⚔️ Conflict Zones | 12 active conflicts (2025–2026) | Daily |
-| 📡 GPS Interference | 15 confirmed hotspots | Static / OSINT |
+| Layer | Coverage | Refresh | Source |
+|---|---|---|---|
+| ✈️ ADS-B Aircraft | Live global aircraft | 60 seconds | OpenSky Network |
+| 🛰️ Satellites | 400+ satellites with orbital paths | 60 minutes | CelesTrak |
+| 🚢 AIS Vessels | Live global vessels | 60 seconds | AISHub |
+| ⚔️ Conflict Zones | 12 active conflicts (2025–2026) | Static OSINT | ACLED / UN |
+| 📡 GPS Interference | 15 confirmed hotspots | Static OSINT | GPSJam.org |
+| ☢️ Nuclear Facilities | 8 sites near conflict zones | Static OSINT | IAEA |
+| 🎯 Military Bases | 15 installations worldwide | Static OSINT | Public records |
+| 🌊 Maritime Chokepoints | 8 strategic straits | Static OSINT | EIA / IMO |
+| 🏴‍☠️ Piracy Zones | 6 high-risk maritime areas | Static OSINT | IMB |
+| 🔫 Weapon Ranges | Missile/drone coverage circles | Static OSINT | CSIS / IISS |
+| ⚡ Energy Infrastructure | 9 oil/gas facilities | Static OSINT | IEA / EIA |
+| 🌐 Cyber Threats | 5 APT group attack flows | Static OSINT | Mandiant / CISA |
+| 🚀 Arms Flows | 10 weapons supply routes | Static OSINT | SIPRI |
+| 👥 Refugee Flows | 10 displacement corridors | Static OSINT | UNHCR |
+| 🔗 Submarine Cables | 5 critical undersea routes | Static OSINT | TeleGeography |
+| 🚫 Sanctions Zones | 6 no-fly / blockade zones | Static OSINT | UN / US / EU |
 
 ---
 
 ## 🚀 Features
 
 ### 🌍 3D Globe Visualization
-- WebGL-powered Earth rendered with night-time satellite imagery via **react-globe.gl** (Three.js)
+- WebGL-powered Earth with night satellite imagery via **react-globe.gl** (Three.js)
 - Tilted camera angle showing satellites overhead in orbital arc
-- Real-time auto-rotation to simulate live Earth spin
-- Day/night terminator shadow overlay
-- Multiple imagery styles: satellite, dark mode, terrain
-- Smooth fly-to animations for region navigation
+- Twinkling star field background, atmospheric glow
+- Auto-rotation, multiple imagery styles, smooth fly-to animations
 
 ### 🛰️ Satellite Tracking
-- Live Two-Line Element (TLE) data fetched from **CelesTrak** (refreshed every 5 minutes)
-- **SGP4** orbital mechanics propagation via `satellite.js`
-- Satellite categories:
-  - 🛸 ISS (International Space Station)
-  - 🔒 Military satellites
-  - 🕵️ Spy / Reconnaissance
-  - 🧭 GPS / Navigation (GPS III, GLONASS, Galileo, BeiDou)
-  - 🌦️ Weather
-  - 🔗 Starlink megaconstellation
-  - 🛰️ Commercial Earth observation
-- Orbital ground tracks (90-minute future prediction arcs)
-- Coverage footprint rings showing sensor/signal reach
-- Satellite-to-ground connection beams
-- **Time slider:** advance up to 6 hours ahead to forecast satellite positions in real time
+- Live TLE data from **CelesTrak** with **SGP4** orbital propagation
+- Categories: ISS, Military, Spy/Reconnaissance, GPS/GLONASS/Galileo/BeiDou, Weather, Starlink
+- **Time slider** moves satellites along real orbits (4D)
+- Orbital ground tracks, coverage footprint rings, satellite-to-ground connection beams
+- Constellation links (GPS green, GLONASS red, Galileo blue, BeiDou yellow)
 
 ### ✈️ ADS-B Aircraft Tracking
-- **OpenSky Network** integration — 1,200+ aircraft updated every 15 seconds
-- Military aircraft detection and highlighting via callsign pattern matching
-- Flight trails showing recent track history
-- Per-aircraft data: country of origin, callsign, altitude, speed, heading, squawk code
-- Aircraft type classification (commercial, cargo, military, helicopter)
+- Live **OpenSky Network** feed
+- Military aircraft detection via callsign patterns + ICAO hex ranges
+- Visual differentiation: military (red glow), civilian (blue), helicopter (green), emergency squawk (white pulse)
+- Squawk emergency alerts: 7500 (hijack), 7600 (radio failure), 7700 (emergency)
+- Flight trails with military trails brighter/thicker than civilian
 
 ### 🚢 Maritime Tracking (AIS)
-- Marine vessel positions via **AIS** (Automatic Identification System) data
-- Warship and military vessel identification and highlighting
-- Ship type classification: tanker, cargo, warship, passenger, fishing
-- Coverage focused on major shipping lanes and strategic chokepoints (Strait of Hormuz, Bab-el-Mandeb, South China Sea, GIUK Gap)
+- Live **AISHub** vessel feed
+- Warship identification and carrier strike group auto-detection
+- Ship trails colored by type (warship red, tanker orange, cargo blue)
+- Carrier group formation rings with navy-specific colors (US blue, Russia red, China yellow)
 
-### ⚔️ Conflict Zones
-- **12 active conflicts** as of 2025–2026 — see full list below
-- Color-coded intensity rings: 🔴 critical / 🟠 high / 🟡 medium / 🟢 low
-- Conflict events with precise location, event type (airstrike, artillery, drone, naval, missile), and casualty data
-- Front line overlays (Ukraine/Russia contact line)
-- Interactive conflict detail panel: parties, casualties, displaced persons, timeline
-- Casualty statistics sourced from ACLED and OSINT reporting
+### ⚔️ Conflict Zones & Death Tolls
+- **12 active conflicts** with GeoJSON boundaries and front line overlays
+- **Death toll bar** always visible: "GLOBAL CONFLICT DEATHS: 1,243,000+"
+- Per-conflict casualty breakdown: military / civilian / displaced with source citations
+- Conflict event markers on map (airstrikes red, drones cyan, missiles magenta)
+- Intensity sparklines showing escalation/de-escalation trends
+- Deaths per day estimate, sorted by death count
 
 ### 📡 GPS Jamming & Spoofing
-- **15 confirmed active GPS interference hotspots** overlaid as intensity heatmap rings
-- Spoofing vs. jamming differentiation (spoofing = false position signals; jamming = signal denial)
-- Intensity-based heatmap color coding
-- Radius-weighted interference model for realistic coverage visualization
-- Critical alert system for hotspots above 80% intensity threshold
+- **15 confirmed hotspots** with intensity heatmap and altitude displacement
+- Spoofing vs jamming differentiation
+- GPS jam to navigation satellite connection arcs
+- Critical alert system for >80% intensity zones
 
-### 🎯 Threat Intelligence & Alerts
-- Automatic threat hotspot calculation — identifies geographic convergence of:
-  - Military aircraft presence
-  - Warship positioning
-  - Active GPS interference
-  - Ongoing conflict events
-- Threat level scoring per region
-- Real-time conflict event ticker (scrolling live feed)
-- Alert system with severity levels: info / warning / critical
-- Mini radar display showing nearby entity density
+### 🎯 Intelligence Overlays (17 toggleable layers)
+- **Nuclear facilities** with evacuation/shelter/monitoring range circles
+- **Military bases** (US/Russia/China/UK/NATO) as diamond markers
+- **Maritime chokepoints** with oil flow volume rings and traffic data
+- **Piracy zones** with pulsing skull markers and incident counts
+- **Weapon range circles** (Houthi missiles, NK ICBMs, Iran SAMs, Ukraine Neptun)
+- **Submarine cables** colored by vulnerability risk
+- **Refugee flow arrows** with width proportional to displaced population
+- **Arms trade arcs** (US→Ukraine, Iran→Houthis, NK→Russia)
+- **Cyber attack arcs** (Sandworm, Volt Typhoon, Lazarus Group, APT33)
+- **Sanctions/no-fly zones** (Ukraine, Libya, Red Sea, DPRK)
+- **Trade route disruptions** (Suez blocked red, Cape reroute green)
+- **Drone activity heatmap** (cyan-purple)
+- **Airspace closures** (NOTAMs)
+- **Energy infrastructure** (oil terminals, pipelines, gas fields)
+
+### 📊 Analysis Panels
+- **War Impact Panel** (press `I`) — per-conflict air/sea traffic disruption + GPS interference + disruption score
+- **Economy Panel** (press `Y`) — 10 conflict-affected commodities (oil $110.50, gold $4,500, copper $13,080) + trade route disruptions
+- **Sources Panel** (press `U`) — all 14 data sources with clickable URLs + inline ⓘ tooltips on every number
 
 ---
 
 ## 🗂️ Data Sources
 
-| Source | Data Type | Refresh Rate | License |
-|---|---|---|---|
-| [OpenSky Network](https://opensky-network.org) | ADS-B aircraft positions | 15 seconds | Free tier |
-| [CelesTrak](https://celestrak.org) | Satellite TLE orbital data | 5 minutes | Public domain |
-| [AISHub](https://www.aishub.net) | Marine vessel AIS positions | 60 seconds | Free tier |
-| [GPSJam.org](https://gpsjam.org) | GPS interference / jamming data | Static / OSINT | Open source |
-| [ACLED](https://acleddata.com) | Conflict event data | Daily | Free for research |
-| OSINT | Conflict zone boundaries & front lines | Manual curation | Open source |
+All data is from **publicly available, open-source channels**:
 
-> **Note:** A Node.js/Express backend proxy handles API requests to avoid CORS restrictions and to rate-limit external API calls. If the backend is unavailable, the app falls back to static seed data so the globe remains functional.
+| Source | Data Type | Refresh | Notes |
+|---|---|---|---|
+| [OpenSky Network](https://opensky-network.org) | ADS-B aircraft | 60s (rate-safe) | Free tier, no auth |
+| [CelesTrak](https://celestrak.org) | Satellite TLE | 60min (fair use) | Public domain |
+| [AISHub](https://www.aishub.net) | AIS vessels | 60s | Free tier |
+| [GPSJam.org](https://gpsjam.org) | GPS interference | Static OSINT | Open source |
+| [ACLED](https://acleddata.com) | Conflict events | Static | Free for research |
+| [UNHCR](https://data.unhcr.org) | Refugee data | Static | Public |
+| [IAEA PRIS](https://pris.iaea.org) | Nuclear facilities | Static | Public |
+| [SIPRI](https://www.sipri.org) | Arms transfers | Static | Public |
+| [IMB](https://www.icc-ccs.org) | Piracy data | Static | Public |
+| [CSIS](https://missilethreat.csis.org) | Weapon ranges | Static | Public |
+| [TeleGeography](https://www.submarinecablemap.com) | Submarine cables | Static | Public |
+
+> **Rate-limit safe:** The backend proxy caches responses and respects API rate limits. HTTP 429 responses trigger automatic backoff. All requests include a proper User-Agent header.
 
 ---
 
 ## ⚔️ Active Conflicts Tracked (as of 2025–2026)
 
-| # | Conflict | Status | Intensity |
+| # | Conflict | Deaths | Intensity |
 |---|---|---|---|
-| 1 | 🇺🇦 Russia–Ukraine War | ![active](https://img.shields.io/badge/active-red) | 🔴 Critical |
-| 2 | 🇮🇱 Israel–Gaza War | ![active](https://img.shields.io/badge/active-red) | 🔴 Critical |
-| 3 | 🇮🇱 Israel–Lebanon / Hezbollah War | ![active](https://img.shields.io/badge/active-red) | 🟠 High |
-| 4 | 🇸🇩 Sudan Civil War | ![active](https://img.shields.io/badge/active-red) | 🔴 Critical |
-| 5 | 🇲🇲 Myanmar Civil War | ![active](https://img.shields.io/badge/active-red) | 🟠 High |
-| 6 | 🇾🇪 Yemen Civil War / Houthi Conflict | ![active](https://img.shields.io/badge/active-red) | 🟠 High |
-| 7 | 🇨🇩 DRC – M23 / Rwanda Conflict | ![active](https://img.shields.io/badge/active-red) | 🟠 High |
-| 8 | 🌍 Sahel Jihadist Insurgency (Mali / Burkina Faso / Niger) | ![active](https://img.shields.io/badge/active-red) | 🟡 Medium |
-| 9 | 🇸🇴 Somalia – Al-Shabaab Insurgency | ![active](https://img.shields.io/badge/active-red) | 🟡 Medium |
-| 10 | 🇭🇹 Haiti Gang Crisis | ![active](https://img.shields.io/badge/active-red) | 🟡 Medium |
-| 11 | 🇪🇹 Ethiopia – Amhara Conflict | ![active](https://img.shields.io/badge/active-red) | 🟡 Medium |
-| 12 | 🇵🇰 Pakistan – TTP Insurgency | ![active](https://img.shields.io/badge/active-red) | 🟡 Medium |
+| 1 | 🇺🇦 Russia–Ukraine War | 700,000+ | 🔴 Critical |
+| 2 | 🇸🇩 Sudan Civil War | 300,000+ | 🔴 Critical |
+| 3 | 🇾🇪 Yemen / Houthi Conflict | 377,000+ | 🟠 High |
+| 4 | 🇸🇴 Somalia – Al-Shabaab | 500,000+ | 🟡 Medium |
+| 5 | 🇵🇰 Pakistan – TTP | 80,000+ | 🟡 Medium |
+| 6 | 🇮🇱 Israel–Gaza War | 58,000+ | 🔴 Critical |
+| 7 | 🇲🇲 Myanmar Civil War | 50,000+ | 🟠 High |
+| 8 | 🇨🇩 DRC – M23 / Rwanda | 50,000+ | 🟠 High |
+| 9 | 🌍 Sahel Jihadist Insurgency | 100,000+ | 🟡 Medium |
+| 10 | 🇪🇹 Ethiopia – Amhara | 10,000+ | 🟡 Medium |
+| 11 | 🇭🇹 Haiti Gang Crisis | 8,000+ | 🟡 Medium |
+| 12 | 🇮🇱 Israel–Lebanon / Hezbollah | 4,500+ | 🟠 High |
 
----
-
-## 📡 GPS Jamming Hotspots (Active)
-
-| # | Location | Type | Intensity |
-|---|---|---|---|
-| 1 | Kaliningrad, Russia | Jamming | 90% |
-| 2 | Eastern Ukraine / Donbas | Jamming | 95% |
-| 3 | Black Sea | Spoofing | 85% |
-| 4 | Northern Israel / Lebanon | Spoofing | 90% |
-| 5 | Gaza Strip | Jamming | 95% |
-| 6 | Iraq / Baghdad area | Spoofing | 70% |
-| 7 | Syria (regime-controlled areas) | Jamming | 65% |
-| 8 | Red Sea / Yemen coast (Houthi) | Jamming | 80% |
-| 9 | Gulf of Aden | Jamming | 75% |
-| 10 | Baltic Sea / Finnish border | Jamming | 70% |
-| 11 | Eastern Mediterranean | Spoofing | 60% |
-| 12 | North Korea border / Korean DMZ | Jamming | 80% |
-| 13 | South China Sea | Spoofing | 50% |
-| 14 | Iran (Tehran area) | Jamming | 60% |
-| 15 | Crimea | Jamming | 90% |
+*Sources: ACLED, UN OHCHR, UN OCHA, UNHCR, AAPP, SATP, Kivu Security Tracker*
 
 ---
 
@@ -163,10 +161,8 @@ World 4D War Track aggregates open-source intelligence (OSINT) and public APIs t
 | **3D Globe** | react-globe.gl (Three.js r165 / WebGL) |
 | **Orbital Mechanics** | satellite.js v5 (SGP4/SDP4 propagation) |
 | **State Management** | Zustand 4 |
-| **HTTP Client** | Axios |
 | **Backend / Proxy** | Node.js + Express |
 | **Container** | Docker + GitHub Container Registry (ghcr.io) |
-| **Build Tool** | Vite + TypeScript compiler |
 
 ---
 
@@ -193,31 +189,15 @@ npm run dev:all
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-```bash
-# Frontend only (uses live APIs directly — no proxy)
-npm run dev
-
-# Backend proxy only
-npm run server
-
-# Production build
-npm run build
-npm run preview
-```
+> **Note:** The backend proxy (port 3001) is required for live data. Without it, the dashboard shows "OFFLINE" alerts and retries automatically until the server is reachable.
 
 ---
 
 ## 🐳 Docker
 
 ```bash
-# Pull the latest image
 docker pull ghcr.io/atvriders/world-4d-war-track:latest
-
-# Run (frontend on :3000, backend proxy on :3001)
 docker run -p 3000:3000 -p 3001:3001 ghcr.io/atvriders/world-4d-war-track:latest
-
-# Open in browser
-# http://localhost:3000
 ```
 
 Or with Docker Compose:
@@ -228,67 +208,45 @@ docker compose up
 
 ---
 
-## 🖱️ Controls & Keyboard Shortcuts
+## 🖱️ Keyboard Shortcuts
 
-### Globe Navigation
+### Layer Toggles
 
-| Action | Control |
+| Key | Layer |
 |---|---|
-| Rotate globe | Left click + drag |
-| Zoom in / out | Mouse scroll wheel |
-| Select entity | Left click on aircraft / satellite / vessel |
-| Close detail panel | `Esc` or click ✕ |
+| `S` | Satellites |
+| `A` | Aircraft |
+| `V` | Vessels |
+| `W` | War zones |
+| `J` | GPS jamming |
+| `O` | Satellite orbits |
+| `N` | Nuclear facilities |
+| `B` | Military bases |
+| `C` | Submarine cables |
+| `R` | Refugee flows |
+| `P` | Piracy zones |
+| `D` | Drone activity |
+| `T` | Threat rings |
+| `X` | Cyber threats |
+| `K` | Chokepoints |
 
-### Keyboard Shortcuts
+### Navigation & Panels
 
 | Key | Action |
 |---|---|
-| `Ctrl+K` | Open global search |
-| `S` | Toggle satellites |
-| `A` | Toggle aircraft |
-| `V` | Toggle vessels |
-| `W` | Toggle war zones |
-| `J` | Toggle GPS jamming |
-| `O` | Toggle satellite orbits |
-| `F` | Fullscreen |
-| `Space` | Play / pause time |
-| `←` / `→` | Scrub time ±15 minutes |
-| `0` | Reset time to now |
-| `G` | Fly to global overview |
+| `G` | Fly to global view |
 | `E` | Fly to Europe |
 | `M` | Fly to Middle East |
-| `H` / `?` | Toggle keyboard help |
-| `Esc` | Close panels / deselect entity |
-
----
-
-## 🧩 UI Panels & Components
-
-The interface is composed of 20+ modular panels:
-
-| Component | Description |
-|---|---|
-| **Globe** | Central WebGL 3D Earth — all data layers rendered here |
-| **StatusBar** | Top bar showing live entity counts and connection status |
-| **FilterPanel** | Toggle visibility of each data layer (aircraft, satellites, vessels, conflicts, GPS jam) |
-| **ConflictSidebar** | Scrollable list of active conflicts with intensity badges and detail expansion |
-| **ConflictTicker** | Bottom scrolling ticker of real-time conflict events |
-| **SatellitePanel** | Satellite category filter, orbital period data, pass prediction |
-| **GpsJamPanel** | GPS interference hotspot list with type and intensity indicators |
-| **InfoPanel** | Click-to-open detail card for any selected entity (aircraft, satellite, vessel) |
-| **AlertPanel** | Real-time alert feed — critical GPS jamming, military aircraft, conflict events |
-| **TimeControl** | Time slider to scrub satellite positions up to 6 hours forward |
-| **SearchBar** | Full-text search across all tracked entities and conflict zones (`Ctrl+K`) |
-| **MiniRadar** | Compact radar overlay showing entity density around the current camera focus |
-| **QuickNav** | One-click fly-to buttons for key regions (Europe, Middle East, Global) |
-| **GlobeSettings** | Imagery style selector, rotation toggle, layer opacity controls |
-| **Legend** | Map legend explaining color coding for conflict intensity and entity types |
-| **LoadingScreen** | Animated splash screen during initial data fetch |
-| **KeyboardHelp** | Keyboard shortcuts reference overlay (`H` or `?`) |
-| **HotspotsPanel** | Threat intelligence — regions with converging military activity |
-| **StatsOverlay** | Global statistics: entity counts, orbit class distribution |
-| **WatchList** | User-created tracking list for favorite aircraft, ships, or satellites |
-| **EventFeed** | Time-ordered conflict event timeline with filtering and sorting |
+| `Ctrl+K` | Open search |
+| `I` | War Impact panel |
+| `Y` | Economy panel |
+| `U` | Data Sources panel |
+| `F` | Fullscreen |
+| `Space` | Play / pause time |
+| `←` / `→` | Scrub time ±15 min |
+| `0` | Reset time to now |
+| `H` / `?` | Keyboard help |
+| `Esc` | Close panels |
 
 ---
 
@@ -298,52 +256,59 @@ The interface is composed of 20+ modular panels:
 world-4d-war-track/
 ├── src/
 │   ├── components/
-│   │   ├── Globe/          # Core WebGL globe component
-│   │   ├── UI/             # All overlay panels and controls
-│   │   └── Layout/         # App shell and layout wrappers
-│   ├── data/
-│   │   └── conflicts.ts    # Static conflict zone GeoJSON + event data
-│   ├── services/
-│   │   ├── adsb.ts         # OpenSky Network ADS-B integration
-│   │   ├── ais.ts          # AIS marine vessel integration
-│   │   ├── satellite.ts    # CelesTrak TLE fetch + SGP4 propagation
-│   │   └── gpsJam.ts       # GPS jamming hotspot data + intensity model
-│   ├── store/
-│   │   └── index.ts        # Zustand global state (13 slices, 15+ actions)
-│   ├── types/
-│   │   └── index.ts        # TypeScript interfaces & enums
-│   ├── hooks/
-│   │   └── useDataRefresh.ts  # Data polling, alert generation, time playback
-│   ├── utils/
-│   │   ├── geoMath.ts      # Haversine distance, bbox, orbit classification
-│   │   ├── colors.ts       # Color palettes and entity categorization
-│   │   ├── labels.ts       # HTML tooltip generation for hover labels
-│   │   └── satelliteConnections.ts  # Satellite-to-ground beam math
-│   └── App.tsx             # Main app shell (state machine, UI orchestration)
-├── server/
-│   └── src/
-│       └── server.js       # Express proxy for external APIs
-├── Dockerfile
-├── docker-compose.yml
-└── vite.config.ts
+│   │   ├── Globe/              # WebGL 3D globe (all layers rendered here)
+│   │   ├── UI/                 # 25+ overlay panels and controls
+│   │   └── ErrorBoundary.tsx   # Crash recovery screen
+│   ├── data/                   # Static OSINT reference data
+│   │   ├── conflicts.ts        # 12 conflict zones + 72 events
+│   │   ├── nuclearSites.ts     # 8 nuclear facilities
+│   │   ├── militaryBases.ts    # 15 military installations
+│   │   ├── chokepoints.ts      # 8 strategic straits
+│   │   ├── piracyZones.ts      # 6 piracy zones
+│   │   ├── weaponRanges.ts     # Missile/drone ranges
+│   │   ├── energyInfra.ts      # 9 oil/gas facilities
+│   │   ├── cyberThreats.ts     # 5 APT groups
+│   │   ├── armsFlows.ts        # 10 arms supply routes
+│   │   ├── refugeeFlows.ts     # 10 displacement corridors
+│   │   ├── seaCables.ts        # 5 submarine cables
+│   │   ├── sanctionsZones.ts   # 6 sanctions/no-fly zones
+│   │   ├── airspaceClosures.ts # 7 FIR closures
+│   │   └── economyData.ts      # 10 commodities + trade disruptions
+│   ├── services/               # Live API integrations
+│   │   ├── adsb.ts             # OpenSky Network (ADS-B)
+│   │   ├── ais.ts              # AISHub (marine AIS)
+│   │   ├── satellite.ts        # CelesTrak (TLE + SGP4)
+│   │   ├── gpsJam.ts           # GPS jamming (live + OSINT fallback)
+│   │   └── rateLimitError.ts   # HTTP 429 detection + backoff
+│   ├── store/index.ts          # Zustand state (imports types from types/)
+│   ├── types/index.ts          # All TypeScript interfaces
+│   ├── hooks/useDataRefresh.ts # Polling, alerts, time playback, retry
+│   └── utils/                  # Geospatial math, labels, colors
+├── server/src/server.js        # Express proxy (rate-limited, cached)
+├── Dockerfile                  # Multi-stage build (Node 20.11 Alpine)
+├── docker-compose.yml          # Container orchestration
+└── .dockerignore               # Build context optimization
 ```
 
 ---
 
 ## 🛡️ Security & Reliability
 
-This project includes built-in protections:
-
-- **XSS Prevention** — All external API data (callsigns, vessel names, satellite names) is HTML-escaped before rendering
-- **Error Boundary** — React error boundary catches crashes and shows a recovery screen instead of a white page
-- **Security Headers** — Express server sets `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, and `Referrer-Policy`
-- **CORS Restriction** — Configurable via `CORS_ORIGIN` environment variable (defaults to permissive for development)
-- **Fetch Timeouts** — All upstream API calls have 15-second timeouts with `AbortController`
-- **Retry Limits** — Failed fetches retry up to 5 times with automatic backoff, then stop
-- **Cache Eviction** — Server-side cache limited to 100 entries with automatic oldest-entry eviction
-- **Alert Caps** — Alert store capped at 100 entries; deduplication keys cleaned hourly to prevent memory leaks
-- **Input Validation** — Coordinate bounds checking, NaN guards, and array length validation on all API responses
-- **Signal Handling** — Docker container properly forwards SIGTERM/SIGINT and waits for backend health before starting frontend
+- **Real-time only** — zero simulated or fake data; offline sources show empty with alerts
+- **XSS Prevention** — all API data HTML-escaped before rendering
+- **Error Boundary** — crash recovery screen instead of white page
+- **Security Headers** — X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
+- **CORS Restriction** — configurable via `CORS_ORIGIN` env var
+- **Rate-limit safe** — respects API limits (OpenSky 60s cache, CelesTrak 60min cache, 429 detection with backoff)
+- **Persistent retry** — never gives up; exponential backoff 10s→20s→40s→60s cap
+- **In-flight guard** — prevents duplicate simultaneous API requests
+- **Request staggering** — CelesTrak TLE groups fetched sequentially with 2s delays
+- **Fetch timeouts** — 15-second AbortController on all upstream calls
+- **Cache eviction** — server cache capped at 100 entries
+- **Alert caps** — store limited to 100 alerts; dedup keys cleaned hourly
+- **Signal handling** — Docker forwards SIGTERM/SIGINT, waits for backend health
+- **Offline alerts** — per-source OFFLINE/ONLINE status with auto-dismiss on recovery
+- **Source citations** — every casualty number traced to ACLED, UN OHCHR, UNHCR, etc.
 
 ---
 
@@ -356,6 +321,7 @@ This project includes built-in protections:
 - **Do not use this application for operational, military, navigation, or safety-critical purposes.**
 - Conflict zone boundaries and front lines are approximate and sourced from open-source reporting; they do not represent official government or military assessments.
 - GPS jamming hotspot data is derived from OSINT (GPSJam.org and community reports) and may not reflect real-time conditions.
+- Casualty figures are estimates from cited sources (ACLED, UN agencies) and subject to revision.
 - This project is not affiliated with, endorsed by, or connected to any government, military organization, or intelligence agency.
 
 ---
