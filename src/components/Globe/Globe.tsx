@@ -1700,8 +1700,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="https://unpkg.com/three-globe@2.31.0/example/img/earth-night.jpg"
-        backgroundImageUrl="https://unpkg.com/three-globe@2.31.0/example/img/night-sky.png"
+        globeImageUrl="/img/earth-night.jpg"
+        bumpImageUrl="/img/earth-night.jpg"
+        backgroundImageUrl="/img/night-sky.png"
+        onGlobeReady={() => {
+          // Force point of view to trigger re-render after texture loads
+          globeRef.current?.pointOfView({ lat: 25, lng: 15, altitude: 2.5 });
+        }}
         atmosphereColor="#1a4a8a"
         atmosphereAltitude={0.15}
         showAtmosphere={layers.atmosphere}
