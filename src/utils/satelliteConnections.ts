@@ -369,7 +369,8 @@ export function getSatelliteFootprints(
  */
 export function getGpsJamConnections(
   satellites: SatelliteEntity[],
-  gpsJamCells: GpsJamCell[]
+  gpsJamCells: GpsJamCell[],
+  maxConnections = 10
 ): ArcConnection[] {
   const navSats = satellites.filter(
     (s) => s.isActive && s.category === 'navigation'
@@ -378,7 +379,9 @@ export function getGpsJamConnections(
   const arcs: ArcConnection[] = [];
 
   for (const sat of navSats) {
+    if (arcs.length >= maxConnections) break;
     for (const cell of gpsJamCells) {
+      if (arcs.length >= maxConnections) break;
       // Only connect to confirmed / significant interference sources
       if (cell.level < 0.3) continue;
 

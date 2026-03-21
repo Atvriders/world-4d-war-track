@@ -361,15 +361,15 @@ function escHtml(str: string): string {
 
 function satelliteColor(category: SatelliteEntity['category']): string {
   switch (category) {
-    case 'military':       return '#ff4444';
-    case 'spy':            return '#ff2266';
-    case 'reconnaissance': return '#ff6600';
-    case 'navigation':     return '#00ddff';
-    case 'starlink':       return '#aaaaff';
-    case 'weather':        return '#66ffcc';
-    case 'iss':            return '#ffffff';
-    case 'commercial':     return '#88aaff';
-    default:               return '#aaaaaa';
+    case 'military':       return '#ff3333';   // bright red
+    case 'spy':            return '#ff2266';   // hot pink-red
+    case 'reconnaissance': return '#ff6600';   // orange
+    case 'navigation':     return '#33ff33';   // bright green (GPS/GLONASS)
+    case 'starlink':       return '#ffffff';   // white
+    case 'weather':        return '#66ffcc';   // teal
+    case 'iss':            return '#ffdd00';   // bright yellow
+    case 'commercial':     return '#00ffff';   // cyan
+    default:               return '#00ffff';   // cyan
   }
 }
 
@@ -820,6 +820,214 @@ function oilFlowPulseSpeed(risk: Chokepoint['risk']): string {
   }
 }
 
+// ─── Module-level stable accessor functions for GlobeGL props ────────────────
+// These never change identity, so react-globe.gl won't rebuild WebGL layers.
+
+function polygonGeoJsonGeometryAccessor(d: object) {
+  return (d as ConflictZone).geoJSON.geometry as any;
+}
+function polygonCapColorAccessor(d: object) {
+  return conflictCapColor((d as ConflictZone).intensity);
+}
+function polygonSideColorAccessor(d: object) {
+  return conflictSideColor((d as ConflictZone).intensity);
+}
+function polygonStrokeColorAccessor(d: object) {
+  return conflictStrokeColor((d as ConflictZone).intensity);
+}
+
+function hexBinPointLatAccessor(d: object) { return (d as { lat: number }).lat; }
+function hexBinPointLngAccessor(d: object) { return (d as { lng: number }).lng; }
+function hexBinPointWeightAccessor(d: object) { return (d as { weight: number }).weight; }
+function hexBinColorAccessor(d: object) {
+  const bin = d as { sumWeight: number; points: unknown[] };
+  const maxLevel = Math.min(1, bin.sumWeight / Math.max(1, bin.points.length));
+  return hexBinColor(maxLevel);
+}
+function hexAltitudeAccessor(d: object) {
+  const bin = d as { sumWeight: number };
+  return bin.sumWeight * 0.02;
+}
+
+function heatmapPointsAccessor(d: object) { return (d as { points: unknown[] }).points; }
+function heatmapPointLatAccessor(d: object) { return (d as { lat: number }).lat; }
+function heatmapPointLngAccessor(d: object) { return (d as { lng: number }).lng; }
+function heatmapPointWeightAccessor(d: object) { return (d as { weight: number }).weight; }
+
+function satPointLatAccessor(d: object) { return (d as SatelliteEntity).lat; }
+function satPointLngAccessor(d: object) { return (d as SatelliteEntity).lng; }
+function satPointAltitudeAccessor(d: object) {
+  const s = d as SatelliteEntity;
+  return s.alt / 6371;
+}
+function satPointRadiusAccessor(d: object) {
+  return (d as SatelliteEntity).category === 'iss' ? 0.6 : 0.3;
+}
+
+function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
+function pathPointLatAccessor(pt: object) { return (pt as { lat: number }).lat; }
+function pathPointLngAccessor(pt: object) { return (pt as { lng: number }).lng; }
+function pathPointAltAccessor(pt: object) { return (pt as { alt: number }).alt; }
+
+function pathColorAccessor(d: object) {
+  const entry = d as PathEntry;
+  if (entry._kind === 'frontline') return '#ff1111';
+  if (entry._kind === 'weaponRange') return weaponRangeColor(entry.weaponType);
+  if (entry._kind === 'sat') return satelliteColorDim(entry.sat.category);
+  if (entry._kind === 'aircraft') return entry.aircraft.isMilitary ? 'rgba(255,51,51,0.35)' : 'rgba(0,170,255,0.35)';
+  if (entry._kind === 'ship') return shipTrailColor(entry.ship.type);
+  if (entry._kind === 'seaCable') return cableRiskColor(entry.cable.risk);
+  if (entry._kind === 'constellation') return entry.color;
+  if (entry._kind === 'nuclearZone') {
+    const bright = entry.risk === 'critical';
+    if (entry.zone === 'Evacuation') return bright ? 'rgba(255,40,40,0.12)' : 'rgba(255,40,40,0.08)';
+    if (entry.zone === 'Shelter-in-place') return bright ? 'rgba(255,165,0,0.08)' : 'rgba(255,165,0,0.05)';
+    return bright ? 'rgba(255,255,0,0.05)' : 'rgba(255,255,0,0.03)';
+  }
+  return '#aaaaaa';
+}
+
+function pathDashLengthAccessor(d: object) {
+  const entry = d as PathEntry;
+  if (entry._kind === 'weaponRange') return 0.6;
+  if (entry._kind === 'seaCable') return 0.4;
+  if (entry._kind === 'constellation') return 0.6;
+  if (entry._kind === 'nuclearZone') {
+    if (entry.zone === 'Evacuation') return 2;
+    if (entry.zone === 'Shelter-in-place') return 0.4;
+    return 0.15;
+  }
+  return 0.5;
+}
+
+function pathDashGapAccessor(d: object) {
+  const entry = d as PathEntry;
+  if (entry._kind === 'weaponRange') return 0.3;
+  if (entry._kind === 'seaCable') return 0.2;
+  if (entry._kind === 'constellation') return 0.3;
+  if (entry._kind === 'nuclearZone') {
+    if (entry.zone === 'Evacuation') return 0;
+    if (entry.zone === 'Shelter-in-place') return 0.3;
+    return 0.15;
+  }
+  return 0.3;
+}
+
+function pathStrokeAccessor(d: object) {
+  const entry = d as PathEntry;
+  if (entry._kind === 'weaponRange') return 0.8;
+  if (entry._kind === 'seaCable') return 1.2;
+  if (entry._kind === 'constellation') return 0.8;
+  if (entry._kind === 'nuclearZone') return entry.risk === 'critical' ? 0.9 : 0.6;
+  return 0.5;
+}
+
+function pathLabelAccessor(d: object) {
+  const entry = d as PathEntry;
+  if (entry._kind === 'weaponRange') {
+    return `<div style="background:rgba(5,15,30,0.95);border:1px solid rgba(0,255,136,0.4);border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+      `<b style="color:${weaponRangeColor(entry.weaponType)}">${entry.weapon}</b><br/>` +
+      `Range: ${entry.rangeKm.toLocaleString()} km<br/>` +
+      `<span style="color:#888">${entry.site}</span></div>`;
+  }
+  if (entry._kind === 'nuclearZone') {
+    const zoneColors = { Evacuation: '#ff4040', 'Shelter-in-place': '#ffa500', Monitoring: '#ffff00' };
+    const zc = zoneColors[entry.zone];
+    return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${zc};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+      `<b style="color:${zc}">${entry.facility}</b><br/>` +
+      `${entry.zone} zone (${entry.radiusKm}km)</div>`;
+  }
+  if (entry._kind === 'seaCable') {
+    const c = entry.cable;
+    const rc = cableRiskColor(c.risk);
+    return `<div style="background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:4px;border:1px solid ${rc};font-family:monospace;font-size:11px;color:#eee;line-height:1.4">
+              <b style="color:${rc}">${c.name}</b><br/>
+              Capacity: ${c.capacity}<br/>
+              Risk: <span style="color:${rc};font-weight:bold">${c.risk.toUpperCase()}</span>${c.nearConflict ? `<br/>Near: ${c.nearConflict}` : ''}
+            </div>`;
+  }
+  return '';
+}
+
+function arcStartLatAccessor(d: object) { return (d as ArcConnection).startLat; }
+function arcStartLngAccessor(d: object) { return (d as ArcConnection).startLng; }
+function arcEndLatAccessor(d: object) { return (d as ArcConnection).endLat; }
+function arcEndLngAccessor(d: object) { return (d as ArcConnection).endLng; }
+
+function arcColorAccessor(d: object) {
+  if (isRefugeeArc(d)) return ['rgba(255,140,0,0.9)', 'rgba(220,40,40,0.9)'];
+  if (isTradeRouteArc(d)) {
+    const t = d as TradeRouteArc;
+    return t.status === 'disrupted'
+      ? ['rgba(255,50,50,0.8)', 'rgba(255,50,50,0.3)']
+      : ['rgba(0,255,136,0.6)', 'rgba(0,255,136,0.2)'];
+  }
+  if (isArmsFlowArc(d)) {
+    const a = d as ArmsFlowArc;
+    const c = armsFlowColor(a.category);
+    return [c, c.replace(/[\d.]+\)$/, '0.3)')];
+  }
+  return (d as ArcConnection).color;
+}
+
+function arcLabelAccessor(d: object) {
+  if (isRefugeeArc(d)) {
+    const r = d as RefugeeArc;
+    return `<b style="color:#ff6644">${formatRefugeeCount(r.count)} displaced</b><br/>${r.from} \u2192 ${r.to}<br/><i>${r.year}</i>`;
+  }
+  if (isTradeRouteArc(d)) {
+    const t = d as TradeRouteArc;
+    const statusColor = t.status === 'disrupted' ? '#ff3333' : '#00ff88';
+    const statusIcon = t.status === 'disrupted' ? '\u2716' : '\u2714';
+    return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${statusColor};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+      `<b style="color:${statusColor}">${statusIcon} ${t.name}</b><br/>` +
+      `Status: <span style="color:${statusColor};font-weight:bold">${t.status.toUpperCase()}</span><br/>` +
+      `<span style="color:#888">Trade route ${t.status === 'disrupted' ? 'blocked by conflict' : 'alternative shipping lane'}</span></div>`;
+  }
+  if (isArmsFlowArc(d)) {
+    const a = d as ArmsFlowArc;
+    const c = armsFlowColor(a.category);
+    return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${c};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+      `<b style="color:${c}">${a.supplier} \u2192 ${a.recipient}</b><br/>` +
+      `Category: ${a.category.replace(/_/g, ' ')}<br/>` +
+      `Value: ${a.value}</div>`;
+  }
+  return (d as ArcConnection).label;
+}
+
+function arcStrokeAccessor(d: object) {
+  if (isRefugeeArc(d)) return refugeeArcWidth((d as RefugeeArc).count);
+  if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 1.8 : 1.2;
+  if (isArmsFlowArc(d)) { const a = d as ArmsFlowArc; return armsFlowStroke(a.category, a.value); }
+  return 0.5;
+}
+
+function arcDashLengthAccessor(d: object) {
+  if (isRefugeeArc(d)) return 0.6;
+  if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.3 : 0.5;
+  if (isArmsFlowArc(d)) return 0.5;
+  return 0.4;
+}
+
+function arcDashGapAccessor(d: object) {
+  if (isRefugeeArc(d)) return 0.3;
+  if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.4 : 0.2;
+  if (isArmsFlowArc(d)) return 0.25;
+  return 0.2;
+}
+
+function arcDashAnimateTimeAccessor(d: object) {
+  if (isRefugeeArc(d)) return 2500;
+  if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0 : 2000;
+  if (isArmsFlowArc(d)) return 2000;
+  return 1500;
+}
+
+function ringLatAccessor(d: object) { return (d as FootprintRing).lat; }
+function ringLngAccessor(d: object) { return (d as FootprintRing).lng; }
+function ringMaxRAccessor(d: object) { return (d as FootprintRing).maxR; }
+function ringColorAccessor(d: object) { return (d as FootprintRing).color; }
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
@@ -863,21 +1071,30 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Auto-rotate + camera controls
+  // Auto-rotate + camera controls — tilted upward view to see satellites overhead
   useEffect(() => {
     if (globeRef.current) {
-      globeRef.current.controls().autoRotate = false;
-      globeRef.current.controls().autoRotateSpeed = 0.3;
-      globeRef.current.controls().enableZoom = true;
-      globeRef.current.controls().minDistance = 150;
-      globeRef.current.controls().maxDistance = 1000;
+      const controls = globeRef.current.controls();
+      controls.autoRotate = false;
+      controls.autoRotateSpeed = 0.3;
+      controls.enableZoom = true;
+      controls.minDistance = 120;        // allow closer zoom to surface
+      controls.maxDistance = 1000;
+
+      // Polar angle: 0 = north pole (top-down), PI/2 = equator (horizon), PI = south pole
+      // Allow tilting from near-horizon (looking up at sky) to straight down
+      controls.minPolarAngle = 0.2;      // nearly top-down allowed
+      controls.maxPolarAngle = Math.PI * 0.75;  // allow tilting past horizon to look upward at sky
+
+      // Set initial tilt — lean toward horizon so satellites above are visible
+      controls.setPolarAngle(Math.PI * 0.55);   // slightly past equator = looking upward
     }
   }, []);
 
-  // Initial camera position
+  // Initial camera position — focused on Ukraine/Middle East conflict zone
   useEffect(() => {
     if (globeRef.current) {
-      globeRef.current.pointOfView({ lat: 25, lng: 15, altitude: 2.5 }, 0);
+      globeRef.current.pointOfView({ lat: 38, lng: 35, altitude: 1.5 }, 0);
     }
   }, []);
 
@@ -937,7 +1154,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     () =>
       layers.aircraftTrails
         ? aircraft
-            .filter((a) => !a.onGround && a.trail && a.trail.length > 1)
+            .filter((a) => !a.onGround && a.isMilitary && a.trail && a.trail.length > 1)
             .map((a) => ({
               _kind: 'aircraft' as const,
               aircraft: a,
@@ -952,7 +1169,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     () =>
       layers.shipTrails
         ? ships
-            .filter((s) => s.trail && s.trail.length > 1)
+            .filter((s) => (s.type === 'military' || s.type === 'warship') && s.trail && s.trail.length > 1)
             .map((s) => ({
               _kind: 'ship' as const,
               ship: s,
@@ -1135,7 +1352,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       conflictZones as any,
       20
     ) : [];
-    const jamArcs = layers.satelliteConnections ? getGpsJamConnections(satellites as any, gpsJamCells as any) : [];
+    const jamArcs = layers.satelliteConnections ? getGpsJamConnections(satellites as any, gpsJamCells as any, 10) : [];
     // Refugee / displacement flow arcs
     const refugeeArcs: RefugeeArc[] = layers.refugeeFlows
       ? REFUGEE_FLOWS.map((flow) => ({
@@ -1219,6 +1436,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     [layers.aircraft, layers.ships, aircraftPoints, shipPoints]
   );
 
+  // ── Globe ready handler ─────────────────────────────────────────────────────
+  const handleGlobeReady = useCallback(() => {
+    globeRef.current?.pointOfView({ lat: 38, lng: 35, altitude: 1.5 });
+  }, []);
+
   // ── Click handlers ──────────────────────────────────────────────────────────
 
   const handleSatelliteClick = useCallback(
@@ -1260,6 +1482,66 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // objectThreeObject removed — caused dual Three.js instance crash
   // Aircraft/ships visible via trail paths instead
+
+  // ── Memoized path callbacks (avoid new function refs every render) ─────────
+
+  const pathPoints = useCallback((d: object) => (d as PathEntry).coords, []);
+  const pathPointLat = useCallback((pt: object) => (pt as { lat: number }).lat, []);
+  const pathPointLng = useCallback((pt: object) => (pt as { lng: number }).lng, []);
+  const pathPointAlt = useCallback((pt: object) => (pt as { alt: number }).alt, []);
+
+  const pathColor = useCallback((d: object) => {
+    const entry = d as PathEntry;
+    if (entry._kind === 'frontline') return '#ff1111';
+    if (entry._kind === 'weaponRange') return weaponRangeColor(entry.weaponType);
+    if (entry._kind === 'sat') return satelliteColorDim(entry.sat.category);
+    if (entry._kind === 'aircraft') return entry.aircraft.isMilitary ? 'rgba(255,51,51,0.35)' : 'rgba(0,170,255,0.35)';
+    if (entry._kind === 'ship') return shipTrailColor(entry.ship.type);
+    if (entry._kind === 'seaCable') return cableRiskColor(entry.cable.risk);
+    if (entry._kind === 'constellation') return entry.color;
+    if (entry._kind === 'nuclearZone') {
+      const bright = entry.risk === 'critical';
+      if (entry.zone === 'Evacuation') return bright ? 'rgba(255,40,40,0.12)' : 'rgba(255,40,40,0.08)';
+      if (entry.zone === 'Shelter-in-place') return bright ? 'rgba(255,165,0,0.08)' : 'rgba(255,165,0,0.05)';
+      return bright ? 'rgba(255,255,0,0.05)' : 'rgba(255,255,0,0.03)';
+    }
+    return '#aaaaaa';
+  }, []);
+
+  const pathDashLength = useCallback((d: object) => {
+    const entry = d as PathEntry;
+    if (entry._kind === 'weaponRange') return 0.6;
+    if (entry._kind === 'seaCable') return 0.4;
+    if (entry._kind === 'constellation') return 0.6;
+    if (entry._kind === 'nuclearZone') {
+      if (entry.zone === 'Evacuation') return 2;
+      if (entry.zone === 'Shelter-in-place') return 0.4;
+      return 0.15;
+    }
+    return 0.5;
+  }, []);
+
+  const pathDashGap = useCallback((d: object) => {
+    const entry = d as PathEntry;
+    if (entry._kind === 'weaponRange') return 0.3;
+    if (entry._kind === 'seaCable') return 0.2;
+    if (entry._kind === 'constellation') return 0.3;
+    if (entry._kind === 'nuclearZone') {
+      if (entry.zone === 'Evacuation') return 0;
+      if (entry.zone === 'Shelter-in-place') return 0.3;
+      return 0.15;
+    }
+    return 0.3;
+  }, []);
+
+  const pathStroke = useCallback((d: object) => {
+    const entry = d as PathEntry;
+    if (entry._kind === 'weaponRange') return 0.8;
+    if (entry._kind === 'seaCable') return 1.2;
+    if (entry._kind === 'constellation') return 0.8;
+    if (entry._kind === 'nuclearZone') return entry.risk === 'critical' ? 0.9 : 0.6;
+    return 0.5;
+  }, []);
 
   // ── Military base HTML markers ──────────────────────────────────────────────
   const militaryBaseMarkers = useMemo(
@@ -1687,51 +1969,111 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return htmlMarkerElement(d);
   }, [csgMarkerElement, htmlMarkerElement]);
 
+  // ── Memoized arc callbacks (avoid new fn refs each render) ─────────────────
+  const arcStartLatCb = useCallback((d: object) => (d as ArcConnection).startLat, []);
+  const arcStartLngCb = useCallback((d: object) => (d as ArcConnection).startLng, []);
+  const arcEndLatCb = useCallback((d: object) => (d as ArcConnection).endLat, []);
+  const arcEndLngCb = useCallback((d: object) => (d as ArcConnection).endLng, []);
+  const arcColorCb = useCallback((d: object) => {
+    if (isRefugeeArc(d)) return ['rgba(255,140,0,0.9)', 'rgba(220,40,40,0.9)'];
+    if (isTradeRouteArc(d)) {
+      const t = d as TradeRouteArc;
+      return t.status === 'disrupted'
+        ? ['rgba(255,50,50,0.8)', 'rgba(255,50,50,0.3)']
+        : ['rgba(0,255,136,0.6)', 'rgba(0,255,136,0.2)'];
+    }
+    if (isArmsFlowArc(d)) {
+      const a = d as ArmsFlowArc;
+      const c = armsFlowColor(a.category);
+      return [c, c.replace(/[\d.]+\)$/, '0.3)')];
+    }
+    return (d as ArcConnection).color;
+  }, []);
+  const arcLabelCb = useCallback((d: object) => {
+    if (isRefugeeArc(d)) {
+      const r = d as RefugeeArc;
+      return `<b style="color:#ff6644">${formatRefugeeCount(r.count)} displaced</b><br/>${r.from} \u2192 ${r.to}<br/><i>${r.year}</i>`;
+    }
+    if (isTradeRouteArc(d)) {
+      const t = d as TradeRouteArc;
+      const statusColor = t.status === 'disrupted' ? '#ff3333' : '#00ff88';
+      const statusIcon = t.status === 'disrupted' ? '\u2716' : '\u2714';
+      return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${statusColor};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+        `<b style="color:${statusColor}">${statusIcon} ${t.name}</b><br/>` +
+        `Status: <span style="color:${statusColor};font-weight:bold">${t.status.toUpperCase()}</span><br/>` +
+        `<span style="color:#888">Trade route ${t.status === 'disrupted' ? 'blocked by conflict' : 'alternative shipping lane'}</span></div>`;
+    }
+    if (isArmsFlowArc(d)) {
+      const a = d as ArmsFlowArc;
+      const c = armsFlowColor(a.category);
+      return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${c};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+        `<b style="color:${c}">${a.supplier} \u2192 ${a.recipient}</b><br/>` +
+        `Category: ${a.category.replace(/_/g, ' ')}<br/>` +
+        `Value: ${a.value}</div>`;
+    }
+    return (d as ArcConnection).label;
+  }, []);
+  const arcStrokeCb = useCallback((d: object) => {
+    if (isRefugeeArc(d)) return refugeeArcWidth((d as RefugeeArc).count);
+    if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 1.8 : 1.2;
+    if (isArmsFlowArc(d)) { const a = d as ArmsFlowArc; return armsFlowStroke(a.category, a.value); }
+    return 0.5;
+  }, []);
+  const arcDashLengthCb = useCallback((d: object) => {
+    if (isRefugeeArc(d)) return 0.6;
+    if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.3 : 0.5;
+    if (isArmsFlowArc(d)) return 0.5;
+    return 0.4;
+  }, []);
+  const arcDashGapCb = useCallback((d: object) => {
+    if (isRefugeeArc(d)) return 0.3;
+    if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.4 : 0.2;
+    if (isArmsFlowArc(d)) return 0.25;
+    return 0.2;
+  }, []);
+  const arcDashAnimateTimeCb = useCallback((d: object) => {
+    if (isRefugeeArc(d)) return 2500;
+    if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0 : 2000;
+    if (isArmsFlowArc(d)) return 2000;
+    return 1500;
+  }, []);
+
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="globe-container" style={{ width: '100%', height: '100%', background: '#000010' }}>
+    <div ref={containerRef} className="globe-container" style={{ width: '100%', height: '100%', background: '#000022' }}>
       <GlobeGL
         ref={globeRef}
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="/img/earth-night.jpg"
-        bumpImageUrl="/img/earth-night.jpg"
-        backgroundImageUrl="/img/night-sky.png"
-        onGlobeReady={() => {
-          // Force point of view to trigger re-render after texture loads
-          globeRef.current?.pointOfView({ lat: 25, lng: 15, altitude: 2.5 });
-        }}
-        atmosphereColor="#1a4a8a"
+        globeImageUrl="/img/earth-day.jpg"
+        bumpImageUrl="/img/earth-day.jpg"
+        backgroundImageUrl=""
+        onGlobeReady={handleGlobeReady}
+        atmosphereColor="#4488ff"
         atmosphereAltitude={0.15}
         showAtmosphere={layers.atmosphere}
 
         // ── War-zone polygons ──────────────────────────────────
         polygonsData={polygonsData}
-        polygonGeoJsonGeometry={(d: object) => (d as ConflictZone).geoJSON.geometry as any}
-        polygonCapColor={(d: object) => conflictCapColor((d as ConflictZone).intensity)}
-        polygonSideColor={(d: object) => conflictSideColor((d as ConflictZone).intensity)}
-        polygonStrokeColor={(d: object) => conflictStrokeColor((d as ConflictZone).intensity)}
+        polygonGeoJsonGeometry={polygonGeoJsonGeometryAccessor}
+        polygonCapColor={polygonCapColorAccessor}
+        polygonSideColor={polygonSideColorAccessor}
+        polygonStrokeColor={polygonStrokeColorAccessor}
         polygonAltitude={0.005}
         onPolygonClick={handleZoneClick}
         polygonLabel={polygonLabel}
 
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
-        hexBinPointLat={(d: object) => (d as { lat: number }).lat}
-        hexBinPointLng={(d: object) => (d as { lng: number }).lng}
-        hexBinPointWeight={(d: object) => (d as { weight: number }).weight}
+        hexBinPointLat={hexBinPointLatAccessor}
+        hexBinPointLng={hexBinPointLngAccessor}
+        hexBinPointWeight={hexBinPointWeightAccessor}
         hexBinResolution={4}
-        hexBinColor={(d: object) => {
-          const bin = d as { sumWeight: number; points: unknown[] };
-          const maxLevel = Math.min(1, bin.sumWeight / Math.max(1, bin.points.length));
-          return hexBinColor(maxLevel);
-        }}
-        hexAltitude={(d: object) => {
-          const bin = d as { sumWeight: number };
-          return bin.sumWeight * 0.02;
-        }}
+        hexBinColor={hexBinColorAccessor}
+        hexAltitude={hexAltitudeAccessor}
         // ── Drone activity heatmap ──────────────────────────────
         heatmapsData={droneActivityHeatmap}
         heatmapPoints={(d: object) => (d as { points: unknown[] }).points}
@@ -1754,7 +2096,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           return s.alt / 6371; // normalise to globe radius fraction
         }}
         pointColor={pointColor}
-        pointRadius={(d: object) => ((d as SatelliteEntity).category === 'iss' ? 0.6 : 0.3)}
+        pointRadius={(d: object) => {
+          const cat = (d as SatelliteEntity).category;
+          if (cat === 'iss') return 0.8;
+          if (cat === 'military' || cat === 'spy' || cat === 'reconnaissance') return 0.5;
+          return 0.45;
+        }}
+        pointResolution={4}
         pointLabel={pointLabel}
         onPointClick={handleSatelliteClick}
 
@@ -1764,59 +2112,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         // ── Satellite ground tracks + aircraft trails (merged) ──
         pathsData={allPaths}
-        pathPoints={(d: object) => (d as PathEntry).coords}
-        pathPointLat={(pt: object) => (pt as { lat: number }).lat}
-        pathPointLng={(pt: object) => (pt as { lng: number }).lng}
-        pathPointAlt={(pt: object) => (pt as { alt: number }).alt}
-        pathColor={(d: object) => {
-          const entry = d as PathEntry;
-          if (entry._kind === 'frontline') return '#ff1111';
-          if (entry._kind === 'weaponRange') return weaponRangeColor(entry.weaponType);
-          if (entry._kind === 'sat') return satelliteColorDim(entry.sat.category);
-          if (entry._kind === 'aircraft') return entry.aircraft.isMilitary ? 'rgba(255,51,51,0.35)' : 'rgba(0,170,255,0.35)';
-          if (entry._kind === 'ship') return shipTrailColor(entry.ship.type);
-          if (entry._kind === 'seaCable') return cableRiskColor(entry.cable.risk);
-          if (entry._kind === 'constellation') return entry.color;
-          if (entry._kind === 'nuclearZone') {
-            const bright = entry.risk === 'critical';
-            if (entry.zone === 'Evacuation') return bright ? 'rgba(255,40,40,0.12)' : 'rgba(255,40,40,0.08)';
-            if (entry.zone === 'Shelter-in-place') return bright ? 'rgba(255,165,0,0.08)' : 'rgba(255,165,0,0.05)';
-            return bright ? 'rgba(255,255,0,0.05)' : 'rgba(255,255,0,0.03)';
-          }
-          return '#aaaaaa';
-        }}
-        pathDashLength={(d: object) => {
-          const entry = d as PathEntry;
-          if (entry._kind === 'weaponRange') return 0.6;
-          if (entry._kind === 'seaCable') return 0.4;
-          if (entry._kind === 'constellation') return 0.6;
-          if (entry._kind === 'nuclearZone') {
-            if (entry.zone === 'Evacuation') return 2;     // solid (large dash, no gap)
-            if (entry.zone === 'Shelter-in-place') return 0.4; // dashed
-            return 0.15;                                       // dotted
-          }
-          return 0.5;
-        }}
-        pathDashGap={(d: object) => {
-          const entry = d as PathEntry;
-          if (entry._kind === 'weaponRange') return 0.3;
-          if (entry._kind === 'seaCable') return 0.2;
-          if (entry._kind === 'constellation') return 0.3;
-          if (entry._kind === 'nuclearZone') {
-            if (entry.zone === 'Evacuation') return 0;        // solid
-            if (entry.zone === 'Shelter-in-place') return 0.3; // dashed
-            return 0.15;                                        // dotted
-          }
-          return 0.3;
-        }}
-        pathStroke={(d: object) => {
-          const entry = d as PathEntry;
-          if (entry._kind === 'weaponRange') return 0.8;
-          if (entry._kind === 'seaCable') return 1.2;
-          if (entry._kind === 'constellation') return 0.8;
-          if (entry._kind === 'nuclearZone') return entry.risk === 'critical' ? 0.9 : 0.6;
-          return 0.5;
-        }}
+        pathPoints={pathPoints}
+        pathPointLat={pathPointLat}
+        pathPointLng={pathPointLng}
+        pathPointAlt={pathPointAlt}
+        pathColor={pathColor}
+        pathDashLength={pathDashLength}
+        pathDashGap={pathDashGap}
+        pathStroke={pathStroke}
         pathLabel={(d: object) => {
           const entry = d as PathEntry;
           if (entry._kind === 'weaponRange') {
@@ -1846,74 +2149,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         // ── Connection arcs (military → conflict, nav → GPS jam) ──
         arcsData={arcsData}
-        arcStartLat={(d: object) => (d as ArcConnection).startLat}
-        arcStartLng={(d: object) => (d as ArcConnection).startLng}
-        arcEndLat={(d: object) => (d as ArcConnection).endLat}
-        arcEndLng={(d: object) => (d as ArcConnection).endLng}
-        arcColor={(d: object) => {
-          if (isRefugeeArc(d)) return ['rgba(255,140,0,0.9)', 'rgba(220,40,40,0.9)'];
-          if (isTradeRouteArc(d)) {
-            const t = d as TradeRouteArc;
-            return t.status === 'disrupted'
-              ? ['rgba(255,50,50,0.8)', 'rgba(255,50,50,0.3)']
-              : ['rgba(0,255,136,0.6)', 'rgba(0,255,136,0.2)'];
-          }
-          if (isArmsFlowArc(d)) {
-            const a = d as ArmsFlowArc;
-            const c = armsFlowColor(a.category);
-            return [c, c.replace(/[\d.]+\)$/, '0.3)')];
-          }
-          return (d as ArcConnection).color;
-        }}
-        arcLabel={(d: object) => {
-          if (isRefugeeArc(d)) {
-            const r = d as RefugeeArc;
-            return `<b style="color:#ff6644">${formatRefugeeCount(r.count)} displaced</b><br/>${r.from} → ${r.to}<br/><i>${r.year}</i>`;
-          }
-          if (isTradeRouteArc(d)) {
-            const t = d as TradeRouteArc;
-            const statusColor = t.status === 'disrupted' ? '#ff3333' : '#00ff88';
-            const statusIcon = t.status === 'disrupted' ? '\u2716' : '\u2714';
-            return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${statusColor};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
-              `<b style="color:${statusColor}">${statusIcon} ${t.name}</b><br/>` +
-              `Status: <span style="color:${statusColor};font-weight:bold">${t.status.toUpperCase()}</span><br/>` +
-              `<span style="color:#888">Trade route ${t.status === 'disrupted' ? 'blocked by conflict' : 'alternative shipping lane'}</span></div>`;
-          }
-          if (isArmsFlowArc(d)) {
-            const a = d as ArmsFlowArc;
-            const c = armsFlowColor(a.category);
-            return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${c};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
-              `<b style="color:${c}">${a.supplier} \u2192 ${a.recipient}</b><br/>` +
-              `Category: ${a.category.replace(/_/g, ' ')}<br/>` +
-              `Value: ${a.value}</div>`;
-          }
-          return (d as ArcConnection).label;
-        }}
+        arcStartLat={arcStartLatCb}
+        arcStartLng={arcStartLngCb}
+        arcEndLat={arcEndLatCb}
+        arcEndLng={arcEndLngCb}
+        arcColor={arcColorCb}
+        arcLabel={arcLabelCb}
         arcAltAutoScale={0.3}
-        arcStroke={(d: object) => {
-          if (isRefugeeArc(d)) return refugeeArcWidth((d as RefugeeArc).count);
-          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 1.8 : 1.2;
-          if (isArmsFlowArc(d)) { const a = d as ArmsFlowArc; return armsFlowStroke(a.category, a.value); }
-          return 0.5;
-        }}
-        arcDashLength={(d: object) => {
-          if (isRefugeeArc(d)) return 0.6;
-          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.3 : 0.5;
-          if (isArmsFlowArc(d)) return 0.5;
-          return 0.4;
-        }}
-        arcDashGap={(d: object) => {
-          if (isRefugeeArc(d)) return 0.3;
-          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.4 : 0.2;
-          if (isArmsFlowArc(d)) return 0.25;
-          return 0.2;
-        }}
-        arcDashAnimateTime={(d: object) => {
-          if (isRefugeeArc(d)) return 2500;
-          if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0 : 2000;
-          if (isArmsFlowArc(d)) return 2000;
-          return 1500;
-        }}
+        arcStroke={arcStrokeCb}
+        arcDashLength={arcDashLengthCb}
+        arcDashGap={arcDashGapCb}
+        arcDashAnimateTime={arcDashAnimateTimeCb}
 
         // ── Satellite footprint rings ──────────────────────────
         ringsData={ringsData}

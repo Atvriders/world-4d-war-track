@@ -49,7 +49,7 @@ interface LocalGlobeSettings {
 }
 
 const DEFAULT_GLOBE_SETTINGS: LocalGlobeSettings = {
-  imageryStyle: 'satellite',
+  imageryStyle: 'terrain',
   autoRotate: false,
   autoRotateSpeed: 0.5,
   showGraticules: false,
