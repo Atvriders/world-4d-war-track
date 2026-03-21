@@ -861,7 +861,10 @@ function satPointAltitudeAccessor(d: object) {
   return s.alt / 6371;
 }
 function satPointRadiusAccessor(d: object) {
-  return (d as SatelliteEntity).category === 'iss' ? 0.6 : 0.3;
+  const cat = (d as SatelliteEntity).category;
+  if (cat === 'iss') return 0.8;
+  if (cat === 'military' || cat === 'spy' || cat === 'reconnaissance') return 0.5;
+  return 0.45;
 }
 
 function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
@@ -2076,10 +2079,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         hexAltitude={hexAltitudeAccessor}
         // ── Drone activity heatmap ──────────────────────────────
         heatmapsData={droneActivityHeatmap}
-        heatmapPoints={(d: object) => (d as { points: unknown[] }).points}
-        heatmapPointLat={(d: object) => (d as { lat: number }).lat}
-        heatmapPointLng={(d: object) => (d as { lng: number }).lng}
-        heatmapPointWeight={(d: object) => (d as { weight: number }).weight}
+        heatmapPoints={heatmapPointsAccessor}
+        heatmapPointLat={heatmapPointLatAccessor}
+        heatmapPointLng={heatmapPointLngAccessor}
+        heatmapPointWeight={heatmapPointWeightAccessor}
         heatmapBandwidth={1.5}
         heatmapColorFn={droneHeatmapColor}
         heatmapColorSaturation={2.0}
@@ -2089,19 +2092,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         // ── Satellite points ───────────────────────────────────
         pointsData={satellitePoints}
-        pointLat={(d: object) => (d as SatelliteEntity).lat}
-        pointLng={(d: object) => (d as SatelliteEntity).lng}
-        pointAltitude={(d: object) => {
-          const s = d as SatelliteEntity;
-          return s.alt / 6371; // normalise to globe radius fraction
-        }}
+        pointLat={satPointLatAccessor}
+        pointLng={satPointLngAccessor}
+        pointAltitude={satPointAltitudeAccessor}
         pointColor={pointColor}
-        pointRadius={(d: object) => {
-          const cat = (d as SatelliteEntity).category;
-          if (cat === 'iss') return 0.8;
-          if (cat === 'military' || cat === 'spy' || cat === 'reconnaissance') return 0.5;
-          return 0.45;
-        }}
+        pointRadius={satPointRadiusAccessor}
         pointResolution={4}
         pointLabel={pointLabel}
         onPointClick={handleSatelliteClick}
@@ -2120,32 +2115,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         pathDashLength={pathDashLength}
         pathDashGap={pathDashGap}
         pathStroke={pathStroke}
-        pathLabel={(d: object) => {
-          const entry = d as PathEntry;
-          if (entry._kind === 'weaponRange') {
-            return `<div style="background:rgba(5,15,30,0.95);border:1px solid rgba(0,255,136,0.4);border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
-              `<b style="color:${weaponRangeColor(entry.weaponType)}">${entry.weapon}</b><br/>` +
-              `Range: ${entry.rangeKm.toLocaleString()} km<br/>` +
-              `<span style="color:#888">${entry.site}</span></div>`;
-          }
-          if (entry._kind === 'nuclearZone') {
-            const zoneColors = { Evacuation: '#ff4040', 'Shelter-in-place': '#ffa500', Monitoring: '#ffff00' };
-            const zc = zoneColors[entry.zone];
-            return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${zc};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
-              `<b style="color:${zc}">${entry.facility}</b><br/>` +
-              `${entry.zone} zone (${entry.radiusKm}km)</div>`;
-          }
-          if (entry._kind === 'seaCable') {
-            const c = entry.cable;
-            const rc = cableRiskColor(c.risk);
-            return `<div style="background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:4px;border:1px solid ${rc};font-family:monospace;font-size:11px;color:#eee;line-height:1.4">
-              <b style="color:${rc}">${c.name}</b><br/>
-              Capacity: ${c.capacity}<br/>
-              Risk: <span style="color:${rc};font-weight:bold">${c.risk.toUpperCase()}</span>${c.nearConflict ? `<br/>Near: ${c.nearConflict}` : ''}
-            </div>`;
-          }
-          return '';
-        }}
+        pathLabel={pathLabelAccessor}
 
         // ── Connection arcs (military → conflict, nav → GPS jam) ──
         arcsData={arcsData}
@@ -2163,10 +2133,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         // ── Satellite footprint rings ──────────────────────────
         ringsData={ringsData}
-        ringLat={(d: object) => (d as FootprintRing).lat}
-        ringLng={(d: object) => (d as FootprintRing).lng}
-        ringMaxR={(d: object) => (d as FootprintRing).maxR}
-        ringColor={(d: object) => (d as FootprintRing).color}
+        ringLat={ringLatAccessor}
+        ringLng={ringLngAccessor}
+        ringMaxR={ringMaxRAccessor}
+        ringColor={ringColorAccessor}
         ringPropagationSpeed={2}
         ringRepeatPeriod={800}
 
