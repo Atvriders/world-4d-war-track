@@ -857,7 +857,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // Auto-rotate + camera controls
   useEffect(() => {
     if (globeRef.current) {
-      globeRef.current.controls().autoRotate = true;
+      globeRef.current.controls().autoRotate = false;
       globeRef.current.controls().autoRotateSpeed = 0.3;
       globeRef.current.controls().enableZoom = true;
       globeRef.current.controls().minDistance = 150;
