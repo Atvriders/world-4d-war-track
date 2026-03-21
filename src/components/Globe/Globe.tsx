@@ -455,6 +455,7 @@ function nuclearPulseSpeed(risk: NuclearSite['risk']): string {
     case 'high':     return '1.2s';
     case 'medium':   return '2s';
     case 'low':      return '3s';
+    default:         return '2s';
   }
 }
 
@@ -761,6 +762,7 @@ function energyRiskColor(risk: 'low' | 'medium' | 'high' | 'critical'): string {
     case 'high':     return '#ff8800';
     case 'medium':   return '#ffcc00';
     case 'low':      return '#44cc44';
+    default:         return '#888888';
   }
 }
 
@@ -815,6 +817,7 @@ function oilFlowPulseSpeed(risk: Chokepoint['risk']): string {
     case 'high':     return '1.5s';
     case 'medium':   return '2.2s';
     case 'low':      return '3s';
+    default:         return '2s';
   }
 }
 
