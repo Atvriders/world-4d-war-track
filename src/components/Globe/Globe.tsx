@@ -1262,33 +1262,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return formatConflictLabel(z);
   }, []);
 
-  const objectLabel = useCallback((d: object) => {
-    const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-    if (obj._type === 'aircraft') {
-      const a = obj as AircraftEntity;
-      return formatAircraftLabel(a);
-    }
-    const s = obj as ShipEntity;
-    return formatShipLabel(s);
-  }, []);
-
-  const objectThreeObject = useCallback((d: object) => {
-    const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-    const { aircraftGeo, aircraftMilitaryGeo, aircraftEmergencyGeo, aircraftHeliGeo, shipGeo, materialCache } = sharedGeo;
-    const color =
-      obj._type === 'aircraft'
-        ? (obj as AircraftEntity).isMilitary
-          ? '#ff3333'
-          : '#00aaff'
-        : shipColor((obj as ShipEntity).type);
-    let material = materialCache.get(color);
-    if (!material) {
-      material = new THREE.MeshBasicMaterial({ color });
-      materialCache.set(color, material);
-    }
-    const geometry = obj._type === 'aircraft' ? aircraftGeo : shipGeo;
-    return new THREE.Mesh(geometry, material);
-  }, [sharedGeo]);
+  // objectThreeObject removed — caused dual Three.js instance crash
+  // Aircraft/ships visible via trail paths instead
 
   // ── Military base HTML markers ──────────────────────────────────────────────
   const militaryBaseMarkers = useMemo(
