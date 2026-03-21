@@ -1086,11 +1086,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
       // Polar angle: 0 = north pole (top-down), PI/2 = equator (horizon), PI = south pole
       // Allow tilting from near-horizon (looking up at sky) to straight down
-      controls.minPolarAngle = 0.2;      // nearly top-down allowed
-      controls.maxPolarAngle = Math.PI * 0.75;  // allow tilting past horizon to look upward at sky
-
-      // Set initial tilt — lean toward horizon so satellites above are visible
-      controls.setPolarAngle(Math.PI * 0.55);   // slightly past equator = looking upward
+      controls.minPolarAngle = 0.2;
+      controls.maxPolarAngle = Math.PI * 0.75;
     }
   }, []);
 
