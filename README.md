@@ -1,6 +1,5 @@
 # 🌍 World 4D War Track
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/Docker-ghcr.io%2Fatvriders%2Fworld--4d--war--track-blue?logo=docker)](https://github.com/Atvriders/world-4d-war-track/pkgs/container/world-4d-war-track)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript)](https://www.typescriptlang.org)
@@ -369,12 +368,6 @@ Contributions are welcome. Please open an issue or pull request on [GitHub](http
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Commit your changes
 4. Push to the branch and open a Pull Request
-
----
-
-## 📄 License
-
-[MIT License](LICENSE) — Copyright © 2025–2026 Atvriders
 
 ---
 
