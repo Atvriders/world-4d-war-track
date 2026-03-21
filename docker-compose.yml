@@ -4,12 +4,12 @@ services:
     image: ghcr.io/atvriders/world-4d-war-track:latest
     ports:
       - "3006:3000"
-      - "3007:3001"
     environment:
       - NODE_ENV=production
+      - PORT=3000
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3001/api/health"]
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

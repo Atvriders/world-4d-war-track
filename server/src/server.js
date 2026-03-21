@@ -2,9 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
 import fetch from 'node-fetch';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // In-memory cache
 const cache = new Map(); // key → { data, expires }
@@ -201,7 +204,17 @@ app.get('/api/gpsjam/current', (req, res) => {
   res.status(503).json({ error: 'GPSJam API not available, using static data' });
 });
 
+// ── Serve static frontend in production ──────────────────────────────────────
+const distPath = path.resolve(__dirname, '../../dist');
+app.use(express.static(distPath));
+// SPA fallback — serve index.html for any non-API route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 // ── Start ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`[${new Date().toISOString()}] World4DWarTrack proxy server listening on port ${PORT}`);
+  console.log(`[${new Date().toISOString()}] World4DWarTrack server listening on port ${PORT}`);
+  console.log(`  API: http://localhost:${PORT}/api/health`);
+  console.log(`  Frontend: http://localhost:${PORT}/`);
 });

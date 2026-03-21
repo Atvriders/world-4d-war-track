@@ -17,9 +17,6 @@ COPY server/ .
 FROM node:20.11-alpine AS production
 WORKDIR /app
 
-# Install serve for static files
-RUN npm install -g serve
-
 # Copy built frontend
 COPY --from=frontend-builder /app/dist ./dist
 
@@ -30,9 +27,11 @@ COPY --from=server-builder /server ./server
 COPY docker-start.sh ./
 RUN chmod +x docker-start.sh
 
-EXPOSE 3000 3001
+ENV PORT=3000
+
+EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
-  CMD wget -q -O- http://localhost:3001/api/health || exit 1
+  CMD wget -q -O- http://localhost:3000/api/health || exit 1
 
 CMD ["./docker-start.sh"]
