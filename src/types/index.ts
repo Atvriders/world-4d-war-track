@@ -101,7 +101,7 @@ export interface GpsJamCell {
 // === ALERT ===
 export interface Alert {
   id: string;
-  type: 'gps-jam' | 'military-aircraft' | 'warship' | 'conflict-event' | 'satellite-pass' | 'system';
+  type: 'gps-jam' | 'military-aircraft' | 'warship' | 'conflict-event' | 'satellite-pass' | 'emergency-squawk' | 'system';
   severity: 'info' | 'warning' | 'critical';
   message: string;
   lat?: number;
@@ -125,6 +125,21 @@ export interface LayerVisibility {
   conflictEvents: boolean;
   frontLines: boolean;
   gpsJam: boolean;
+  droneActivity: boolean;
+  seaCables: boolean;
+  nuclearSites: boolean;
+  militaryBases: boolean;
+  sanctionsZones: boolean;
+  chokepoints: boolean;
+  refugeeFlows: boolean;
+  airspaceClosures: boolean;
+  weaponRanges: boolean;
+  cyberThreats: boolean;
+  piracyZones: boolean;
+  carrierGroups: boolean;
+  threatRings: boolean;
+  armsFlows: boolean;
+  energyInfra: boolean;
   atmosphere: boolean;
 }
 

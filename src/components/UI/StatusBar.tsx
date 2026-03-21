@@ -1,4 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+
+interface AlertLike {
+  severity: 'info' | 'warning' | 'critical';
+  dismissed: boolean;
+}
+
+interface GpsJamCellLike {
+  level: number;
+}
 
 interface StatusBarProps {
   satellites: number;
@@ -12,6 +21,8 @@ interface StatusBarProps {
   errors: { satellites: string | null; aircraft: string | null; ships: string | null; gpsJam: string | null };
   lastRefresh: { satellites: number; aircraft: number; ships: number; gpsJam: number };
   currentTime: Date;
+  alerts?: AlertLike[];
+  gpsJamCells?: GpsJamCellLike[];
 }
 
 const STYLES = `
@@ -26,6 +37,10 @@ const STYLES = `
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+  }
+  @keyframes blinkRed {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(255,59,59,0.8); }
+    50% { opacity: 0.3; box-shadow: 0 0 0px rgba(255,59,59,0); }
   }
 `;
 
@@ -53,6 +68,20 @@ function formatDate(date: Date): string {
   const y = date.getUTCFullYear();
   return `${d} ${m} ${y}`;
 }
+
+/** Determine data freshness: 'live' (<30s), 'delayed' (<2min), 'stale' (>=2min) */
+function getFreshness(slowestMs: number): 'live' | 'delayed' | 'stale' {
+  const age = Date.now() - slowestMs;
+  if (age < 30_000) return 'live';
+  if (age < 120_000) return 'delayed';
+  return 'stale';
+}
+
+const FRESHNESS_CONFIG = {
+  live:    { color: '#00ff88', label: 'LIVE',    bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
+  delayed: { color: '#ffd700', label: 'DELAYED', bg: 'rgba(255, 215, 0, 0.15)', border: 'rgba(255, 215, 0, 0.5)' },
+  stale:   { color: '#ff3b3b', label: 'STALE',   bg: 'rgba(255, 59, 59, 0.15)', border: 'rgba(255, 59, 59, 0.5)' },
+};
 
 const LoadingDot: React.FC = () => (
   <span
@@ -84,6 +113,23 @@ const ErrorIcon: React.FC<{ title: string }> = ({ title }) => (
   </span>
 );
 
+/** Blinking red dot for military items */
+const MilDot: React.FC = () => (
+  <span
+    style={{
+      display: 'inline-block',
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      background: '#ff3b3b',
+      marginLeft: 4,
+      marginRight: 2,
+      verticalAlign: 'middle',
+      animation: 'blinkRed 1s ease-in-out infinite',
+    }}
+  />
+);
+
 const StatusBar: React.FC<StatusBarProps> = ({
   satellites,
   aircraft,
@@ -96,6 +142,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
   errors,
   lastRefresh,
   currentTime,
+  alerts = [],
+  gpsJamCells = [],
 }) => {
   const [clock, setClock] = useState<Date>(currentTime);
 
@@ -107,13 +155,39 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const anySyncing = isLoading.satellites || isLoading.aircraft || isLoading.ships || isLoading.gpsJam;
   const slowest = getSlowestRefresh(lastRefresh);
 
+  // Derived: alert severity breakdown (only non-dismissed)
+  const alertStats = useMemo(() => {
+    const active = alerts.filter(a => !a.dismissed);
+    return {
+      total: active.length,
+      critical: active.filter(a => a.severity === 'critical').length,
+      warning: active.filter(a => a.severity === 'warning').length,
+      info: active.filter(a => a.severity === 'info').length,
+    };
+  }, [alerts]);
+
+  // Derived: average GPS interference level (0-100%)
+  const gpsInterference = useMemo(() => {
+    if (gpsJamCells.length === 0) return 0;
+    const sum = gpsJamCells.reduce((acc, c) => acc + c.level, 0);
+    return Math.round((sum / gpsJamCells.length) * 100);
+  }, [gpsJamCells]);
+
+  // Civilian counts
+  const civilianAircraft = aircraft - militaryAircraft;
+  const commercialShips = ships - warships;
+
+  // Data freshness
+  const freshness = getFreshness(slowest);
+  const freshnessConf = FRESHNESS_CONFIG[freshness];
+
   return (
     <>
       <style>{STYLES}</style>
       <div
         style={{
           position: 'fixed',
-          top: 0,
+          top: 28,
           left: 0,
           right: 0,
           height: 48,
@@ -129,8 +203,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
           userSelect: 'none',
         }}
       >
-        {/* LEFT — Title */}
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 180 }}>
+        {/* LEFT -- Title */}
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 170 }}>
           <span
             style={{
               color: '#00ff88',
@@ -154,28 +228,16 @@ const StatusBar: React.FC<StatusBarProps> = ({
           </span>
         </div>
 
-        {/* CENTER — Counters */}
+        {/* CENTER -- Counters */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 24,
+            gap: 18,
             flex: 1,
             justifyContent: 'center',
           }}
         >
-          {/* SATELLITES */}
-          <CounterBlock
-            icon="🛰️"
-            label="SATELLITES"
-            loading={isLoading.satellites}
-            error={errors.satellites}
-          >
-            <span style={{ color: '#00ff88', fontSize: 15, fontWeight: 700 }}>{satellites.toLocaleString()}</span>
-          </CounterBlock>
-
-          <Divider />
-
           {/* AIRCRAFT */}
           <CounterBlock
             icon="✈️"
@@ -183,10 +245,17 @@ const StatusBar: React.FC<StatusBarProps> = ({
             loading={isLoading.aircraft}
             error={errors.aircraft}
           >
-            <span style={{ color: '#4da8ff', fontSize: 15, fontWeight: 700 }}>{aircraft.toLocaleString()}</span>
-            <span style={{ color: '#7a9ab0', fontSize: 10, margin: '0 3px' }}>/</span>
-            <span style={{ color: '#ff3b3b', fontSize: 13, fontWeight: 700 }}>{militaryAircraft.toLocaleString()}</span>
-            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 2 }}>MIL</span>
+            <span style={{ color: '#4da8ff', fontSize: 15, fontWeight: 700 }}>
+              {aircraft.toLocaleString()}
+            </span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>
+              ({civilianAircraft.toLocaleString()} civ)
+            </span>
+            <MilDot />
+            <span style={{ color: '#ff3b3b', fontSize: 13, fontWeight: 700 }}>
+              {militaryAircraft.toLocaleString()}
+            </span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 2 }}>mil</span>
           </CounterBlock>
 
           <Divider />
@@ -198,10 +267,32 @@ const StatusBar: React.FC<StatusBarProps> = ({
             loading={isLoading.ships}
             error={errors.ships}
           >
-            <span style={{ color: '#ff8c00', fontSize: 15, fontWeight: 700 }}>{ships.toLocaleString()}</span>
-            <span style={{ color: '#7a9ab0', fontSize: 10, margin: '0 3px' }}>/</span>
-            <span style={{ color: '#ff3b3b', fontSize: 13, fontWeight: 700 }}>{warships.toLocaleString()}</span>
-            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 2 }}>WARSHIPS</span>
+            <span style={{ color: '#ff8c00', fontSize: 15, fontWeight: 700 }}>
+              {ships.toLocaleString()}
+            </span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>
+              ({commercialShips.toLocaleString()} comm)
+            </span>
+            <MilDot />
+            <span style={{ color: '#ff3b3b', fontSize: 13, fontWeight: 700 }}>
+              {warships.toLocaleString()}
+            </span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 2 }}>warships</span>
+          </CounterBlock>
+
+          <Divider />
+
+          {/* SATELLITES */}
+          <CounterBlock
+            icon="🛰️"
+            label="SATELLITES"
+            loading={isLoading.satellites}
+            error={errors.satellites}
+          >
+            <span style={{ color: '#00ff88', fontSize: 15, fontWeight: 700 }}>
+              {satellites.toLocaleString()}
+            </span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>tracked</span>
           </CounterBlock>
 
           <Divider />
@@ -226,24 +317,67 @@ const StatusBar: React.FC<StatusBarProps> = ({
               }}
             />
             <span style={{ color: '#ff3b3b', fontSize: 15, fontWeight: 700 }}>{activeConflicts}</span>
-            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>ACTIVE</span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>active</span>
           </CounterBlock>
 
           <Divider />
 
-          {/* GPS JAM */}
+          {/* GPS INTERFERENCE */}
           <CounterBlock
             icon="📡"
-            label="GPS JAM"
+            label="GPS INTRF"
             loading={isLoading.gpsJam}
             error={errors.gpsJam}
           >
-            <span style={{ color: '#ffd700', fontSize: 15, fontWeight: 700 }}>{gpsJamZones}</span>
-            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>ZONES</span>
+            <span
+              style={{
+                color: gpsInterference > 70 ? '#ff3b3b' : gpsInterference > 40 ? '#ffd700' : '#00ff88',
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              {gpsInterference}%
+            </span>
+            <span style={{ color: '#7a9ab0', fontSize: 9, marginLeft: 3 }}>
+              ({gpsJamZones} zones)
+            </span>
+          </CounterBlock>
+
+          <Divider />
+
+          {/* ALERTS */}
+          <CounterBlock
+            icon="⚠️"
+            label="ALERTS"
+            loading={false}
+            error={null}
+          >
+            <span
+              style={{
+                color: alertStats.critical > 0 ? '#ff3b3b' : alertStats.warning > 0 ? '#ffd700' : '#7a9ab0',
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              {alertStats.total}
+            </span>
+            {alertStats.total > 0 && (
+              <span style={{ fontSize: 9, marginLeft: 4, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                {alertStats.critical > 0 && (
+                  <span style={{ color: '#ff3b3b' }}>{alertStats.critical}C</span>
+                )}
+                {alertStats.warning > 0 && (
+                  <span style={{ color: '#ffd700' }}>{alertStats.warning}W</span>
+                )}
+                {alertStats.info > 0 && (
+                  <span style={{ color: '#8ab4f8' }}>{alertStats.info}I</span>
+                )}
+              </span>
+            )}
           </CounterBlock>
         </div>
 
-        {/* RIGHT — Clock / Status */}
+        {/* RIGHT -- Clock / Status / Freshness */}
         <div
           style={{
             display: 'flex',
@@ -259,7 +393,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
             <span style={{ color: '#e0f0ff', fontSize: 14, fontWeight: 700, letterSpacing: '0.06em' }}>
               {formatUTC(clock)} UTC
             </span>
-            {/* LIVE / SYNCING badge */}
+            {/* Freshness / SYNCING badge */}
             {anySyncing ? (
               <span
                 style={{
@@ -291,8 +425,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
             ) : (
               <span
                 style={{
-                  background: 'rgba(0, 255, 136, 0.15)',
-                  border: '1px solid rgba(0, 255, 136, 0.5)',
+                  background: freshnessConf.bg,
+                  border: `1px solid ${freshnessConf.border}`,
                   color: '#fff',
                   fontSize: 9,
                   fontWeight: 700,
@@ -310,11 +444,15 @@ const StatusBar: React.FC<StatusBarProps> = ({
                     width: 5,
                     height: 5,
                     borderRadius: '50%',
-                    background: '#00ff88',
-                    animation: 'pulse 1.8s ease-in-out infinite',
+                    background: freshnessConf.color,
+                    animation: freshness === 'live'
+                      ? 'pulse 1.8s ease-in-out infinite'
+                      : freshness === 'stale'
+                        ? 'blink 1s step-start infinite'
+                        : 'pulse 1.2s ease-in-out infinite',
                   }}
                 />
-                LIVE
+                {freshnessConf.label}
               </span>
             )}
           </div>
@@ -334,7 +472,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   );
 };
 
-/* ── Helper sub-components ─────────────────────────────────────────────── */
+/* -- Helper sub-components ------------------------------------------------- */
 
 interface CounterBlockProps {
   icon: string;

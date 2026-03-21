@@ -6,7 +6,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useStore } from '../store';
 import { fetchAircraft } from '../services/adsb';
 import { fetchShips } from '../services/ais';
-import { fetchAllSatellites } from '../services/satellite';
+import { fetchAllSatellites, propagateSatellite, getSatelliteGroundTrack, getFootprintRadius } from '../services/satellite';
 import { getStaticGpsJamHotspots } from '../services/gpsJam';
 import { distanceKm, pointNearConflictZone } from '../utils/geoMath';
 
@@ -274,7 +274,39 @@ export function useAlertGenerator(): void {
       });
     }
 
-    // 4. Satellite passing over conflict zone (alt < 600 km, within footprint)
+    // 4. Emergency squawk codes
+    const EMERGENCY_SQUAWKS: Record<string, { label: string; severity: 'critical' | 'warning' }> = {
+      '7500': { label: 'HIJACK', severity: 'critical' },
+      '7600': { label: 'RADIO FAILURE', severity: 'warning' },
+      '7700': { label: 'GENERAL EMERGENCY', severity: 'critical' },
+    };
+
+    for (const ac of aircraft) {
+      if (!ac.squawk) continue;
+      const info = EMERGENCY_SQUAWKS[ac.squawk];
+      if (!info) continue;
+
+      const key = `emergency-squawk-${ac.icao24}-${ac.squawk}`;
+      const flightLevel = Math.round(ac.altitude / 100)
+        .toString()
+        .padStart(3, '0');
+      const callsign = ac.callsign || ac.icao24;
+      const country = ac.country || 'unknown location';
+
+      maybeAlert(key, {
+        id: newId(),
+        type: 'emergency-squawk',
+        severity: info.severity,
+        message: `EMERGENCY: ${callsign} squawking ${ac.squawk} (${info.label}) over ${country} at FL${flightLevel}`,
+        lat: ac.lat,
+        lng: ac.lng,
+        entityId: ac.icao24,
+        timestamp: now,
+        dismissed: false,
+      });
+    }
+
+    // 5. Satellite passing over conflict zone (alt < 600 km, within footprint)
     for (const sat of satellites) {
       if (sat.alt >= SATELLITE_MAX_ALT_KM) continue;
 
@@ -321,7 +353,71 @@ export function useAlertGenerator(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Hook 3: useGlobeTime
+// Hook 3: useSatelliteTimePropagation — 4D time-travel for satellite positions
+// ---------------------------------------------------------------------------
+
+/**
+ * Watches `timeOffset` and re-propagates all satellite positions, ground
+ * tracks, and footprints so they reflect the adjusted time.  This runs
+ * entirely client-side using already-fetched TLE data stored on each entity.
+ *
+ * Debounced to avoid hammering the CPU while the user scrubs the slider.
+ */
+export function useSatelliteTimePropagation(): void {
+  const satellites = useStore((s) => s.satellites);
+  const timeOffset = useStore((s) => s.timeOffset);
+  const setSatellites = useStore((s) => s.setSatellites);
+
+  // Keep a ref to satellites so we don't re-trigger the effect when
+  // setSatellites updates the array (we only want to react to timeOffset).
+  const satellitesRef = useRef(satellites);
+  satellitesRef.current = satellites;
+
+  // Track the last timeOffset we propagated for so we skip the initial 0.
+  const lastPropagatedOffset = useRef<number>(0);
+
+  useEffect(() => {
+    // Skip if offset hasn't actually changed (avoids work on initial mount
+    // or when other state changes trigger a re-render).
+    if (timeOffset === lastPropagatedOffset.current) return;
+
+    const debounceTimer = setTimeout(() => {
+      const sats = satellitesRef.current;
+      if (sats.length === 0) return;
+
+      const adjustedNow = Date.now() + timeOffset * 60_000;
+      const adjustedDate = new Date(adjustedNow);
+
+      const updated = sats.map((sat) => {
+        const pos = propagateSatellite(sat.name, sat.tle1, sat.tle2, adjustedDate);
+        if (!pos) return sat; // keep previous position if propagation fails
+
+        const groundTrack = getSatelliteGroundTrack(sat.tle1, sat.tle2, 90, 2, adjustedNow);
+        const footprintRadius = getFootprintRadius(pos.alt);
+
+        return {
+          ...sat,
+          lat: pos.lat,
+          lng: pos.lng,
+          alt: pos.alt,
+          velocity: pos.velocity,
+          heading: pos.heading,
+          groundTrack,
+          footprintRadius,
+          lastUpdated: adjustedNow,
+        };
+      });
+
+      lastPropagatedOffset.current = timeOffset;
+      setSatellites(updated);
+    }, 80); // 80ms debounce — responsive but not excessive
+
+    return () => clearTimeout(debounceTimer);
+  }, [timeOffset, setSatellites]);
+}
+
+// ---------------------------------------------------------------------------
+// Hook 4: useGlobeTime
 // ---------------------------------------------------------------------------
 
 interface GlobeTimeResult {

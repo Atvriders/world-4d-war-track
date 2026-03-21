@@ -254,6 +254,37 @@ const Legend: React.FC = () => {
             label="Front lines"
           />
 
+          {/* MILITARY BASES */}
+          <SectionHead>Military Bases</SectionHead>
+          <LegendItem
+            swatch={<div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '8px solid #4488ff', flexShrink: 0 }} />}
+            label="US base"
+          />
+          <LegendItem
+            swatch={<div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '8px solid #ff3333', flexShrink: 0 }} />}
+            label="Russian base"
+          />
+          <LegendItem
+            swatch={<div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '8px solid #ffdd00', flexShrink: 0 }} />}
+            label="Chinese base"
+          />
+          <LegendItem
+            swatch={<div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '8px solid #00cccc', flexShrink: 0 }} />}
+            label="UK base"
+          />
+          <LegendItem
+            swatch={<div style={{ width: 0, height: 0, borderLeft: '5px solid transparent', borderRight: '5px solid transparent', borderBottom: '8px solid #ffffff', flexShrink: 0 }} />}
+            label="NATO base"
+          />
+
+          
+          {/* ENERGY INFRASTRUCTURE */}
+          <SectionHead>Energy Infrastructure</SectionHead>
+          <LegendItem swatch={<Swatch color="#ff0033" />} label="Critical risk" />
+          <LegendItem swatch={<Swatch color="#ff8800" />} label="High risk" />
+          <LegendItem swatch={<Swatch color="#ffcc00" />} label="Medium risk" />
+          <LegendItem swatch={<Swatch color="#44cc44" />} label="Low risk" />
+
           {/* GPS INTERFERENCE */}
           <SectionHead>GPS Interference</SectionHead>
           <LegendItem

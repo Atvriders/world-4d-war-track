@@ -1,1 +1,1 @@
-export { useDataRefresh, useAlertGenerator, useGlobeTime } from './useDataRefresh';
+export { useDataRefresh, useAlertGenerator, useSatelliteTimePropagation, useGlobeTime } from './useDataRefresh';

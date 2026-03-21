@@ -140,16 +140,16 @@ export function getSatelliteGroundTrack(
   tle1: string,
   tle2: string,
   minutesAhead = 90,
-  stepMinutes = 2
+  stepMinutes = 2,
+  baseTime: number = Date.now()
 ): [number, number][] {
   try {
     const satrec = satellite.twoline2satrec(tle1, tle2);
     if (satrec.error !== 0) return [];
-    const now = Date.now();
     const track: [number, number][] = [];
 
     for (let m = 0; m <= minutesAhead; m += stepMinutes) {
-      const date = new Date(now + m * 60 * 1000);
+      const date = new Date(baseTime + m * 60 * 1000);
       const pv = satellite.propagate(satrec, date);
 
       if (!pv || typeof pv.position === 'boolean') continue;

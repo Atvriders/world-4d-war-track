@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from './store';
-import { useDataRefresh, useAlertGenerator, useGlobeTime } from './hooks';
+import { useDataRefresh, useAlertGenerator, useSatelliteTimePropagation, useGlobeTime } from './hooks';
 
 import Globe from './components/Globe/Globe';
 import StatusBar from './components/UI/StatusBar';
@@ -23,6 +23,8 @@ import StatsOverlay from './components/UI/StatsOverlay';
 import KeyboardHelp from './components/UI/KeyboardHelp';
 import WatchList from './components/UI/WatchList';
 import EventFeed from './components/UI/EventFeed';
+import DeathTollBar from './components/UI/DeathTollBar';
+import WarImpactPanel from './components/UI/WarImpactPanel';
 
 import { fetchAircraft } from './services/adsb';
 import { fetchShips } from './services/ais';
@@ -85,6 +87,7 @@ export default function App() {
   const [showHotspots, setShowHotspots] = useState(false);
   const [showWatchList, setShowWatchList] = useState(false);
   const [showEventFeed, setShowEventFeed] = useState(false);
+  const [showWarImpact, setShowWarImpact] = useState(false);
   const [watchedEntities, setWatchedEntities] = useState<Array<{ type: 'aircraft' | 'ship' | 'satellite'; id: string; label: string; addedAt: number }>>([]);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
@@ -92,6 +95,7 @@ export default function App() {
   // ── Custom hooks for data refresh, alert generation, and globe time ───────
   useDataRefresh();
   useAlertGenerator();
+  useSatelliteTimePropagation();
   const { currentTime } = useGlobeTime();
 
   // ── Globe ref ───────────────────────────────────────────────────────────────
@@ -217,6 +221,15 @@ export default function App() {
         case 'w': store.toggleLayer('warZones'); break;
         case 'j': store.toggleLayer('gpsJam'); break;
         case 'o': store.toggleLayer('satelliteOrbits'); break;
+        case 'n': store.toggleLayer('nuclearSites'); break;
+        case 'b': store.toggleLayer('militaryBases'); break;
+        case 'c': store.toggleLayer('seaCables'); break;
+        case 'r': store.toggleLayer('refugeeFlows'); break;
+        case 'p': store.toggleLayer('piracyZones'); break;
+        case 'd': store.toggleLayer('droneActivity'); break;
+        case 't': store.toggleLayer('threatRings'); break;
+        case 'x': store.toggleLayer('cyberThreats'); break;
+        case 'k': store.toggleLayer('chokepoints'); break;
         case 'f': document.documentElement.requestFullscreen?.(); break;
         case ' ':
           e.preventDefault();
@@ -231,6 +244,9 @@ export default function App() {
         case '?':
         case 'h':
           setShowKeyboardHelp(v => !v);
+          break;
+        case 'i':
+          setShowWarImpact(v => !v);
           break;
         case 'escape':
           setShowKeyboardHelp(false);
@@ -276,6 +292,12 @@ export default function App() {
 
       {isLoaded && (
         <>
+          {/* Death toll summary bar — always visible at very top */}
+          <DeathTollBar
+            conflictZones={conflictZones}
+            onFlyTo={handleFlyTo}
+          />
+
           {/* Status bar */}
           <StatusBar
             satellites={satellites.length}
@@ -289,6 +311,8 @@ export default function App() {
             errors={errors}
             lastRefresh={lastRefresh}
             currentTime={currentTime}
+            alerts={alerts}
+            gpsJamCells={gpsJamCells}
           />
 
           {/* Search bar */}
@@ -313,6 +337,7 @@ export default function App() {
               layers={layers}
               onEntityClick={handleEntityClick}
               timeOffset={timeOffset}
+              globeSettings={globeSettings}
             />
           </div>
 
@@ -461,6 +486,16 @@ export default function App() {
             onFlyTo={handleFlyTo}
             visible={showEventFeed}
             onToggle={() => setShowEventFeed(v => !v)}
+          />
+
+          {/* War impact panel */}
+          <WarImpactPanel
+            aircraft={aircraft}
+            ships={ships}
+            conflictZones={conflictZones}
+            gpsJamCells={gpsJamCells}
+            visible={showWarImpact}
+            onToggle={() => setShowWarImpact(v => !v)}
           />
 
           {/* Keyboard help */}

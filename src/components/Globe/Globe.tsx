@@ -11,7 +11,50 @@ import {
   type ArcConnection,
   type FootprintRing,
 } from '../../utils/satelliteConnections';
+import { MILITARY_BASES, type MilitaryBase } from '../../data/militaryBases';
+import { SEA_CABLES, type SeaCable } from '../../data/seaCables';
 
+import { CYBER_THREATS, type CyberThreat } from '../../data/cyberThreats';
+
+import { REFUGEE_FLOWS, type RefugeeFlow } from '../../data/refugeeFlows';
+
+import { PIRACY_ZONES, type PiracyZone } from '../../data/piracyZones';
+import { ENERGY_FACILITIES, type EnergyFacility } from '../../data/energyInfra';
+
+import { WEAPON_RANGES } from '../../data/weaponRanges';
+import { NUCLEAR_SITES, type NuclearSite } from '../../data/nuclearSites';
+import { CHOKEPOINTS, type Chokepoint } from '../../data/chokepoints';
+import { ARMS_FLOWS, type ArmsFlow } from '../../data/armsFlows';
+
+
+// ─── Inject chokepoint pulse animation CSS (once) ────────────────────────────
+if (typeof document !== 'undefined' && !document.getElementById('chokepoint-pulse-css')) {
+  const style = document.createElement('style');
+  style.id = 'chokepoint-pulse-css';
+  style.textContent = `
+    @keyframes chokepoint-pulse {
+      0%   { transform: scale(1);   opacity: 0.9; }
+      50%  { transform: scale(1.6); opacity: 0.3; }
+      100% { transform: scale(1);   opacity: 0.9; }
+    }
+    @keyframes csg-pulse {
+      0%   { transform: scale(1);   opacity: 0.7; }
+      50%  { transform: scale(1.15); opacity: 0.4; }
+      100% { transform: scale(1);   opacity: 0.7; }
+    }
+    .chokepoint-tooltip {
+      display: none; position: absolute; bottom: 100%; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(5,15,30,0.95); border: 1px solid rgba(0,255,136,0.4);
+      border-radius: 4px; padding: 8px 10px; white-space: nowrap;
+      font-family: 'Courier New', monospace; font-size: 11px; color: #cde;
+      pointer-events: none; z-index: 9999; margin-bottom: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.7); line-height: 1.5;
+    }
+    .chokepoint-marker:hover .chokepoint-tooltip { display: block; }
+  `;
+  document.head.appendChild(style);
+}
 // ─── Inline interfaces (mirrors types/index.ts to avoid circular deps) ────────
 
 interface SatelliteEntity {
@@ -114,7 +157,145 @@ interface LayerVisibility {
   conflictEvents: boolean;
   frontLines: boolean;
   gpsJam: boolean;
+  droneActivity: boolean;
+  seaCables: boolean;
+  refugeeFlows: boolean;
+  piracyZones: boolean;
+  cyberThreats: boolean;
+  weaponRanges: boolean;
+  energyInfra: boolean;
+  carrierGroups: boolean;
+  nuclearSites: boolean;
+  militaryBases: boolean;
+  chokepoints: boolean;
+  sanctionsZones: boolean;
+  armsFlows: boolean;
   atmosphere: boolean;
+}
+
+interface PiracyMarker extends PiracyZone {
+  _marker: 'piracy';
+}
+
+// ─── Nuclear marker for the unified HTML elements layer ──────────────────────
+
+interface NuclearMarker extends NuclearSite {
+  _marker: 'nuclear';
+}
+
+
+// ─── Carrier Strike Group types & helpers ──────────────────────────────────
+
+interface CarrierStrikeGroup {
+  id: string;
+  name: string;
+  country: string;
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  color: string;
+  ships: ShipEntity[];
+  composition: string;
+  _marker: 'csg';
+}
+
+/** Navy color by country */
+function navyColor(country: string): string {
+  const c = country.toLowerCase();
+  if (c.includes('united states'))  return '#1a3a6e';
+  if (c.includes('russia'))         return '#cc2222';
+  if (c.includes('china'))          return '#ccaa00';
+  if (c.includes('united kingdom')) return '#00cccc';
+  if (c.includes('india'))          return '#ee7700';
+  if (c.includes('south korea'))    return '#4488cc';
+  return '#8888ff';
+}
+
+/** Navy glow color (brighter) */
+function navyGlow(country: string): string {
+  const c = country.toLowerCase();
+  if (c.includes('united states'))  return '#4477dd';
+  if (c.includes('russia'))         return '#ff4444';
+  if (c.includes('china'))          return '#ffdd44';
+  if (c.includes('united kingdom')) return '#44ffff';
+  if (c.includes('india'))          return '#ffaa44';
+  if (c.includes('south korea'))    return '#66aaff';
+  return '#aaaaff';
+}
+
+/** Classify warship role by name */
+function classifyShipRole(name: string): string {
+  const n = name.toUpperCase();
+  if (n.includes('CARRIER') || n.includes('FORD') || n.includes('EISENHOWER') ||
+      n.includes('REAGAN') || n.includes('QUEEN ELIZABETH') || n.includes('PRINCE OF WALES') ||
+      n.includes('VIKRAMADITYA') || n.includes('BATAAN')) return 'carrier';
+  if (n.includes('CRUISER') || n.includes('NORMANDY') || n.includes('CHANCELLORSVILLE') ||
+      n.includes('PHILIPPINE SEA') || n.includes('SEJONG')) return 'cruiser';
+  if (n.includes('DESTROYER') || n.includes('GRAVELY') || n.includes('MASON') ||
+      n.includes('HUDNER') || n.includes('DIAMOND')) return 'destroyer';
+  if (n.includes('FRIGATE') || n.includes('KENT') || n.includes('SHIVALIK')) return 'frigate';
+  if (n.includes('SUPPLY') || n.includes('COMFORT') || n.includes('USNS')) return 'supply';
+  if (n.includes('HALL') || n.includes('CARTER')) return 'amphibious';
+  return 'escort';
+}
+
+/** Build composition string */
+function buildComposition(groupShips: ShipEntity[]): string {
+  const counts: Record<string, number> = {};
+  for (const s of groupShips) {
+    const role = classifyShipRole(s.name);
+    counts[role] = (counts[role] || 0) + 1;
+  }
+  const order = ['carrier', 'cruiser', 'destroyer', 'frigate', 'amphibious', 'escort', 'supply'];
+  const parts: string[] = [];
+  for (const role of order) {
+    const c = counts[role];
+    if (c) parts.push(`${c} ${role}${c > 1 ? 's' : ''}`);
+  }
+  return parts.join(', ');
+}
+
+/** Detect carrier strike groups: same-country warships within 50km of a carrier */
+function detectCarrierGroups(ships: ShipEntity[]): CarrierStrikeGroup[] {
+  const PROXIMITY_KM = 50;
+  const militaryShips = ships.filter(s => s.type === 'warship' || s.type === 'military');
+  const carriers = militaryShips.filter(s => classifyShipRole(s.name) === 'carrier');
+  const assigned = new Set<string>();
+  const groups: CarrierStrikeGroup[] = [];
+
+  for (const carrier of carriers) {
+    if (assigned.has(carrier.mmsi)) continue;
+    const nearby = militaryShips.filter(s =>
+      s.country === carrier.country &&
+      !assigned.has(s.mmsi) &&
+      haversineKm(carrier.lat, carrier.lng, s.lat, s.lng) <= PROXIMITY_KM
+    );
+    if (nearby.length < 2) continue;
+    for (const s of nearby) assigned.add(s.mmsi);
+
+    const avgLat = nearby.reduce((sum, s) => sum + s.lat, 0) / nearby.length;
+    const avgLng = nearby.reduce((sum, s) => sum + s.lng, 0) / nearby.length;
+    let maxDist = 20;
+    for (const s of nearby) {
+      const d = haversineKm(avgLat, avgLng, s.lat, s.lng);
+      if (d > maxDist) maxDist = d;
+    }
+    const carrierShortName = carrier.name.replace(/^(USS |HMS |INS |RFS |ROKS )/, '');
+
+    groups.push({
+      id: `csg-${carrier.mmsi}`,
+      name: `${carrierShortName} CSG`,
+      country: carrier.country,
+      lat: avgLat,
+      lng: avgLng,
+      radiusKm: maxDist + 5,
+      color: navyColor(carrier.country),
+      ships: nearby,
+      composition: buildComposition(nearby),
+      _marker: 'csg',
+    });
+  }
+  return groups;
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -163,7 +344,6 @@ function conflictCapColor(intensity: ConflictZone['intensity']): string {
     case 'critical': return 'rgba(255,17,17,0.25)';
     case 'high':     return 'rgba(255,102,0,0.2)';
     case 'medium':   return 'rgba(255,170,0,0.15)';
-    default:         return 'rgba(200,200,0,0.10)';
   }
 }
 
@@ -194,6 +374,56 @@ function shipColor(type: ShipEntity['type']): string {
   }
 }
 
+function cyberThreatColor(type: CyberThreat['type']): string {
+  switch (type) {
+    case 'ransomware':             return '#ff2222';
+    case 'espionage':              return '#aa44ff';
+    case 'ddos':                   return '#00ddff';
+    case 'infrastructure':         return '#ff8800';
+    case 'election_interference':  return '#ffdd00';
+  }
+}
+
+function cableRiskColor(risk: SeaCable['risk']): string {
+  switch (risk) {
+    case 'critical': return '#ff3333';
+    case 'high':     return '#ff8800';
+    case 'medium':   return '#ffdd00';
+    case 'low':      return '#00ddff';
+    default:         return '#00ddff';
+  }
+}
+
+/** Risk-based glow color for nuclear site markers */
+function nuclearRiskColor(risk: NuclearSite['risk']): string {
+  switch (risk) {
+    case 'critical': return '#ff2222';
+    case 'high':     return '#ff8800';
+    case 'medium':   return '#ffdd00';
+    case 'low':      return '#44cc44';
+  }
+}
+
+/** CSS animation speed for nuclear pulse */
+function nuclearPulseSpeed(risk: NuclearSite['risk']): string {
+  switch (risk) {
+    case 'critical': return '0.8s';
+    case 'high':     return '1.2s';
+    case 'medium':   return '2s';
+    case 'low':      return '3s';
+  }
+}
+
+function militaryBaseColor(operator: string): string {
+  const op = operator.toUpperCase();
+  if (op.includes('RUSSIA')) return '#ff3333';
+  if (op.includes('CHINA')) return '#ffdd00';
+  if (op.includes('UK') && !op.includes('US')) return '#00cccc';
+  if (op.includes('NATO')) return '#ffffff';
+  if (op.includes('US')) return '#4488ff';
+  return '#aaaaaa';
+}
+
 /** Expand a GpsJamCell into a cloud of lat/lng points distributed in a circle */
 function expandJamCell(cell: GpsJamCell): { lat: number; lng: number; weight: number }[] {
   const KM_PER_DEG = 111;
@@ -219,14 +449,276 @@ function hexBinColor(frac: number): string {
   const b = 0;
   return `rgba(${r},${g},${b},0.75)`;
 }
+/** Cyan-to-purple gradient for drone activity heatmap */
+function droneHeatmapColor(t: number): string {
+  const r = Math.round(170 * t);
+  const g = Math.round(255 * (1 - t));
+  const b = 255;
+  return `rgba(${r},${g},${b},${(0.4 + 0.5 * t).toFixed(2)})`;
+}
+
+/** Expand drone events into weighted lat/lng points for heatmap layer */
+function expandDroneEvents(
+  zones: ConflictZone[]
+): { lat: number; lng: number; weight: number }[] {
+  const KM_PER_DEG = 111;
+  const points: { lat: number; lng: number; weight: number }[] = [];
+  for (const zone of zones) {
+    for (const evt of zone.events) {
+      if (evt.type !== 'drone') continue;
+      const weight = Math.max(0.3, Math.min(1, 0.3 + Math.log10(evt.fatalities + 1) * 0.25));
+      points.push({ lat: evt.lat, lng: evt.lng, weight });
+      const radius = 50;
+      const n = 6;
+      for (let i = 0; i < n; i++) {
+        const angle = (2 * Math.PI * i) / n;
+        const dLat = (radius / KM_PER_DEG) * Math.cos(angle);
+        const dLng =
+          (radius / (KM_PER_DEG * Math.cos((evt.lat * Math.PI) / 180))) *
+          Math.sin(angle);
+        points.push({ lat: evt.lat + dLat, lng: evt.lng + dLng, weight: weight * 0.5 });
+      }
+    }
+  }
+  return points;
+}
+
 
 // zoneCentroid replaced by getConflictCenter from utils/satelliteConnections
+
+
+function piracyZoneColor(risk: PiracyZone['risk']): string {
+  switch (risk) {
+    case 'critical': return '#ff2222';
+    case 'high':     return '#ff8800';
+    case 'medium':   return '#ffdd00';
+    case 'low':      return '#44cc44';
+  }
+}
+
+let _piracyStyleInjected = false;
+function injectPiracyPulseStyle() {
+  if (_piracyStyleInjected) return;
+  _piracyStyleInjected = true;
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes piracy-pulse-critical {
+      0%, 100% { opacity: 0.9; transform: scale(1); box-shadow: 0 0 12px #ff2222, inset 0 0 8px #ff2222; }
+      50% { opacity: 0.5; transform: scale(1.25); box-shadow: 0 0 24px #ff2222, inset 0 0 16px #ff2222; }
+    }
+    @keyframes piracy-pulse-high {
+      0%, 100% { opacity: 0.85; transform: scale(1); box-shadow: 0 0 10px #ff8800, inset 0 0 6px #ff8800; }
+      50% { opacity: 0.45; transform: scale(1.2); box-shadow: 0 0 20px #ff8800, inset 0 0 12px #ff8800; }
+    }
+    @keyframes piracy-pulse-medium {
+      0%, 100% { opacity: 0.8; transform: scale(1); box-shadow: 0 0 8px #ffdd00, inset 0 0 5px #ffdd00; }
+      50% { opacity: 0.4; transform: scale(1.15); box-shadow: 0 0 16px #ffdd00, inset 0 0 10px #ffdd00; }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 // ─── Path entry union (satellite ground tracks + aircraft trails) ─────────────
 
 type PathEntry =
   | { _kind: 'sat'; sat: SatelliteEntity; coords: { lat: number; lng: number; alt: number }[] }
-  | { _kind: 'aircraft'; aircraft: AircraftEntity; coords: { lat: number; lng: number; alt: number }[] };
+  | { _kind: 'aircraft'; aircraft: AircraftEntity; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'ship'; ship: ShipEntity; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'frontline'; zone: ConflictZone; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'seaCable'; cable: SeaCable; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'weaponRange'; site: string; weapon: string; rangeKm: number; weaponType: 'ballistic' | 'cruise' | 'drone' | 'sam' | 'rocket'; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'constellation'; constellation: string; color: string; coords: { lat: number; lng: number; alt: number }[] };
+
+// ─── Navigation constellation helpers ──────────────────────────────────────
+
+type ConstellationName = 'GPS' | 'GLONASS' | 'Galileo' | 'BeiDou' | 'Starlink';
+
+const CONSTELLATION_COLORS: Record<ConstellationName, string> = {
+  GPS:      '#00ff00',
+  GLONASS:  '#ff3333',
+  Galileo:  '#4488ff',
+  BeiDou:   '#ffdd00',
+  Starlink: '#aaddff',
+};
+
+/** Identify which navigation constellation a satellite belongs to (or null) */
+function getConstellation(sat: SatelliteEntity): ConstellationName | null {
+  const upper = sat.name.toUpperCase();
+  if (upper.includes('NAVSTAR') || upper.includes('GPS')) return 'GPS';
+  if (upper.includes('GLONASS') || upper.includes('COSMOS')) return 'GLONASS';
+  if (upper.includes('GALILEO') || upper.includes('GSAT')) return 'Galileo';
+  if (upper.includes('BEIDOU')) return 'BeiDou';
+  if (sat.category === 'starlink') return 'Starlink';
+  return null;
+}
+
+/** Haversine distance in km between two lat/lng points */
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// ─── Refugee flow arc ────────────────────────────────────────────────────────
+
+interface RefugeeArc {
+  _isRefugee: true;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  count: number;
+  from: string;
+  to: string;
+  year: string;
+}
+
+/** Map refugee count to arc stroke width (min 0.8, max 4) */
+function refugeeArcWidth(count: number): number {
+  return Math.min(4, Math.max(0.8, 0.8 + Math.log10(Math.max(1, count)) * 0.5));
+}
+
+function formatRefugeeCount(count: number): string {
+  if (count >= 1_000_000) return (count / 1_000_000).toFixed(1) + 'M';
+  if (count >= 1_000) return Math.round(count / 1_000) + 'K';
+  return String(count);
+}
+
+// ─── Arms supply flow arc ───────────────────────────────────────────────────
+
+interface ArmsFlowArc {
+  _isArmsFlow: true;
+  startLat: number;
+  startLng: number;
+  endLat: number;
+  endLng: number;
+  supplier: string;
+  recipient: string;
+  category: string;
+  value: string;
+}
+
+function armsFlowColor(category: string): string {
+  switch (category) {
+    case 'missiles':     return '#ff2222';
+    case 'drones':       return '#00ddff';
+    case 'ammunition':   return '#ff8800';
+    case 'air_defense':  return '#22cc44';
+    case 'vehicles':     return '#ffdd00';
+    case 'artillery':    return '#ff6644';
+    default:             return '#ff8800';
+  }
+}
+
+/** Map arms flow category to arc stroke width (thicker = higher significance) */
+function armsFlowStroke(category: string, value: string): number {
+  // Billion-dollar+ transfers get thicker lines
+  if (value.includes('B')) return 3.0;
+  if (value.includes('M') || value.includes('million')) return 2.0;
+  return 1.8;
+}
+
+type ArcEntry = ArcConnection | RefugeeArc | ArmsFlowArc;
+
+function isRefugeeArc(d: object): d is RefugeeArc {
+  return '_isRefugee' in d;
+}
+
+function isArmsFlowArc(d: object): d is ArmsFlowArc {
+  return '_isArmsFlow' in d;
+}
+
+
+/** Generate a circle of [lat, lng] points on Earth surface */
+function generateCircleCoords(
+  centerLat: number, centerLng: number, radiusKm: number, segments: number = 64
+): { lat: number; lng: number; alt: number }[] {
+  const KM_PER_DEG = 111.32;
+  const coords: { lat: number; lng: number; alt: number }[] = [];
+  for (let i = 0; i <= segments; i++) {
+    const angle = (2 * Math.PI * i) / segments;
+    const dLat = (radiusKm / KM_PER_DEG) * Math.cos(angle);
+    const dLng = (radiusKm / (KM_PER_DEG * Math.cos((centerLat * Math.PI) / 180))) * Math.sin(angle);
+    coords.push({ lat: centerLat + dLat, lng: centerLng + dLng, alt: 0.002 });
+  }
+  return coords;
+}
+
+/** Color for weapon range circle by type */
+function weaponRangeColor(type: 'ballistic' | 'cruise' | 'drone' | 'sam' | 'rocket'): string {
+  switch (type) {
+    case 'ballistic': return 'rgba(255,50,50,0.55)';
+    case 'cruise':    return 'rgba(255,160,0,0.55)';
+    case 'drone':     return 'rgba(0,220,255,0.55)';
+    case 'sam':       return 'rgba(255,255,0,0.55)';
+    case 'rocket':    return 'rgba(255,255,255,0.55)';
+  }
+}
+
+// Inject nuclear pulse keyframes into the document once
+let _nuclearStyleInjected = false;
+function injectNuclearPulseStyle() {
+  if (_nuclearStyleInjected) return;
+  _nuclearStyleInjected = true;
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes nuclear-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.5); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// ─── Unified HTML marker type (events + nuclear sites share htmlElementsData) ─
+
+type HtmlMarker =
+  | (EventMarker & { _marker: 'event' })
+  | NuclearMarker;
+
+
+function energyRiskColor(risk: 'low' | 'medium' | 'high' | 'critical'): string {
+  switch (risk) {
+    case 'critical': return '#ff0033';
+    case 'high':     return '#ff8800';
+    case 'medium':   return '#ffcc00';
+    case 'low':      return '#44cc44';
+  }
+}
+
+function energyTypeIcon(type: string): string {
+  switch (type) {
+    case 'oil_field':
+    case 'gas_field':     return '\u{1F525}'; // flame
+    case 'refinery':      return '\u{1F3ED}'; // factory
+    case 'pipeline_hub':  return '\u{1F6E2}'; // oil drum
+    case 'lng_terminal':
+    case 'oil_terminal':  return '\u{2693}';  // anchor
+    default:              return '\u{26A1}';  // lightning
+  }
+}
+
+
+function chokepointRiskColor(risk: Chokepoint['risk']): string {
+  switch (risk) {
+    case 'critical': return '#ff2222';
+    case 'high':     return '#ff8800';
+    case 'medium':   return '#ffdd00';
+    case 'low':      return '#44cc44';
+  }
+}
+
+/** Map daily traffic string to a ring size in px (16-36) */
+function chokepointRingSize(dailyTraffic: string): number {
+  const match = dailyTraffic.match(/~?(\d+)/);
+  if (!match) return 20;
+  const n = parseInt(match[1], 10);
+  return Math.min(36, Math.max(16, Math.round(12 + n * 0.28)));
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -271,6 +763,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }
   }, []);
 
+  // Inject nuclear pulse CSS once
+  useEffect(() => { injectNuclearPulseStyle(); injectPiracyPulseStyle(); }, []);
+
   // ── Derived data (memoized) ─────────────────────────────────────────────────
 
   // War zone polygon data
@@ -284,6 +779,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     () => (layers.gpsJam ? gpsJamCells.flatMap(expandJamCell) : []),
     [layers.gpsJam, gpsJamCells]
   );
+  // Drone activity heatmap data
+  const droneActivityHeatmap = useMemo(() => {
+    if (!layers.droneActivity) return [];
+    const pts = expandDroneEvents(conflictZones);
+    if (pts.length === 0) return [];
+    return [{
+      id: 'drone-activity',
+      points: pts,
+    }];
+  }, [layers.droneActivity, conflictZones]);
+
 
   // Satellite points
   const satellitePoints = layers.satellites ? satellites : [];
@@ -323,22 +829,152 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     [layers.aircraftTrails, aircraft]
   );
 
+  // Sea cable paths
+  const seaCablePaths: PathEntry[] = useMemo(
+    () =>
+      layers.seaCables
+        ? SEA_CABLES.map((cable) => ({
+            _kind: 'seaCable' as const,
+            cable,
+            coords: cable.path.map(([lat, lng]) => ({ lat, lng, alt: 0 })),
+          }))
+        : [],
+    [layers.seaCables]
+  );
+
+  // ── Navigation constellation connection paths ─────────────────────────────
+  // Groups nav satellites by constellation and draws connecting lines.
+  // Starlink skipped (too many for connecting lines).
+  const constellationPaths: PathEntry[] = useMemo(() => {
+    if (!layers.satelliteOrbits) return [];
+
+    const groups = new Map<ConstellationName, SatelliteEntity[]>();
+    for (const sat of satellites) {
+      const constellation = getConstellation(sat);
+      if (!constellation || constellation === 'Starlink') continue;
+      if (!groups.has(constellation)) groups.set(constellation, []);
+      groups.get(constellation)!.push(sat);
+    }
+
+    const paths: PathEntry[] = [];
+    const MAX_CONNECT_KM = 12000;
+
+    for (const [constellation, sats] of groups) {
+      if (sats.length < 2) continue;
+      const color = CONSTELLATION_COLORS[constellation] + '88';
+
+      const sorted = [...sats].sort((a, b) => a.lng - b.lng);
+
+      // Greedy nearest-neighbor chain
+      const connected = new Set<number>();
+      connected.add(0);
+      let current = 0;
+
+      while (connected.size < sorted.length) {
+        let nearestIdx = -1;
+        let nearestDist = Infinity;
+
+        for (let i = 0; i < sorted.length; i++) {
+          if (connected.has(i)) continue;
+          const dist = haversineKm(
+            sorted[current].lat, sorted[current].lng,
+            sorted[i].lat, sorted[i].lng
+          );
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            nearestIdx = i;
+          }
+        }
+
+        if (nearestIdx === -1 || nearestDist > MAX_CONNECT_KM) break;
+
+        const s1 = sorted[current];
+        const s2 = sorted[nearestIdx];
+        const alt = Math.min(s1.alt, s2.alt) / 6371;
+        paths.push({
+          _kind: 'constellation',
+          constellation,
+          color,
+          coords: [
+            { lat: s1.lat, lng: s1.lng, alt },
+            { lat: s2.lat, lng: s2.lng, alt },
+          ],
+        });
+
+        connected.add(nearestIdx);
+        current = nearestIdx;
+      }
+    }
+
+    return paths;
+  }, [layers.satelliteOrbits, satellites]);
+
+  // Weapon range circles
+  const weaponRangePaths: PathEntry[] = useMemo(
+    () => {
+      if (!layers.weaponRanges) return [];
+      const paths: PathEntry[] = [];
+      for (const site of WEAPON_RANGES) {
+        for (const r of site.ranges) {
+          paths.push({
+            _kind: 'weaponRange' as const,
+            site: `${site.name} (${site.operator})`,
+            weapon: r.weapon,
+            rangeKm: r.rangeKm,
+            weaponType: r.type,
+            coords: generateCircleCoords(site.lat, site.lng, r.rangeKm),
+          });
+        }
+      }
+      return paths;
+    },
+    [layers.weaponRanges]
+  );
+
   const allPaths: PathEntry[] = useMemo(
-    () => [...satelliteTrackPaths, ...aircraftTrailPaths],
-    [satelliteTrackPaths, aircraftTrailPaths]
+    () => [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths],
+    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths]
   );
 
   // Satellite connection arcs: military/spy/recon → nearest conflict zone + nav → GPS jam cells
-  const arcsData: ArcConnection[] = useMemo(() => {
-    if (!layers.satelliteConnections) return [];
-    const milArcs = getMilitarySatelliteConnections(
+  const arcsData: ArcEntry[] = useMemo(() => {
+    if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats) return [];
+    const milArcs = layers.satelliteConnections ? getMilitarySatelliteConnections(
       satellites as any,
       conflictZones as any,
       20
-    );
-    const jamArcs = getGpsJamConnections(satellites as any, gpsJamCells as any);
-    return [...milArcs, ...jamArcs];
-  }, [layers.satelliteConnections, satellites, conflictZones, gpsJamCells]);
+    ) : [];
+    const jamArcs = layers.satelliteConnections ? getGpsJamConnections(satellites as any, gpsJamCells as any) : [];
+    // Refugee / displacement flow arcs
+    const refugeeArcs: RefugeeArc[] = layers.refugeeFlows
+      ? REFUGEE_FLOWS.map((flow) => ({
+          _isRefugee: true as const,
+          startLat: flow.startLat,
+          startLng: flow.startLng,
+          endLat: flow.endLat,
+          endLng: flow.endLng,
+          count: flow.count,
+          from: flow.from,
+          to: flow.to,
+          year: flow.year,
+        }))
+      : [];
+    // Cyber threat arcs (origin -> target)
+    const cyberArcs: ArcEntry[] = layers.cyberThreats
+      ? CYBER_THREATS.filter(t => t.active).map(t => ({
+          startLat: t.originLat,
+          startLng: t.originLng,
+          startAlt: 0,
+          endLat: t.targetLat,
+          endLng: t.targetLng,
+          endAlt: 0,
+          color: cyberThreatColor(t.type),
+          label: `<b>${t.group}</b><br/>${t.name}<br/><i>${t.description}</i><br/>${t.originCountry} \u2192 ${t.targetCountry}`,
+          type: 'communications' as const,
+        }))
+      : [];
+    return [...milArcs, ...jamArcs, ...refugeeArcs, ...cyberArcs];
+  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, satellites, conflictZones, gpsJamCells]);
 
   // Satellite footprint rings
   const ringsData: FootprintRing[] = useMemo(
@@ -347,6 +983,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         ? getSatelliteFootprints(satellites as any, ['military', 'spy', 'reconnaissance', 'navigation'])
         : [],
     [layers.satelliteFootprints, satellites]
+  );
+
+  // ── Carrier Strike Group detection ─────────────────────────────────────────
+  const carrierGroups: CarrierStrikeGroup[] = useMemo(
+    () => (layers.carrierGroups ? detectCarrierGroups(ships) : []),
+    [layers.carrierGroups, ships]
   );
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
@@ -442,6 +1084,412 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return new THREE.Mesh(geometry, material);
   }, [sharedGeo]);
 
+  // ── Military base HTML markers ──────────────────────────────────────────────
+  const militaryBaseMarkers = useMemo(
+    () => (layers.militaryBases ? MILITARY_BASES.map(b => ({ ...b, _marker: 'base' as const })) : []),
+    [layers.militaryBases]
+  );
+
+  // ── Energy infrastructure markers ──────────────────────────────────────────
+  const energyMarkers = useMemo(
+    () => (layers.energyInfra ? ENERGY_FACILITIES.map(f => ({ ...f, _marker: 'energy' as const })) : []),
+    [layers.energyInfra]
+  );
+
+  // ── Nuclear site markers ──────────────────────────────────────────────────
+  const nuclearMarkers: NuclearMarker[] = useMemo(
+    () => (layers.nuclearSites ? NUCLEAR_SITES.map(s => ({ ...s, _marker: 'nuclear' as const })) : []),
+    [layers.nuclearSites]
+  );
+
+  // ── Piracy zone markers ──────────────────────────────────────────────────
+  const piracyMarkers = useMemo(
+    () => (layers.piracyZones ? PIRACY_ZONES.map(z => ({ ...z, _marker: 'piracy' as const })) : []),
+    [layers.piracyZones]
+  );
+
+    // ── Chokepoint markers ──────────────────────────────────────────────────────
+  const chokepointMarkers = useMemo(
+    () => layers.chokepoints
+      ? CHOKEPOINTS.map(cp => ({ ...cp, _marker: 'chokepoint' as const }))
+      : [],
+    [layers.chokepoints]
+  );
+
+// ── Unified HTML markers (military bases + energy infra + nuclear) ────────
+  const htmlMarkers = useMemo(
+    () => [...militaryBaseMarkers, ...energyMarkers, ...nuclearMarkers, ...piracyMarkers, ...chokepointMarkers],
+    [militaryBaseMarkers, energyMarkers, nuclearMarkers, piracyMarkers, chokepointMarkers]
+  );
+
+  const htmlMarkerElement = useCallback((d: object) => {
+    const obj = d as { _marker: string };
+
+    // ── Energy infrastructure ──
+    if (obj._marker === 'energy') {
+      const fac = d as EnergyFacility & { _marker: string };
+      const color = energyRiskColor(fac.risk);
+      const icon = energyTypeIcon(fac.type);
+
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      wrapper.style.width = '0';
+      wrapper.style.height = '0';
+      wrapper.style.cursor = 'pointer';
+      wrapper.style.pointerEvents = 'auto';
+
+      // Colored dot with icon
+      const dot = document.createElement('div');
+      dot.style.position = 'absolute';
+      dot.style.width = '16px';
+      dot.style.height = '16px';
+      dot.style.left = '-8px';
+      dot.style.top = '-8px';
+      dot.style.borderRadius = '50%';
+      dot.style.background = `radial-gradient(circle, ${color}cc 30%, ${color}44 100%)`;
+      dot.style.border = `1.5px solid ${color}`;
+      dot.style.boxShadow = `0 0 6px ${color}88`;
+      dot.style.display = 'flex';
+      dot.style.alignItems = 'center';
+      dot.style.justifyContent = 'center';
+      dot.style.fontSize = '9px';
+      dot.style.lineHeight = '1';
+      dot.textContent = icon;
+      wrapper.appendChild(dot);
+
+      // Hover label
+      const label = document.createElement('div');
+      label.style.position = 'absolute';
+      label.style.left = '12px';
+      label.style.top = '-8px';
+      label.style.whiteSpace = 'nowrap';
+      label.style.background = 'rgba(0,0,0,0.9)';
+      label.style.color = color;
+      label.style.fontSize = '10px';
+      label.style.fontFamily = "'Courier New', monospace";
+      label.style.padding = '3px 7px';
+      label.style.borderRadius = '3px';
+      label.style.border = `1px solid ${color}55`;
+      label.style.pointerEvents = 'none';
+      label.style.opacity = '0';
+      label.style.transition = 'opacity 0.15s';
+      label.style.zIndex = '10';
+
+      const typeLabel = fac.type.replace(/_/g, ' ').toUpperCase();
+      const conflictLine = fac.nearConflict ? `Near conflict: ${fac.nearConflict}` : '';
+      label.innerHTML = `<b>${fac.name}</b><br/>${typeLabel} | ${fac.country}<br/>Capacity: ${fac.capacity}<br/>Risk: ${fac.risk.toUpperCase()}${conflictLine ? '<br/>' + conflictLine : ''}`;
+      wrapper.appendChild(label);
+
+      wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
+      wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; });
+
+      wrapper.title = `${fac.name}\n${typeLabel} | ${fac.country}\nCapacity: ${fac.capacity}\nRisk: ${fac.risk.toUpperCase()}${conflictLine ? '\n' + conflictLine : ''}`;
+
+      return wrapper;
+    }
+
+    // ── Nuclear facility ──
+    if (obj._marker === 'nuclear') {
+      const nuc = d as NuclearMarker;
+      const color = nuclearRiskColor(nuc.risk);
+      const pulse = nuclearPulseSpeed(nuc.risk);
+
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      wrapper.style.width = '0';
+      wrapper.style.height = '0';
+      wrapper.style.cursor = 'pointer';
+      wrapper.style.pointerEvents = 'auto';
+
+      // Pulsing glow ring
+      const glow = document.createElement('div');
+      glow.style.position = 'absolute';
+      glow.style.width = '28px';
+      glow.style.height = '28px';
+      glow.style.left = '-14px';
+      glow.style.top = '-14px';
+      glow.style.borderRadius = '50%';
+      glow.style.background = `radial-gradient(circle, ${color}66 0%, transparent 70%)`;
+      glow.style.animation = `nuclear-pulse ${pulse} ease-in-out infinite`;
+      wrapper.appendChild(glow);
+
+      // Nuclear icon
+      const icon = document.createElement('div');
+      icon.style.position = 'absolute';
+      icon.style.left = '-10px';
+      icon.style.top = '-10px';
+      icon.style.width = '20px';
+      icon.style.height = '20px';
+      icon.style.display = 'flex';
+      icon.style.alignItems = 'center';
+      icon.style.justifyContent = 'center';
+      icon.style.fontSize = '14px';
+      icon.style.borderRadius = '50%';
+      icon.style.background = 'rgba(0,0,0,0.7)';
+      icon.style.border = `2px solid ${color}`;
+      icon.style.boxShadow = `0 0 8px ${color}, 0 0 16px ${color}44`;
+      icon.style.color = color;
+      icon.style.lineHeight = '1';
+      icon.textContent = '\u2622'; // radioactive symbol
+      wrapper.appendChild(icon);
+
+      // Label (shown on hover)
+      const label = document.createElement('div');
+      label.style.position = 'absolute';
+      label.style.left = '14px';
+      label.style.top = '-8px';
+      label.style.whiteSpace = 'nowrap';
+      label.style.background = 'rgba(0,0,0,0.85)';
+      label.style.color = color;
+      label.style.fontSize = '10px';
+      label.style.fontFamily = "'Courier New', monospace";
+      label.style.padding = '2px 6px';
+      label.style.borderRadius = '3px';
+      label.style.border = `1px solid ${color}55`;
+      label.style.pointerEvents = 'none';
+      label.style.opacity = '0';
+      label.style.transition = 'opacity 0.15s';
+      label.textContent = `${nuc.name} [${nuc.risk.toUpperCase()}]`;
+      wrapper.appendChild(label);
+
+      wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
+      wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; });
+
+      wrapper.title = `${nuc.name}\n${nuc.country} | ${nuc.type.replace('_', ' ')} | ${nuc.status}\nRisk: ${nuc.risk.toUpperCase()}`;
+
+      return wrapper;
+    }
+
+    // ── Piracy zone ──
+    if (obj._marker === 'piracy') {
+      const pz = d as PiracyZone & { _marker: string };
+      const color = piracyZoneColor(pz.risk);
+      const size = Math.min(50, Math.max(20, Math.round(pz.radius / 8)));
+
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'relative';
+      wrapper.style.width = '0';
+      wrapper.style.height = '0';
+      wrapper.style.cursor = 'pointer';
+      wrapper.style.pointerEvents = 'auto';
+
+      const circle = document.createElement('div');
+      circle.style.position = 'absolute';
+      circle.style.width = `${size}px`;
+      circle.style.height = `${size}px`;
+      circle.style.left = `${-size / 2}px`;
+      circle.style.top = `${-size / 2}px`;
+      circle.style.borderRadius = '50%';
+      circle.style.border = `2px solid ${color}`;
+      circle.style.background = pz.risk === 'critical' ? 'rgba(255,34,34,0.15)'
+        : pz.risk === 'high' ? 'rgba(255,136,0,0.15)'
+        : 'rgba(255,221,0,0.15)';
+      circle.style.animation = `piracy-pulse-${pz.risk} 2s ease-in-out infinite`;
+      wrapper.appendChild(circle);
+
+      const hoverIcon = document.createElement('div');
+      hoverIcon.style.position = 'absolute';
+      hoverIcon.style.left = '-8px';
+      hoverIcon.style.top = '-8px';
+      hoverIcon.style.width = '16px';
+      hoverIcon.style.height = '16px';
+      hoverIcon.style.display = 'flex';
+      hoverIcon.style.alignItems = 'center';
+      hoverIcon.style.justifyContent = 'center';
+      hoverIcon.style.fontSize = '12px';
+      hoverIcon.style.opacity = '0';
+      hoverIcon.style.transition = 'opacity 0.15s';
+      hoverIcon.style.pointerEvents = 'none';
+      hoverIcon.textContent = '\u2620';
+      wrapper.appendChild(hoverIcon);
+
+      const label = document.createElement('div');
+      label.style.position = 'absolute';
+      label.style.left = `${size / 2 + 4}px`;
+      label.style.top = '-8px';
+      label.style.whiteSpace = 'nowrap';
+      label.style.background = 'rgba(0,0,0,0.85)';
+      label.style.color = color;
+      label.style.fontSize = '10px';
+      label.style.fontFamily = "'Courier New', monospace";
+      label.style.padding = '2px 6px';
+      label.style.borderRadius = '3px';
+      label.style.border = `1px solid ${color}55`;
+      label.style.pointerEvents = 'none';
+      label.style.opacity = '0';
+      label.style.transition = 'opacity 0.15s';
+      label.textContent = `\u2620 ${pz.name} [${pz.risk.toUpperCase()}]`;
+      wrapper.appendChild(label);
+
+      wrapper.addEventListener('mouseenter', () => {
+        label.style.opacity = '1';
+        hoverIcon.style.opacity = '1';
+      });
+      wrapper.addEventListener('mouseleave', () => {
+        label.style.opacity = '0';
+        hoverIcon.style.opacity = '0';
+      });
+
+      wrapper.title = `\u2620 ${pz.name}\nRisk: ${pz.risk.toUpperCase()}\nType: ${pz.type.replace(/_/g, ' ')}\nIncidents (2024): ${pz.incidents2024}\n${pz.description}`;
+      return wrapper;
+    }
+
+    // ── Chokepoint marker — pulsing ring ──
+    if (obj._marker === 'chokepoint') {
+      const cp = d as Chokepoint & { _marker: string };
+      const cpColor = chokepointRiskColor(cp.risk);
+      const ringSize = chokepointRingSize(cp.dailyTraffic);
+      const pulseSpeed = cp.risk === 'critical' ? '1.2s' : cp.risk === 'high' ? '1.8s' : '2.5s';
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'chokepoint-marker';
+      wrapper.style.position = 'relative';
+      wrapper.style.cursor = 'pointer';
+      wrapper.style.pointerEvents = 'auto';
+
+      const ring = document.createElement('div');
+      ring.style.width = `${ringSize}px`;
+      ring.style.height = `${ringSize}px`;
+      ring.style.borderRadius = '50%';
+      ring.style.border = `2px solid ${cpColor}`;
+      ring.style.background = 'transparent';
+      ring.style.boxShadow = `0 0 ${ringSize / 2}px ${cpColor}, inset 0 0 ${ringSize / 3}px ${cpColor}44`;
+      ring.style.animation = `chokepoint-pulse ${pulseSpeed} ease-in-out infinite`;
+
+      const cpDot = document.createElement('div');
+      cpDot.style.position = 'absolute';
+      cpDot.style.top = '50%';
+      cpDot.style.left = '50%';
+      cpDot.style.transform = 'translate(-50%, -50%)';
+      cpDot.style.width = '6px';
+      cpDot.style.height = '6px';
+      cpDot.style.borderRadius = '50%';
+      cpDot.style.background = cpColor;
+      cpDot.style.boxShadow = `0 0 6px ${cpColor}`;
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'chokepoint-tooltip';
+      const rlc = cp.risk === 'critical' ? '#ff2222' : cp.risk === 'high' ? '#ff8800' : '#ffdd00';
+      tooltip.innerHTML = `<div style="color:${rlc};font-weight:bold;font-size:12px;margin-bottom:4px">${cp.name}</div>`
+        + `<div>Width: <span style="color:#fff">${cp.width}</span></div>`
+        + `<div>Daily Traffic: <span style="color:#fff">${cp.dailyTraffic}</span></div>`
+        + `<div>Oil Flow: <span style="color:#fff">${cp.oilFlow}</span></div>`
+        + `<div>Risk: <span style="color:${rlc}">${cp.risk.toUpperCase()}</span></div>`
+        + `<div>Threat: <span style="color:#ff8866">${cp.threat}</span></div>`;
+
+      wrapper.appendChild(ring);
+      wrapper.appendChild(cpDot);
+      wrapper.appendChild(tooltip);
+      return wrapper;
+    }
+
+    // ── Military base (default) ──
+    const base = d as MilitaryBase & { _marker: string };
+    const color = militaryBaseColor(base.operator);
+    const el = document.createElement('div');
+    el.style.position = 'relative';
+    el.style.width = '0';
+    el.style.height = '0';
+    // Diamond shape: top triangle
+    el.style.borderLeft = '5px solid transparent';
+    el.style.borderRight = '5px solid transparent';
+    el.style.borderBottom = `8px solid ${color}`;
+    el.style.filter = `drop-shadow(0 0 3px ${color})`;
+    el.style.cursor = 'pointer';
+    el.style.pointerEvents = 'auto';
+    // Bottom triangle to complete diamond
+    const bottomHalf = document.createElement('div');
+    bottomHalf.style.position = 'absolute';
+    bottomHalf.style.top = '8px';
+    bottomHalf.style.left = '-5px';
+    bottomHalf.style.width = '0';
+    bottomHalf.style.height = '0';
+    bottomHalf.style.borderLeft = '5px solid transparent';
+    bottomHalf.style.borderRight = '5px solid transparent';
+    bottomHalf.style.borderTop = `5px solid ${color}`;
+    el.appendChild(bottomHalf);
+    el.title = `${base.name}\nOperator: ${base.operator}\nBranch: ${base.branch}\nType: ${base.type.replace(/_/g, ' ')}\nCountry: ${base.country}`;
+    return el;
+  }, []);
+
+
+  // ── Carrier Strike Group HTML element factory ────────────────────────────
+  const csgMarkerElement = useCallback((csg: CarrierStrikeGroup) => {
+    const glow = navyGlow(csg.country);
+    const ringSize = Math.max(40, Math.min(80, csg.radiusKm * 1.5));
+
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.width = `${ringSize}px`;
+    container.style.height = `${ringSize}px`;
+    container.style.marginLeft = `-${ringSize / 2}px`;
+    container.style.marginTop = `-${ringSize / 2}px`;
+    container.style.pointerEvents = 'auto';
+    container.style.cursor = 'pointer';
+
+    // Outer pulsing ring
+    const ring = document.createElement('div');
+    ring.style.position = 'absolute';
+    ring.style.inset = '0';
+    ring.style.borderRadius = '50%';
+    ring.style.border = `2px solid ${glow}`;
+    ring.style.boxShadow = `0 0 12px ${glow}44, inset 0 0 8px ${glow}22`;
+    ring.style.opacity = '0.7';
+    ring.style.animation = 'csg-pulse 3s ease-in-out infinite';
+    container.appendChild(ring);
+
+    // Inner translucent fill
+    const fill = document.createElement('div');
+    fill.style.position = 'absolute';
+    fill.style.inset = '4px';
+    fill.style.borderRadius = '50%';
+    fill.style.background = `${csg.color}15`;
+    fill.style.border = `1px dashed ${glow}55`;
+    container.appendChild(fill);
+
+    // CSG label above ring
+    const label = document.createElement('div');
+    label.style.position = 'absolute';
+    label.style.bottom = `${ringSize + 4}px`;
+    label.style.left = '50%';
+    label.style.transform = 'translateX(-50%)';
+    label.style.whiteSpace = 'nowrap';
+    label.style.fontFamily = "'Courier New', monospace";
+    label.style.fontSize = '10px';
+    label.style.fontWeight = '700';
+    label.style.letterSpacing = '0.08em';
+    label.style.color = glow;
+    label.style.textShadow = `0 0 6px ${glow}`;
+    label.style.pointerEvents = 'none';
+    label.textContent = csg.name;
+    container.appendChild(label);
+
+    // Tooltip
+    container.title = `${csg.name}\n${csg.country}\nFormation: ${csg.composition}\nShips: ${csg.ships.map(s => s.name).join(', ')}`;
+
+    container.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onEntityClick('carrierGroup', csg);
+    });
+
+    return container;
+  }, [onEntityClick]);
+
+  // ── Merged HTML markers (military bases + carrier strike groups) ──────────
+  const mergedHtmlMarkers = useMemo(
+    () => [...htmlMarkers, ...carrierGroups],
+    [htmlMarkers, carrierGroups]
+  );
+
+  // Unified HTML element factory dispatching by _marker tag
+  const mergedHtmlElement = useCallback((d: object) => {
+    const marker = d as { _marker: string };
+    if (marker._marker === 'csg') {
+      return csgMarkerElement(d as CarrierStrikeGroup);
+    }
+    return htmlMarkerElement(d);
+  }, [csgMarkerElement, htmlMarkerElement]);
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -482,6 +1530,18 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           const bin = d as { sumWeight: number };
           return bin.sumWeight * 0.02;
         }}
+        // ── Drone activity heatmap ──────────────────────────────
+        heatmapsData={droneActivityHeatmap}
+        heatmapPoints={(d: object) => (d as { points: unknown[] }).points}
+        heatmapPointLat={(d: object) => (d as { lat: number }).lat}
+        heatmapPointLng={(d: object) => (d as { lng: number }).lng}
+        heatmapPointWeight={(d: object) => (d as { weight: number }).weight}
+        heatmapBandwidth={1.5}
+        heatmapColorFn={() => droneHeatmapColor}
+        heatmapColorSaturation={2.0}
+        heatmapBaseAltitude={0.006}
+        heatmapTopAltitude={0.04}
+
 
         // ── Satellite points ───────────────────────────────────
         pointsData={satellitePoints}
@@ -508,13 +1568,55 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         pathPointAlt={(pt: object) => (pt as { alt: number }).alt}
         pathColor={(d: object) => {
           const entry = d as PathEntry;
+          if (entry._kind === 'frontline') return '#ff1111';
+          if (entry._kind === 'weaponRange') return weaponRangeColor(entry.weaponType);
           if (entry._kind === 'sat') return satelliteColorDim(entry.sat.category);
-          // aircraft trail: military = dim red, civilian = dim blue
-          return entry.aircraft.isMilitary ? 'rgba(255,51,51,0.35)' : 'rgba(0,170,255,0.35)';
+          if (entry._kind === 'aircraft') return entry.aircraft.isMilitary ? 'rgba(255,51,51,0.35)' : 'rgba(0,170,255,0.35)';
+          if (entry._kind === 'ship') return shipTrailColor(entry.ship.type);
+          if (entry._kind === 'seaCable') return cableRiskColor(entry.cable.risk);
+          if (entry._kind === 'constellation') return entry.color;
+          return '#aaaaaa';
         }}
-        pathDashLength={0.5}
-        pathDashGap={0.3}
-        pathStroke={0.5}
+        pathDashLength={(d: object) => {
+          const entry = d as PathEntry;
+          if (entry._kind === 'weaponRange') return 0.6;
+          if (entry._kind === 'seaCable') return 0.4;
+          if (entry._kind === 'constellation') return 0.6;
+          return 0.5;
+        }}
+        pathDashGap={(d: object) => {
+          const entry = d as PathEntry;
+          if (entry._kind === 'weaponRange') return 0.3;
+          if (entry._kind === 'seaCable') return 0.2;
+          if (entry._kind === 'constellation') return 0.3;
+          return 0.3;
+        }}
+        pathStroke={(d: object) => {
+          const entry = d as PathEntry;
+          if (entry._kind === 'weaponRange') return 0.8;
+          if (entry._kind === 'seaCable') return 1.2;
+          if (entry._kind === 'constellation') return 0.8;
+          return 0.5;
+        }}
+        pathLabel={(d: object) => {
+          const entry = d as PathEntry;
+          if (entry._kind === 'weaponRange') {
+            return `<div style="background:rgba(5,15,30,0.95);border:1px solid rgba(0,255,136,0.4);border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+              `<b style="color:${weaponRangeColor(entry.weaponType)}">${entry.weapon}</b><br/>` +
+              `Range: ${entry.rangeKm.toLocaleString()} km<br/>` +
+              `<span style="color:#888">${entry.site}</span></div>`;
+          }
+          if (entry._kind === 'seaCable') {
+            const c = entry.cable;
+            const rc = cableRiskColor(c.risk);
+            return `<div style="background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:4px;border:1px solid ${rc};font-family:monospace;font-size:11px;color:#eee;line-height:1.4">
+              <b style="color:${rc}">${c.name}</b><br/>
+              Capacity: ${c.capacity}<br/>
+              Risk: <span style="color:${rc};font-weight:bold">${c.risk.toUpperCase()}</span>${c.nearConflict ? `<br/>Near: ${c.nearConflict}` : ''}
+            </div>`;
+          }
+          return '';
+        }}
 
         // ── Connection arcs (military → conflict, nav → GPS jam) ──
         arcsData={arcsData}
@@ -522,13 +1624,22 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         arcStartLng={(d: object) => (d as ArcConnection).startLng}
         arcEndLat={(d: object) => (d as ArcConnection).endLat}
         arcEndLng={(d: object) => (d as ArcConnection).endLng}
-        arcColor={(d: object) => (d as ArcConnection).color}
-        arcLabel={(d: object) => (d as ArcConnection).label}
+        arcColor={(d: object) => {
+          if (isRefugeeArc(d)) return ['rgba(255,140,0,0.9)', 'rgba(220,40,40,0.9)'];
+          return (d as ArcConnection).color;
+        }}
+        arcLabel={(d: object) => {
+          if (isRefugeeArc(d)) {
+            const r = d as RefugeeArc;
+            return `<b style="color:#ff6644">${formatRefugeeCount(r.count)} displaced</b><br/>${r.from} → ${r.to}<br/><i>${r.year}</i>`;
+          }
+          return (d as ArcConnection).label;
+        }}
         arcAltAutoScale={0.3}
-        arcStroke={0.5}
-        arcDashLength={0.4}
-        arcDashGap={0.2}
-        arcDashAnimateTime={1500}
+        arcStroke={(d: object) => isRefugeeArc(d) ? refugeeArcWidth((d as RefugeeArc).count) : 0.5}
+        arcDashLength={(d: object) => isRefugeeArc(d) ? 0.6 : 0.4}
+        arcDashGap={(d: object) => isRefugeeArc(d) ? 0.3 : 0.2}
+        arcDashAnimateTime={(d: object) => isRefugeeArc(d) ? 2500 : 1500}
 
         // ── Satellite footprint rings ──────────────────────────
         ringsData={ringsData}
@@ -556,6 +1667,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           if (obj._type === 'aircraft') handleAircraftClick(obj);
           else handleShipClick(obj);
         }}
+
+        // ── Military base markers (HTML elements) ───────────────
+        htmlElementsData={mergedHtmlMarkers}
+        htmlLat={(d: object) => (d as { lat: number }).lat}
+        htmlLng={(d: object) => (d as { lng: number }).lng}
+        htmlAltitude={0.008}
+        htmlElement={mergedHtmlElement}
+
+
       />
 
     </div>

@@ -13,6 +13,18 @@ interface LayerVisibility {
   conflictEvents: boolean;
   frontLines: boolean;
   gpsJam: boolean;
+  nuclearSites: boolean;
+  militaryBases: boolean;
+  droneActivity: boolean;
+  seaCables: boolean;
+  sanctionsZones: boolean;
+  chokepoints: boolean;
+  piracyZones: boolean;
+  carrierGroups: boolean;
+  cyberThreats: boolean;
+  refugeeFlows: boolean;
+  weaponRanges: boolean;
+  energyInfra: boolean;
   atmosphere: boolean;
 }
 
@@ -276,6 +288,8 @@ const COLLAPSED_ICONS = [
   { icon: '🚢', title: 'Ships', layerKey: 'ships' },
   { icon: '⚔️', title: 'Conflicts', layerKey: 'warZones' },
   { icon: '📡', title: 'GPS Jamming', layerKey: 'gpsJam' },
+  { icon: '\u2620\ufe0f', title: 'Piracy Zones', layerKey: 'piracyZones' },
+  { icon: '\u2622\ufe0f', title: 'Nuclear Sites', layerKey: 'nuclearSites' },
   { icon: '🌍', title: 'Atmosphere', layerKey: 'atmosphere' },
 ];
 
@@ -393,6 +407,32 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
                   onToggle={onToggleLayer}
                   indent
                 />
+                <LayerRow
+                  icon="⚓"
+                  label="Carrier Strike Groups"
+                  layerKey="carrierGroups"
+                  on={layers.carrierGroups}
+                  onToggle={onToggleLayer}
+                  indent
+                />
+                <LayerRow
+                  icon="⚓"
+                  label="Chokepoints"
+                  layerKey="chokepoints"
+                  on={layers.chokepoints}
+                  onToggle={onToggleLayer}
+                  countBadge="8"
+                  subLabel="Strategic straits"
+                />
+                <LayerRow
+                  icon="☠️"
+                  label="Piracy Zones"
+                  layerKey="piracyZones"
+                  on={layers.piracyZones}
+                  onToggle={onToggleLayer}
+                  countBadge="6"
+                  subLabel="Armed attacks & hijacking"
+                />
               </div>
 
               {/* CONFLICT ZONES */}
@@ -420,6 +460,68 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
                   on={layers.frontLines}
                   onToggle={onToggleLayer}
                 />
+                <LayerRow
+                  icon="🚶"
+                  label="Refugee Flows"
+                  layerKey="refugeeFlows"
+                  on={layers.refugeeFlows}
+                  onToggle={onToggleLayer}
+                  countBadge="10"
+                  subLabel="Displacement arcs"
+                />
+                <LayerRow
+                  icon="🚫"
+                  label="Sanctions / No-Fly Zones"
+                  layerKey="sanctionsZones"
+                  on={layers.sanctionsZones}
+                  onToggle={onToggleLayer}
+                  countBadge="6"
+                />
+                <LayerRow
+                  icon="☢️"
+                  label="Nuclear Facilities"
+                  layerKey="nuclearSites"
+                  on={layers.nuclearSites}
+                  onToggle={onToggleLayer}
+                  countBadge="8"
+                  subLabel="Near conflict zones"
+                />
+                <LayerRow
+                  icon="🏛️"
+                  label="Military Bases"
+                  layerKey="militaryBases"
+                  on={layers.militaryBases}
+                  onToggle={onToggleLayer}
+                  countBadge="15"
+                  subLabel="US/RU/CN/UK/NATO"
+                />
+                <LayerRow
+                  icon="🎯"
+                  label="Weapon Ranges"
+                  layerKey="weaponRanges"
+                  on={layers.weaponRanges}
+                  onToggle={onToggleLayer}
+                  countBadge="5"
+                  subLabel="Missile/drone range circles"
+                />
+                <LayerRow
+                  icon="🔌"
+                  label="Undersea Cables"
+                  layerKey="seaCables"
+                  on={layers.seaCables}
+                  onToggle={onToggleLayer}
+                  countBadge="5"
+                  subLabel="Infrastructure vulnerability"
+                />
+                <LayerRow
+                  icon="🛢️"
+                  label="Energy Infrastructure"
+                  layerKey="energyInfra"
+                  on={layers.energyInfra}
+                  onToggle={onToggleLayer}
+                  countBadge="9"
+                  subLabel="Oil/gas near conflict zones"
+                />
               </div>
 
               {/* INTERFERENCE */}
@@ -432,6 +534,21 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
                   on={layers.gpsJam}
                   onToggle={onToggleLayer}
                   countBadge={counts.gpsJamCells > 0 ? `${formatCount(counts.gpsJamCells)} zones` : undefined}
+                />
+                <LayerRow
+                  icon="🤖"
+                  label="Drone Activity Heatmap"
+                  layerKey="droneActivity"
+                  on={layers.droneActivity}
+                  onToggle={onToggleLayer}
+                />
+                <LayerRow
+                  icon="💻"
+                  label="Cyber Threats"
+                  layerKey="cyberThreats"
+                  on={layers.cyberThreats}
+                  onToggle={onToggleLayer}
+                  subLabel="Attack origin/target arcs"
                 />
               </div>
 

@@ -10,11 +10,11 @@ interface ConflictSidebarProps {
   onFlyTo: (lat: number, lng: number) => void;
 }
 
-type SortMode = 'intensity' | 'casualties' | 'alpha';
+type SortMode = 'deaths' | 'intensity' | 'alpha';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const PANEL_WIDTH = 260;
+const PANEL_WIDTH = 290;
 
 const INTENSITY_ORDER: Record<ConflictZone['intensity'], number> = {
   critical: 4,
@@ -46,6 +46,13 @@ function formatCasualties(n: number | undefined): string {
   return n.toLocaleString();
 }
 
+function formatCasualtiesPlus(n: number | undefined): string {
+  if (n === undefined || n === null) return 'N/A';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M+`;
+  if (n >= 1_000) return `${Math.floor(n / 1_000).toLocaleString()}K+`;
+  return n.toLocaleString();
+}
+
 function getDuration(startDate: string): string {
   const start = new Date(startDate);
   const now = new Date();
@@ -61,10 +68,45 @@ function getDuration(startDate: string): string {
   return `${days} day${days !== 1 ? 's' : ''}`;
 }
 
+function getDaysSinceStart(startDate: string): number {
+  const start = new Date(startDate);
+  const now = new Date();
+  return Math.max(1, Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+}
+
 function getRecentEventCount(events: ConflictZone['events']): number {
   const now = new Date();
   const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   return events.filter((e) => new Date(e.date) >= cutoff).length;
+}
+
+/** Group events into weekly buckets (most recent 8 weeks) and return counts + trend direction. */
+function getWeeklyBuckets(events: ConflictZone['events']): { counts: number[]; trend: 'rising' | 'falling' | 'stable' } {
+  const NUM_WEEKS = 8;
+  const now = new Date();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const cutoff = new Date(now.getTime() - NUM_WEEKS * msPerWeek);
+
+  const filtered = events
+    .filter((e) => new Date(e.date) >= cutoff)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  const counts = new Array(NUM_WEEKS).fill(0);
+  for (const ev of filtered) {
+    const weeksAgo = Math.floor((now.getTime() - new Date(ev.date).getTime()) / msPerWeek);
+    const bucketIdx = NUM_WEEKS - 1 - Math.min(weeksAgo, NUM_WEEKS - 1);
+    counts[bucketIdx]++;
+  }
+
+  const half = Math.floor(NUM_WEEKS / 2);
+  const firstHalfAvg = counts.slice(0, half).reduce((s, v) => s + v, 0) / half;
+  const secondHalfAvg = counts.slice(half).reduce((s, v) => s + v, 0) / (NUM_WEEKS - half);
+  const diff = secondHalfAvg - firstHalfAvg;
+  const threshold = 0.5;
+  const trend: 'rising' | 'falling' | 'stable' =
+    diff > threshold ? 'rising' : diff < -threshold ? 'falling' : 'stable';
+
+  return { counts, trend };
 }
 
 function getConflictCentroid(zone: ConflictZone): { lat: number; lng: number } | null {
@@ -89,7 +131,6 @@ function getConflictCentroid(zone: ConflictZone): { lat: number; lng: number } |
 }
 
 function getCountryFlags(countries: string[]): string {
-  // Map common ISO codes to flag emojis; fallback to raw code
   const flagMap: Record<string, string> = {
     UA: '🇺🇦', RU: '🇷🇺', PS: '🇵🇸', IL: '🇮🇱', SD: '🇸🇩', YE: '🇾🇪',
     MM: '🇲🇲', ET: '🇪🇹', CD: '🇨🇩', SO: '🇸🇴', AF: '🇦🇫', IQ: '🇮🇶',
@@ -104,13 +145,25 @@ function getCountryFlags(countries: string[]): string {
   return flags;
 }
 
+/** Compute intensity trend indicator based on event frequency */
+function getTrendIndicator(trend: 'rising' | 'falling' | 'stable'): { symbol: string; color: string; label: string } {
+  switch (trend) {
+    case 'rising':
+      return { symbol: '\u25B2', color: '#ff4444', label: 'Escalating' };
+    case 'falling':
+      return { symbol: '\u25BC', color: '#00ff88', label: 'De-escalating' };
+    case 'stable':
+      return { symbol: '\u2500', color: '#ffcc00', label: 'Stable' };
+  }
+}
+
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'fixed',
     top: 0,
-    right: 320, // left of InfoPanel (320px wide)
+    right: 320,
     height: '100vh',
     zIndex: 999,
     display: 'flex',
@@ -153,7 +206,7 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '-3px 0 10px rgba(0,0,0,0.5)',
   },
   header: {
-    padding: '12px 12px 8px',
+    padding: '10px 10px 8px',
     borderBottom: '1px solid rgba(0, 255, 100, 0.15)',
     flexShrink: 0,
   },
@@ -161,7 +214,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   headerTitle: {
     color: 'rgba(0, 255, 100, 0.95)',
@@ -251,7 +304,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 5,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   cardFlags: {
     fontSize: 13,
@@ -411,6 +464,188 @@ if (typeof document !== 'undefined' && !document.getElementById(BLINK_STYLE_ID))
   document.head.appendChild(style);
 }
 
+// ── Sparkline ─────────────────────────────────────────────────────────────────
+
+const TREND_COLORS: Record<'rising' | 'falling' | 'stable', string> = {
+  rising: '#ff4444',
+  falling: '#00ff88',
+  stable: '#ffcc00',
+};
+
+function Sparkline({ counts, trend }: { counts: number[]; trend: 'rising' | 'falling' | 'stable' }) {
+  const W = 52;
+  const H = 14;
+  const PAD_Y = 2;
+  const maxVal = Math.max(...counts, 1);
+  const stepX = W / (counts.length - 1 || 1);
+
+  const points = counts
+    .map((v, i) => {
+      const x = i * stepX;
+      const y = PAD_Y + (H - 2 * PAD_Y) * (1 - v / maxVal);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  const color = TREND_COLORS[trend];
+
+  return (
+    <svg
+      width={W}
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      style={{ flexShrink: 0, display: 'block' }}
+      aria-label={`Event frequency trend: ${trend}`}
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.9"
+      />
+    </svg>
+  );
+}
+
+// ── Casualty Bar Chart ────────────────────────────────────────────────────────
+
+function CasualtyBar({ military, civilian, total }: { military?: number; civilian?: number; total?: number }) {
+  const mil = military ?? 0;
+  const civ = civilian ?? 0;
+  const sum = mil + civ || total || 1;
+  const milPct = (mil / sum) * 100;
+  const civPct = (civ / sum) * 100;
+
+  // If we have no military/civilian breakdown, show full bar as unknown
+  if (!military && !civilian) {
+    return (
+      <div style={{ width: '100%', marginTop: 3, marginBottom: 1 }}>
+        <div style={{
+          height: 5,
+          borderRadius: 2,
+          background: 'rgba(255, 60, 60, 0.35)',
+          width: '100%',
+        }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 1 }}>
+          <span style={{ color: 'rgba(180, 160, 160, 0.5)', fontSize: 8 }}>breakdown unavailable</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ width: '100%', marginTop: 3, marginBottom: 1 }}>
+      <div style={{
+        display: 'flex',
+        height: 5,
+        borderRadius: 2,
+        overflow: 'hidden',
+        background: 'rgba(255,255,255,0.05)',
+      }}>
+        {milPct > 0 && (
+          <div
+            style={{
+              width: `${milPct}%`,
+              background: '#cc3333',
+              transition: 'width 0.3s ease',
+            }}
+            title={`Military: ${formatCasualties(military)}`}
+          />
+        )}
+        {civPct > 0 && (
+          <div
+            style={{
+              width: `${civPct}%`,
+              background: '#777788',
+              transition: 'width 0.3s ease',
+            }}
+            title={`Civilian: ${formatCasualties(civilian)}`}
+          />
+        )}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 1 }}>
+        <span style={{ color: '#cc5555', fontSize: 8, fontWeight: 700 }}>
+          MIL {formatCasualties(military)}
+        </span>
+        <span style={{ color: '#888899', fontSize: 8, fontWeight: 700 }}>
+          CIV {formatCasualties(civilian)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Global Toll Banner ────────────────────────────────────────────────────────
+
+function GlobalTollBanner({ zones }: { zones: ConflictZone[] }) {
+  const totalKilled = zones.reduce((sum, z) => sum + (z.casualties.total ?? 0), 0);
+  const totalDisplaced = zones.reduce((sum, z) => sum + (z.casualties.displaced ?? 0), 0);
+
+  return (
+    <div style={{
+      margin: '6px 8px 2px',
+      padding: '8px 10px',
+      background: 'rgba(255, 20, 20, 0.08)',
+      border: '1px solid rgba(255, 50, 50, 0.35)',
+      borderRadius: 3,
+    }}>
+      <div style={{
+        color: 'rgba(255, 80, 80, 0.6)',
+        fontSize: 8,
+        fontWeight: 700,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase' as const,
+        marginBottom: 4,
+      }}>
+        GLOBAL TOLL
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{
+          color: '#ff3333',
+          fontSize: 16,
+          fontWeight: 700,
+          letterSpacing: '0.02em',
+          lineHeight: 1,
+        }}>
+          {formatCasualtiesPlus(totalKilled)}
+        </span>
+        <span style={{
+          color: 'rgba(255, 100, 100, 0.7)',
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: '0.05em',
+        }}>
+          KILLED
+        </span>
+        <span style={{
+          color: 'rgba(255,255,255,0.15)',
+          fontSize: 12,
+        }}>|</span>
+        <span style={{
+          color: '#cc8844',
+          fontSize: 13,
+          fontWeight: 700,
+          letterSpacing: '0.02em',
+          lineHeight: 1,
+        }}>
+          {formatCasualtiesPlus(totalDisplaced)}
+        </span>
+        <span style={{
+          color: 'rgba(200, 140, 60, 0.7)',
+          fontSize: 9,
+          fontWeight: 700,
+          letterSpacing: '0.05em',
+        }}>
+          DISPLACED
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ── Conflict Card ─────────────────────────────────────────────────────────────
 
 interface ConflictCardProps {
@@ -424,13 +659,21 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
   const [hovered, setHovered] = useState(false);
 
   const recentEvents = getRecentEventCount(zone.events);
+  const { counts: weeklyCounts, trend } = useMemo(() => getWeeklyBuckets(zone.events), [zone.events]);
   const duration = getDuration(zone.startDate);
   const flags = getCountryFlags(zone.countries);
   const intensityColor = INTENSITY_COLORS[zone.intensity];
   const dots = INTENSITY_DOTS[zone.intensity];
   const descSnippet = zone.description?.length > 90
-    ? zone.description.slice(0, 90).trimEnd() + '…'
+    ? zone.description.slice(0, 90).trimEnd() + '\u2026'
     : zone.description;
+
+  const daysSinceStart = getDaysSinceStart(zone.startDate);
+  const deathsPerDay = zone.casualties.total
+    ? Math.round(zone.casualties.total / daysSinceStart)
+    : null;
+
+  const trendIndicator = getTrendIndicator(trend);
 
   let cardStyle: React.CSSProperties = { ...styles.card };
   if (isSelected) {
@@ -450,28 +693,117 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
       <div style={{ ...styles.intensityBar, background: intensityColor }} />
 
       <div style={styles.cardInner}>
-        {/* Row 1: flags + name + status badge */}
+        {/* Row 1: flags + name + trend indicator + status badge */}
         <div style={styles.cardRow1}>
           <span style={styles.cardFlags}>{flags}</span>
           <span style={styles.cardName} title={zone.name}>{zone.name}</span>
+          <span
+            title={trendIndicator.label}
+            style={{
+              color: trendIndicator.color,
+              fontSize: 11,
+              fontWeight: 700,
+              flexShrink: 0,
+              lineHeight: 1,
+            }}
+          >
+            {trendIndicator.symbol}
+          </span>
           <StatusBadge status={zone.status} />
         </div>
 
-        {/* Row 2: intensity dots + events count */}
-        <div style={styles.cardRow2}>
+        {/* PROMINENT DEATH COUNT */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 6,
+          marginTop: 3,
+          marginBottom: 2,
+        }}>
+          <span style={{
+            color: '#ff2222',
+            fontSize: 20,
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            lineHeight: 1,
+            textShadow: '0 0 12px rgba(255, 30, 30, 0.3)',
+          }}>
+            {formatCasualtiesPlus(zone.casualties.total)}
+          </span>
+          <span style={{
+            color: 'rgba(255, 80, 80, 0.6)',
+            fontSize: 9,
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+          }}>
+            KILLED
+          </span>
+          {deathsPerDay !== null && (
+            <span style={{
+              color: 'rgba(255, 100, 100, 0.45)',
+              fontSize: 8,
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              marginLeft: 'auto',
+            }}>
+              ~{deathsPerDay.toLocaleString()}/day
+            </span>
+          )}
+        </div>
+
+        {/* Military / Civilian breakdown bar */}
+        <CasualtyBar
+          military={zone.casualties.military}
+          civilian={zone.casualties.civilian}
+          total={zone.casualties.total}
+        />
+
+        {/* Displaced count */}
+        {zone.casualties.displaced != null && zone.casualties.displaced > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            marginTop: 3,
+            marginBottom: 2,
+          }}>
+            <span style={{ fontSize: 10, lineHeight: 1 }} title="Displaced persons">
+              {'\uD83D\uDC65'}
+            </span>
+            <span style={{
+              color: '#cc8844',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.02em',
+            }}>
+              {formatCasualtiesPlus(zone.casualties.displaced)}
+            </span>
+            <span style={{
+              color: 'rgba(200, 140, 60, 0.5)',
+              fontSize: 8,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+            }}>
+              DISPLACED
+            </span>
+          </div>
+        )}
+
+        {/* Row 2: intensity dots + sparkline + events count */}
+        <div style={{ ...styles.cardRow2, marginTop: 4 }}>
           <span style={styles.intensityDots} title={`Intensity: ${zone.intensity}`}>{dots}</span>
+          <span title={`Trend: ${trend} (8-week event frequency)`} style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <Sparkline counts={weeklyCounts} trend={trend} />
+          </span>
           <span style={styles.cardStat}>
             {recentEvents > 0
-              ? `${recentEvents} event${recentEvents !== 1 ? 's' : ''} / 7d`
-              : 'No recent events'}
+              ? `${recentEvents} evt/7d`
+              : 'No recent'}
           </span>
         </div>
 
-        {/* Row 3: casualties + duration + fly-to (on hover or selected) */}
+        {/* Row 3: duration + fly-to */}
         <div style={styles.cardRow3}>
-          <span style={styles.casualtyCount}>
-            ☠ {formatCasualties(zone.casualties.total)}
-          </span>
           <span style={styles.activeSince}>{duration}</span>
           {(hovered || isSelected) && (
             <button
@@ -488,7 +820,7 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
               }}
               title="Fly to conflict zone"
             >
-              ◎ FLY
+              {'\u25CE'} FLY
             </button>
           )}
         </div>
@@ -528,14 +860,14 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
   onFlyTo,
 }) => {
   const [open, setOpen] = useState(true);
-  const [sortMode, setSortMode] = useState<SortMode>('intensity');
+  const [sortMode, setSortMode] = useState<SortMode>('deaths');
 
   const sorted = useMemo(() => {
     const zones = [...conflictZones];
-    if (sortMode === 'intensity') {
-      zones.sort((a, b) => INTENSITY_ORDER[b.intensity] - INTENSITY_ORDER[a.intensity]);
-    } else if (sortMode === 'casualties') {
+    if (sortMode === 'deaths') {
       zones.sort((a, b) => (b.casualties.total ?? 0) - (a.casualties.total ?? 0));
+    } else if (sortMode === 'intensity') {
+      zones.sort((a, b) => INTENSITY_ORDER[b.intensity] - INTENSITY_ORDER[a.intensity]);
     } else {
       zones.sort((a, b) => a.name.localeCompare(b.name));
     }
@@ -543,8 +875,8 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
   }, [conflictZones, sortMode]);
 
   const sortButtons: { key: SortMode; label: string }[] = [
+    { key: 'deaths', label: 'Deaths' },
     { key: 'intensity', label: 'Intensity' },
-    { key: 'casualties', label: 'Casualties' },
     { key: 'alpha', label: 'A-Z' },
   ];
 
@@ -561,7 +893,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
             {/* Header */}
             <div style={styles.header}>
               <div style={styles.headerTop}>
-                <span style={styles.headerTitle}>⚔ Active Conflicts</span>
+                <span style={styles.headerTitle}>{'\u2694'} Active Conflicts</span>
                 <span style={styles.countBadge}>{conflictZones.length}</span>
               </div>
               <div style={styles.sortRow}>
@@ -579,6 +911,9 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Global toll banner */}
+            <GlobalTollBanner zones={conflictZones} />
 
             {/* Conflict list */}
             <div style={styles.scrollArea}>
@@ -628,7 +963,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
         onClick={() => setOpen((v) => !v)}
         title={open ? 'Collapse conflict sidebar' : 'Expand conflict sidebar'}
       >
-        {open ? '▶' : '◀'}
+        {open ? '\u25B6' : '\u25C0'}
       </button>
     </div>
   );
