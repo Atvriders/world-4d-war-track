@@ -537,6 +537,7 @@ function piracyZoneColor(risk: PiracyZone['risk']): string {
     case 'high':     return '#ff8800';
     case 'medium':   return '#ffdd00';
     case 'low':      return '#44cc44';
+    default:         return '#ff8800';
   }
 }
 
@@ -782,6 +783,7 @@ function chokepointRiskColor(risk: Chokepoint['risk']): string {
     case 'high':     return '#ff8800';
     case 'medium':   return '#ffdd00';
     case 'low':      return '#44cc44';
+    default:         return '#ff8800';
   }
 }
 
