@@ -1923,12 +1923,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         ringPropagationSpeed={2}
         ringRepeatPeriod={800}
 
-        // ── Military base markers (HTML elements) ───────────────
-        htmlElementsData={mergedHtmlMarkers}
-        htmlLat={(d: object) => (d as { lat: number }).lat}
-        htmlLng={(d: object) => (d as { lng: number }).lng}
-        htmlAltitude={0.008}
-        htmlElement={mergedHtmlElement}
+        // HTML elements disabled — isBehindGlobe crash in three-render-objects
+        // htmlElementsData={mergedHtmlMarkers}
+        // htmlLat={(d: object) => (d as { lat: number }).lat}
+        // htmlLng={(d: object) => (d as { lng: number }).lng}
+        // htmlAltitude={0.008}
+        // htmlElement={mergedHtmlElement}
 
 
       />
