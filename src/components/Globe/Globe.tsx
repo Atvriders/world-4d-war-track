@@ -574,7 +574,8 @@ type PathEntry =
   | { _kind: 'seaCable'; cable: SeaCable; coords: { lat: number; lng: number; alt: number }[] }
   | { _kind: 'weaponRange'; site: string; weapon: string; rangeKm: number; weaponType: 'ballistic' | 'cruise' | 'drone' | 'sam' | 'rocket'; coords: { lat: number; lng: number; alt: number }[] }
   | { _kind: 'constellation'; constellation: string; color: string; coords: { lat: number; lng: number; alt: number }[] }
-  | { _kind: 'nuclearZone'; facility: string; zone: 'Evacuation' | 'Shelter-in-place' | 'Monitoring'; radiusKm: number; risk: NuclearSite['risk']; coords: { lat: number; lng: number; alt: number }[] };
+  | { _kind: 'nuclearZone'; facility: string; zone: 'Evacuation' | 'Shelter-in-place' | 'Monitoring'; radiusKm: number; risk: NuclearSite['risk']; coords: { lat: number; lng: number; alt: number }[] }
+  | { _kind: 'conflictBorder'; zone: ConflictZone; coords: { lat: number; lng: number; alt: number }[] };
 
 // ─── Navigation constellation helpers ──────────────────────────────────────
 
@@ -942,11 +943,13 @@ function pathColorAccessor(d: object) {
     if (entry.zone === 'Shelter-in-place') return bright ? 'rgba(255,165,0,0.08)' : 'rgba(255,165,0,0.05)';
     return bright ? 'rgba(255,255,0,0.05)' : 'rgba(255,255,0,0.03)';
   }
+  if (entry._kind === 'conflictBorder') return conflictStrokeColor(entry.zone.intensity);
   return '#aaaaaa';
 }
 
 function pathDashLengthAccessor(d: object) {
   const entry = d as PathEntry;
+  if (entry._kind === 'conflictBorder') return 0;
   if (entry._kind === 'weaponRange') return 0.6;
   if (entry._kind === 'seaCable') return 0.4;
   if (entry._kind === 'constellation') return 0.6;
@@ -960,6 +963,7 @@ function pathDashLengthAccessor(d: object) {
 
 function pathDashGapAccessor(d: object) {
   const entry = d as PathEntry;
+  if (entry._kind === 'conflictBorder') return 0;
   if (entry._kind === 'weaponRange') return 0.3;
   if (entry._kind === 'seaCable') return 0.2;
   if (entry._kind === 'constellation') return 0.3;
@@ -973,6 +977,7 @@ function pathDashGapAccessor(d: object) {
 
 function pathStrokeAccessor(d: object) {
   const entry = d as PathEntry;
+  if (entry._kind === 'conflictBorder') return 1.5;
   if (entry._kind === 'weaponRange') return 0.8;
   if (entry._kind === 'seaCable') return 1.2;
   if (entry._kind === 'constellation') return 0.8;
@@ -1166,11 +1171,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // ── Derived data (memoized) ─────────────────────────────────────────────────
 
-  // War zone polygon data
-  const polygonsData = useMemo(
-    () => (layers.warZones ? conflictZones : []),
-    [layers.warZones, conflictZones]
-  );
+  // War zone polygon data removed — conflict borders now rendered as paths
 
   // GPS hex bin points
   const hexBinPoints = useMemo(
@@ -1201,13 +1202,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       alt: number;
       color: string;
       size: number;
+      _type?: string;
     }> = [];
 
     if (layers.satellites) {
-      // Top 20 satellites by altitude (most visible, floating above globe)
+      // Top 15 satellites by altitude (most visible, floating above globe)
       const topSats = [...satellites]
         .sort((a, b) => b.alt - a.alt)
-        .slice(0, 20)
+        .slice(0, 15)
         .map(s => ({
           name: `◆ ${s.name}`,
           lat: s.lat,
@@ -1243,8 +1245,43 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }));
     labels.push(...countryLabels);
 
-    return labels;
-  }, [satellites, layers.satellites, layers.airspaceClosures]);
+    // Aircraft labels (military only, top 20)
+    if (layers.aircraft) {
+      const acLabels = aircraft
+        .filter(a => !a.onGround && a.isMilitary)
+        .slice(0, 20)
+        .map(a => ({
+          name: `✈ ${a.callsign || a.icao24}`,
+          lat: a.lat,
+          lng: a.lng,
+          alt: a.altitude / 6_371_000, // normalize to globe radius
+          color: 'rgba(255,80,80,0.9)',
+          size: 0.8,
+          _type: 'aircraft',
+        }));
+      labels.push(...acLabels);
+    }
+
+    // Ship labels (warships only, top 5)
+    if (layers.ships) {
+      const shipLabels = ships
+        .filter(s => s.type === 'warship' || s.type === 'military')
+        .slice(0, 5)
+        .map(s => ({
+          name: `🚢 ${s.name || s.mmsi}`,
+          lat: s.lat,
+          lng: s.lng,
+          alt: 0.001,
+          color: 'rgba(255,80,80,0.8)',
+          size: 0.5,
+          _type: 'ship',
+        }));
+      labels.push(...shipLabels);
+    }
+
+    // Cap total labels for performance
+    return labels.slice(0, 80);
+  }, [satellites, layers.satellites, layers.airspaceClosures, aircraft, ships, layers.aircraft, layers.ships]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
@@ -1254,16 +1291,40 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
   const satelliteTrackPaths: PathEntry[] = useMemo(
-    () =>
-      layers.satelliteOrbits
-        ? satellites
-            .filter((s) => s.groundTrack && s.groundTrack.length > 1)
-            .map((s) => ({
+    () => {
+      if (!layers.satelliteOrbits) return [];
+      return satellites
+        .map((s) => {
+          const altNorm = s.alt / 6371;
+          // Use TLE-propagated ground track if available
+          if (s.groundTrack && s.groundTrack.length > 1) {
+            return {
               _kind: 'sat' as const,
               sat: s,
-              coords: s.groundTrack.map(([lat, lng]) => ({ lat, lng, alt: 0 })),
-            }))
-        : [],
+              coords: s.groundTrack.map(([lat, lng]) => ({ lat, lng, alt: altNorm })),
+            };
+          }
+          // Fallback: approximate great-circle orbit from current position + heading
+          if (s.lat !== undefined && s.lng !== undefined && s.heading !== undefined) {
+            const points = 60;
+            const arcSpan = 60; // degrees of arc to trace
+            const coords: { lat: number; lng: number; alt: number }[] = [];
+            const headRad = s.heading * Math.PI / 180;
+            for (let i = 0; i < points; i++) {
+              const frac = (i / (points - 1)) - 0.5;
+              const angDeg = frac * arcSpan;
+              const dLat = Math.cos(headRad) * angDeg;
+              const dLng = Math.sin(headRad) * angDeg / Math.max(Math.cos(s.lat * Math.PI / 180), 0.01);
+              coords.push({ lat: s.lat + dLat, lng: s.lng + dLng, alt: altNorm });
+            }
+            if (coords.length > 1) {
+              return { _kind: 'sat' as const, sat: s, coords };
+            }
+          }
+          return null;
+        })
+        .filter((entry): entry is PathEntry => entry !== null);
+    },
     [layers.satelliteOrbits, satellites]
   );
 
@@ -1456,9 +1517,30 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return paths;
   }, [layers.nuclearSites]);
 
+  // Convert conflict zone GeoJSON polygons to path outlines (replaces polygon layer to avoid hover interception)
+  const conflictBorderPaths: PathEntry[] = useMemo(
+    () => {
+      if (!layers.warZones) return [];
+      return conflictZones.flatMap(zone => {
+        const geom = zone.geoJSON?.geometry;
+        if (!geom?.coordinates) return [];
+        // Extract coordinate rings based on geometry type
+        const rings: number[][][] = geom.type === 'MultiPolygon'
+          ? (geom.coordinates as number[][][][]).flatMap(poly => poly)
+          : (geom.coordinates as number[][][]);
+        return rings.map(ring => ({
+          _kind: 'conflictBorder' as const,
+          zone,
+          coords: ring.map(([lng, lat]) => ({ lat, lng, alt: 0.002 })),
+        }));
+      });
+    },
+    [layers.warZones, conflictZones]
+  );
+
   const allPaths: PathEntry[] = useMemo(
-    () => [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths, ...nuclearZonePaths],
-    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths, nuclearZonePaths]
+    () => [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths, ...nuclearZonePaths, ...conflictBorderPaths],
+    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths, nuclearZonePaths, conflictBorderPaths]
   );
 
   // Satellite connection arcs: military/spy/recon → nearest conflict zone + nav → GPS jam cells
@@ -1592,10 +1674,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return formatSatelliteLabel(s);
   }, []);
 
-  const polygonLabel = useCallback((d: object) => {
-    const z = d as ConflictZone;
-    return formatConflictLabel(z);
-  }, []);
+  // polygonLabel removed — polygon layer replaced by path borders
 
   // objectThreeObject removed — caused dual Three.js instance crash
   // Aircraft/ships visible via trail paths instead
@@ -2047,17 +2126,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         atmosphereAltitude={0.25}
         showAtmosphere={layers.atmosphere}
 
-        // ── War-zone polygons ──────────────────────────────────
-        polygonsData={polygonsData}
-        polygonGeoJsonGeometry={polygonGeoJsonGeometryAccessor}
-        polygonCapColor={polygonCapColorAccessor}
-        polygonSideColor={polygonSideColorAccessor}
-        polygonStrokeColor={polygonStrokeColorAccessor}
-        polygonAltitude={0}
-        onPolygonClick={handleZoneClick}
-        polygonLabel=""
-        polygonsTransitionDuration={0}
-
+        // ── War-zone polygons REMOVED — conflict borders now rendered as paths
+        // (polygon 3D meshes intercepted hover events everywhere on the globe)
 
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
@@ -2139,7 +2209,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         labelSize={labelSizeAccessor}
         labelColor={labelColorAccessor}
         labelDotRadius={labelDotRadiusAccessor}
-        labelResolution={2}
+        labelResolution={1}
 
         // HTML elements disabled — isBehindGlobe crash in three-render-objects
         // htmlElementsData={mergedHtmlMarkers}

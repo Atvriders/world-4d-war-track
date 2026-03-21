@@ -10,105 +10,25 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// In-memory cache
-const cache = new Map(); // key → { data, expires }
-function getCached(key) {
-  // Evict oldest entries if cache grows too large
-  if (cache.size > 100) {
-    const entriesToDelete = [...cache.entries()]
-      .sort((a, b) => a[1].expires - b[1].expires)
-      .slice(0, cache.size - 100);
-    for (const [k] of entriesToDelete) {
-      cache.delete(k);
-    }
-  }
-  const c = cache.get(key);
-  if (!c) return null;
-  if (c.expires <= Date.now()) {
-    cache.delete(key); // clean up expired entries so cache.has() is accurate
-    return null;
-  }
-  return c.data;
-}
-function setCached(key, data, ttlMs) {
-  cache.set(key, { data, expires: Date.now() + ttlMs });
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA HUB — Background fetch stores latest data in memory.
+// Browser requests are served instantly from these stores.
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Middleware
-app.use(compression());
-app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+// ── In-memory data stores ────────────────────────────────────────────────────
+let latestAdsb = { time: 0, states: [] };
+let latestAdsbUpdated = 0;
 
-// Security headers
-app.use((req, res, next) => {
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  next();
-});
-app.use(express.json());
+let latestAis = [];
+let latestAisUpdated = 0;
 
-// Request logging
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
-});
+let latestSatPositions = { satellites: [], time: 0, count: 0 };
+let latestSatPositionsUpdated = 0;
 
-// ── GET /api/health ──────────────────────────────────────────────────────────
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
-});
+// TLE text per group (used by satellite position computation)
+const latestTle = {}; // group → { text, updated }
 
-// ── GET /api/adsb/states ─────────────────────────────────────────────────────
-// OpenSky allows ~4 req/hour for unauthenticated users → cache 60s
-let adsbFetchInFlight = false;
-
-app.get('/api/adsb/states', async (req, res) => {
-  const CACHE_KEY = 'adsb:states';
-  const TTL_MS = 60_000; // 60 seconds
-
-  const cached = getCached(CACHE_KEY);
-  if (cached === null && cache.has(CACHE_KEY)) {
-    // Cache entry exists but data is null → rate-limited backoff
-    return res.status(429).json({ error: 'Rate limited', retryAfter: 600 });
-  }
-  if (cached) {
-    return res.json(cached);
-  }
-
-  // If a request is already in flight, return empty fallback to avoid pile-up
-  if (adsbFetchInFlight) {
-    return res.json({ time: Date.now() / 1000, states: [] });
-  }
-
-  adsbFetchInFlight = true;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch('https://opensky-network.org/api/states/all', {
-      headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
-      signal: controller.signal,
-    });
-    if (response.status === 429) {
-      const retryAfter = response.headers.get('Retry-After');
-      const backoffMs = retryAfter ? parseInt(retryAfter) * 1000 : 600_000; // 10 min default
-      setCached(CACHE_KEY, null, backoffMs);
-      return res.status(429).json({ error: 'Rate limited', retryAfter: backoffMs / 1000 });
-    }
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    setCached(CACHE_KEY, data, TTL_MS);
-    res.json(data);
-  } catch (err) {
-    console.error('[adsb] fetch error:', err.message);
-    res.status(502).json({ time: Date.now() / 1000, states: [] });
-  } finally {
-    clearTimeout(timeoutId);
-    adsbFetchInFlight = false;
-  }
-});
-
-// ── GET /api/satellites/tle ──────────────────────────────────────────────────
+// ── TLE URLs ─────────────────────────────────────────────────────────────────
 const TLE_URLS = {
   stations: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
   gps:      'https://celestrak.org/NORAD/elements/gp.php?GROUP=gps-ops&FORMAT=tle',
@@ -118,74 +38,6 @@ const TLE_URLS = {
   active:   'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle',
 };
 
-app.get('/api/satellites/tle', async (req, res) => {
-  const group = req.query.group || 'active';
-  const url = TLE_URLS[group];
-
-  if (!url) {
-    return res.status(400).type('text/plain').send('Unknown group');
-  }
-
-  const CACHE_KEY = `tle:${group}`;
-  const TTL_MS = 3_600_000; // 60 minutes — CelesTrak fair use is ~1 req per 2 hours
-
-  const cached = getCached(CACHE_KEY);
-  if (cached === null && cache.has(CACHE_KEY)) {
-    return res.status(429).type('text/plain').send('Rate limited');
-  }
-  if (cached) {
-    return res.type('text/plain').send(cached);
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(url, {
-      headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
-      signal: controller.signal,
-    });
-    if (response.status === 429) {
-      const retryAfter = response.headers.get('Retry-After');
-      const backoffMs = retryAfter ? parseInt(retryAfter) * 1000 : 600_000;
-      setCached(CACHE_KEY, null, backoffMs);
-      return res.status(429).type('text/plain').send('Rate limited');
-    }
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const text = await response.text();
-    setCached(CACHE_KEY, text, TTL_MS);
-    res.type('text/plain').send(text);
-  } catch (err) {
-    console.error(`[satellites] CelesTrak fetch error for group "${group}":`, err.message);
-    // Fallback: try celestrak.com mirror (different domain)
-    try {
-      const fallbackUrl = `https://celestrak.com/NORAD/elements/gp.php?GROUP=${group === 'gps' ? 'gps-ops' : group}&FORMAT=tle`;
-      const ctrl2 = new AbortController();
-      const tid2 = setTimeout(() => ctrl2.abort(), 10000);
-      const fb = await fetch(fallbackUrl, {
-        headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
-        signal: ctrl2.signal,
-      });
-      clearTimeout(tid2);
-      if (fb.ok) {
-        const text = await fb.text();
-        setCached(CACHE_KEY, text, TTL_MS);
-        console.log(`[satellites] Fallback celestrak.com succeeded for "${group}"`);
-        return res.type('text/plain').send(text);
-      }
-    } catch (fbErr) {
-      console.error(`[satellites] Fallback also failed for "${group}":`, fbErr.message);
-    }
-    res.status(502).type('text/plain').send('');
-  } finally {
-    clearTimeout(timeoutId);
-  }
-});
-
-// ── GET /api/satellites/positions ────────────────────────────────────────────
-// Pre-computes satellite positions server-side using SGP4 propagation.
-// The browser receives ready-to-render positions — no satellite.js math needed.
-// Returns { satellites: [...], time, count }. Cached for 60 seconds.
-
 const SAT_GROUPS = [
   { group: 'stations',  category: 'iss',        country: 'International' },
   { group: 'gps',       category: 'navigation',  country: 'USA' },
@@ -193,6 +45,12 @@ const SAT_GROUPS = [
   { group: 'weather',   category: 'weather',     country: 'Various' },
   { group: 'starlink',  category: 'starlink',    country: 'USA', limit: 50 },
 ];
+
+const UA = 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SATELLITE HELPERS (unchanged logic, extracted for background use)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /** Parse 3-line TLE text into [{name, tle1, tle2}] */
 function parseTLEText(rawText) {
@@ -247,66 +105,119 @@ function computeGroundTrack(satrec, baseTime) {
   return track;
 }
 
-let satPositionsFetchInFlight = false;
+// ═══════════════════════════════════════════════════════════════════════════════
+// BACKGROUND FETCH FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
 
-app.get('/api/satellites/positions', async (req, res) => {
-  const CACHE_KEY = 'sat:positions';
-  const TTL_MS = 60_000; // 60 seconds
+/** Fetch ADS-B data from OpenSky — runs every 60s */
+async function refreshAdsb() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch('https://opensky-network.org/api/states/all', {
+      signal: controller.signal,
+      headers: { 'User-Agent': UA },
+    });
+    if (res.status === 429) {
+      console.warn('[bg] ADS-B rate limited, keeping stale data');
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    latestAdsb = await res.json();
+    latestAdsbUpdated = Date.now();
+    console.log(`[bg] ADS-B refreshed: ${latestAdsb.states?.length || 0} aircraft`);
+  } catch (err) {
+    console.warn('[bg] ADS-B refresh failed:', err.message);
+    // Keep existing data — stale is better than empty
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
-  const cached = getCached(CACHE_KEY);
-  if (cached) return res.json(cached);
+/** Fetch AIS vessel data from AISHub — runs every 60s */
+async function refreshAis() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch(
+      'http://data.aishub.net/ws.php?username=0&format=1&output=json&compress=0',
+      { signal: controller.signal, headers: { 'User-Agent': UA } }
+    );
+    if (res.status === 429) {
+      console.warn('[bg] AIS rate limited, keeping stale data');
+      return;
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    latestAis = await res.json();
+    latestAisUpdated = Date.now();
+    console.log(`[bg] AIS refreshed: ${Array.isArray(latestAis) ? latestAis.length : '?'} vessels`);
+  } catch (err) {
+    console.warn('[bg] AIS refresh failed:', err.message);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
-  // Prevent concurrent fetches piling up
-  if (satPositionsFetchInFlight) {
-    return res.json({ satellites: [], time: Date.now(), count: 0 });
+/** Fetch TLE data for a single group from CelesTrak */
+async function fetchTleGroup(group) {
+  const url = TLE_URLS[group];
+  if (!url) return null;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { 'User-Agent': UA },
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const text = await res.text();
+      latestTle[group] = { text, updated: Date.now() };
+      return text;
+    }
+  } catch {
+    clearTimeout(timeoutId);
   }
 
-  satPositionsFetchInFlight = true;
+  // Fallback: try celestrak.com mirror
   try {
+    const fbGroup = group === 'gps' ? 'gps-ops' : group;
+    const fbUrl = `https://celestrak.com/NORAD/elements/gp.php?GROUP=${fbGroup}&FORMAT=tle`;
+    const ctrl2 = new AbortController();
+    const tid2 = setTimeout(() => ctrl2.abort(), 10_000);
+    const fb = await fetch(fbUrl, { signal: ctrl2.signal, headers: { 'User-Agent': UA } });
+    clearTimeout(tid2);
+    if (fb.ok) {
+      const text = await fb.text();
+      latestTle[group] = { text, updated: Date.now() };
+      console.log(`[bg] TLE fallback celestrak.com succeeded for "${group}"`);
+      return text;
+    }
+  } catch { /* both failed */ }
+
+  return null;
+}
+
+/** Refresh all TLE data and recompute satellite positions — runs every 60min */
+async function refreshSatellites() {
+  try {
+    // Fetch TLE for all groups in parallel
+    await Promise.allSettled(
+      Object.keys(TLE_URLS).map(group => fetchTleGroup(group))
+    );
+
+    // Now compute positions from whatever TLE data we have
     const now = new Date();
     const nowMs = now.getTime();
     const allSats = [];
     const seen = new Set();
 
     for (const cfg of SAT_GROUPS) {
-      // Reuse TLE cache if available, otherwise fetch from CelesTrak
-      const tleCacheKey = `tle:${cfg.group}`;
-      let tleText = getCached(tleCacheKey);
+      const tleEntry = latestTle[cfg.group];
+      if (!tleEntry || !tleEntry.text) continue;
 
-      if (!tleText) {
-        const url = TLE_URLS[cfg.group];
-        if (!url) continue;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        try {
-          const response = await fetch(url, {
-            headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' },
-            signal: controller.signal,
-          });
-          if (!response.ok) { clearTimeout(timeoutId); continue; }
-          tleText = await response.text();
-          setCached(tleCacheKey, tleText, 3_600_000);
-        } catch {
-          // Fallback: try celestrak.com mirror
-          try {
-            const fbGroup = cfg.group === 'gps' ? 'gps-ops' : cfg.group;
-            const fbUrl = `https://celestrak.com/NORAD/elements/gp.php?GROUP=${fbGroup}&FORMAT=tle`;
-            const ctrl2 = new AbortController();
-            const tid2 = setTimeout(() => ctrl2.abort(), 10000);
-            const fb = await fetch(fbUrl, { signal: ctrl2.signal });
-            clearTimeout(tid2);
-            if (fb.ok) {
-              tleText = await fb.text();
-              setCached(tleCacheKey, tleText, 3_600_000);
-            }
-          } catch { /* both failed, skip group */ }
-          if (!tleText) continue;
-        } finally {
-          clearTimeout(timeoutId);
-        }
-      }
-
-      let parsed = parseTLEText(tleText);
+      let parsed = parseTLEText(tleEntry.text);
       if (cfg.limit) parsed = parsed.slice(0, cfg.limit);
 
       for (const { name, tle1, tle2 } of parsed) {
@@ -330,7 +241,7 @@ app.get('/api/satellites/positions', async (req, res) => {
           const alt = gd.height;
           const velocity = Math.sqrt(velEci.x ** 2 + velEci.y ** 2 + velEci.z ** 2);
 
-          // ECI→ENU heading (proper, no second propagation needed)
+          // ECI to ENU heading
           const sinLat = Math.sin(gd.latitude), cosLat = Math.cos(gd.latitude);
           const sinLng = Math.sin(gd.longitude), cosLng = Math.cos(gd.longitude);
           const vE = -sinLng * velEci.x + cosLng * velEci.y;
@@ -365,53 +276,87 @@ app.get('/api/satellites/positions', async (req, res) => {
       }
     }
 
-    const result = { satellites: allSats, time: nowMs, count: allSats.length };
-    setCached(CACHE_KEY, result, TTL_MS);
-    res.json(result);
+    latestSatPositions = { satellites: allSats, time: nowMs, count: allSats.length };
+    latestSatPositionsUpdated = nowMs;
+    console.log(`[bg] Satellites refreshed: ${allSats.length} positions computed`);
   } catch (err) {
-    console.error('[satellites/positions] error:', err.message);
-    res.status(502).json({ satellites: [], time: Date.now(), count: 0, error: err.message });
-  } finally {
-    satPositionsFetchInFlight = false;
+    console.error('[bg] Satellite refresh failed:', err.message);
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MIDDLEWARE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.use(compression());
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+app.use(express.json());
+
+// Request logging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// API ENDPOINTS — Serve instantly from memory
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── GET /api/health ──────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    time: new Date().toISOString(),
+    dataAge: {
+      adsb: latestAdsbUpdated ? `${Math.round((Date.now() - latestAdsbUpdated) / 1000)}s ago` : 'never',
+      ais: latestAisUpdated ? `${Math.round((Date.now() - latestAisUpdated) / 1000)}s ago` : 'never',
+      satellites: latestSatPositionsUpdated ? `${Math.round((Date.now() - latestSatPositionsUpdated) / 1000)}s ago` : 'never',
+    },
+  });
+});
+
+// ── GET /api/adsb/states ─────────────────────────────────────────────────────
+// Instant response from memory — no proxy delay
+app.get('/api/adsb/states', (req, res) => {
+  res.json(latestAdsb);
+});
+
+// ── GET /api/satellites/tle ──────────────────────────────────────────────────
+// Serves cached TLE text from memory
+app.get('/api/satellites/tle', (req, res) => {
+  const group = req.query.group || 'active';
+  if (!TLE_URLS[group]) {
+    return res.status(400).type('text/plain').send('Unknown group');
+  }
+
+  const tleEntry = latestTle[group];
+  if (tleEntry && tleEntry.text) {
+    return res.type('text/plain').send(tleEntry.text);
+  }
+
+  // No data yet — return empty (background fetch will populate it)
+  res.type('text/plain').send('');
+});
+
+// ── GET /api/satellites/positions ────────────────────────────────────────────
+// Instant response from memory — no SGP4 computation on request
+app.get('/api/satellites/positions', (req, res) => {
+  res.json(latestSatPositions);
 });
 
 // ── GET /api/ais/vessels ─────────────────────────────────────────────────────
-app.get('/api/ais/vessels', async (req, res) => {
-  const CACHE_KEY = 'ais:vessels';
-  const TTL_MS = 60_000; // 1 minute
-
-  const cached = getCached(CACHE_KEY);
-  if (cached === null && cache.has(CACHE_KEY)) {
-    return res.status(429).json({ error: 'Rate limited', retryAfter: 600 });
-  }
-  if (cached) {
-    return res.json(cached);
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  try {
-    const response = await fetch(
-      'http://data.aishub.net/ws.php?username=0&format=1&output=json&compress=0',
-      { headers: { 'User-Agent': 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)' }, signal: controller.signal }
-    );
-    if (response.status === 429) {
-      const retryAfter = response.headers.get('Retry-After');
-      const backoffMs = retryAfter ? parseInt(retryAfter) * 1000 : 600_000;
-      setCached(CACHE_KEY, null, backoffMs);
-      return res.status(429).json({ error: 'Rate limited', retryAfter: backoffMs / 1000 });
-    }
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    setCached(CACHE_KEY, data, TTL_MS);
-    res.json(data);
-  } catch (err) {
-    console.error('[ais] fetch error:', err.message);
-    res.status(502).json([]);
-  } finally {
-    clearTimeout(timeoutId);
-  }
+// Instant response from memory
+app.get('/api/ais/vessels', (req, res) => {
+  res.json(latestAis);
 });
 
 // ── GET /api/gpsjam/current ──────────────────────────────────────────────────
@@ -427,9 +372,23 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-// ── Start ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// START SERVER + BACKGROUND FETCH INTERVALS
+// ═══════════════════════════════════════════════════════════════════════════════
+
 app.listen(PORT, () => {
   console.log(`[${new Date().toISOString()}] World4DWarTrack server listening on port ${PORT}`);
   console.log(`  API: http://localhost:${PORT}/api/health`);
   console.log(`  Frontend: http://localhost:${PORT}/`);
+  console.log('  Starting background data fetching...');
+
+  // Kick off initial fetches immediately
+  refreshAdsb();
+  refreshAis();
+  refreshSatellites();
+
+  // Schedule recurring background fetches
+  setInterval(refreshAdsb, 60_000);        // every 60 seconds
+  setInterval(refreshAis, 60_000);         // every 60 seconds
+  setInterval(refreshSatellites, 3_600_000); // every 60 minutes
 });

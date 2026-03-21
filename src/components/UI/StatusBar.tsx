@@ -74,11 +74,18 @@ function formatDate(date: Date): string {
   return `${d} ${m} ${y}`;
 }
 
-/** Determine data freshness: 'live' (<30s), 'delayed' (<2min), 'stale' (>=2min) */
-function getFreshness(slowestMs: number): 'live' | 'delayed' | 'stale' {
+/** Determine data freshness based on last refresh time and error state */
+function getFreshness(
+  slowestMs: number,
+  hasErrors: boolean,
+): 'live' | 'delayed' | 'stale' | 'connecting' | 'syncing' {
+  // Never successfully loaded: check if errors are present
+  if (slowestMs === 0) {
+    return hasErrors ? 'connecting' : 'syncing';
+  }
+  // Previously loaded: check age
   const age = Date.now() - slowestMs;
-  if (age < 30_000) return 'live';
-  if (age < 120_000) return 'delayed';
+  if (age < 120_000) return 'live';
   return 'stale';
 }
 
@@ -129,9 +136,11 @@ function buildTooltip(
 }
 
 const FRESHNESS_CONFIG = {
-  live:    { color: '#00ff88', label: 'LIVE',    bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
-  delayed: { color: '#ffd700', label: 'DELAYED', bg: 'rgba(255, 215, 0, 0.15)', border: 'rgba(255, 215, 0, 0.5)' },
-  stale:   { color: '#ff3b3b', label: 'STALE',   bg: 'rgba(255, 59, 59, 0.15)', border: 'rgba(255, 59, 59, 0.5)' },
+  live:       { color: '#00ff88', label: 'LIVE',       bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
+  delayed:    { color: '#ffd700', label: 'DELAYED',    bg: 'rgba(255, 215, 0, 0.15)', border: 'rgba(255, 215, 0, 0.5)' },
+  stale:      { color: '#ff3b3b', label: 'STALE',      bg: 'rgba(255, 59, 59, 0.15)', border: 'rgba(255, 59, 59, 0.5)' },
+  connecting: { color: '#ffd700', label: 'CONNECTING', bg: 'rgba(255, 215, 0, 0.15)', border: 'rgba(255, 215, 0, 0.5)' },
+  syncing:    { color: '#ffd700', label: 'SYNCING',    bg: 'rgba(255, 215, 0, 0.15)', border: 'rgba(255, 215, 0, 0.5)' },
 };
 
 const LoadingDot: React.FC = () => (
@@ -324,7 +333,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const commercialShips = ships - warships;
 
   // Data freshness
-  const freshness = getFreshness(slowest);
+  const hasErrors = !!(errors.satellites || errors.aircraft || errors.ships || errors.gpsJam);
+  const freshness = getFreshness(slowest, hasErrors);
   const freshnessConf = FRESHNESS_CONFIG[freshness];
 
   // Hover tooltips for each data source (memoized to avoid recalculating every tick)
@@ -609,7 +619,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
                       ? 'pulse 1.8s ease-in-out infinite'
                       : freshness === 'stale'
                         ? 'blink 1s step-start infinite'
-                        : 'pulse 1.2s ease-in-out infinite',
+                        : 'pulse 1.2s ease-in-out infinite', // connecting, syncing, delayed
                   }}
                 />
                 {freshnessConf.label}

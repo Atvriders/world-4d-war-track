@@ -49,13 +49,18 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
   const [lat, setLat] = useState(38);
   const [lng, setLng] = useState(35);
 
-  // ── 1-second tick for timestamp + coordinate refresh ────────────────────
+  // ── 1-second tick for timestamp + blinking dot ──────────────────────────
   useEffect(() => {
     const id = setInterval(() => {
       setNow(new Date());
       setDotVisible(v => !v);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
 
-      // Read globe POV if available
+  // ── 5-second tick for coordinate refresh (reduces re-renders) ──────────
+  useEffect(() => {
+    const id = setInterval(() => {
       if (globeRef?.current) {
         try {
           const pov = globeRef.current.pointOfView?.();
@@ -67,7 +72,7 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
           // Globe may not expose getter — keep last known coords
         }
       }
-    }, 1000);
+    }, 5000);
     return () => clearInterval(id);
   }, [globeRef]);
 
