@@ -1,0 +1,152 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #000011; }
+
+body {
+  font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+  color: #e0e8f0;
+}
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+::-webkit-scrollbar-thumb { background: rgba(0,255,136,0.4); border-radius: 2px; }
+
+:root {
+  --color-primary: #00ff88;
+  --color-secondary: #0088ff;
+  --color-danger: #ff3333;
+  --color-warning: #ffaa00;
+  --color-bg: rgba(5, 15, 30, 0.92);
+  --color-border: rgba(0, 255, 136, 0.3);
+  --color-text: #e0e8f0;
+  --color-text-dim: #7a9ab0;
+  --font-mono: 'Courier New', monospace;
+  --transition: all 0.2s ease;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes criticalPulse {
+  0%, 100% { background: rgba(255, 17, 17, 0.1); }
+  50% { background: rgba(255, 17, 17, 0.25); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 4px rgba(0, 255, 136, 0.5); }
+  50% { text-shadow: 0 0 12px rgba(0, 255, 136, 0.9), 0 0 20px rgba(0, 255, 136, 0.3); }
+}
+
+.blink { animation: blink 1s step-end infinite; }
+.pulse { animation: pulse 2s infinite; }
+.glow { animation: glowPulse 2s ease-in-out infinite; }
+.fade-in { animation: fadeIn 0.3s ease forwards; }
+.slide-in-right { animation: slideInRight 0.3s ease forwards; }
+.slide-in-left { animation: slideInLeft 0.3s ease forwards; }
+.critical-pulse { animation: criticalPulse 1.5s ease-in-out infinite; }
+
+.text-primary { color: var(--color-primary); }
+.text-danger { color: var(--color-danger); }
+.text-warning { color: var(--color-warning); }
+.text-dim { color: var(--color-text-dim); }
+.text-mono { font-family: var(--font-mono); }
+.text-sm { font-size: 11px; }
+.text-xs { font-size: 10px; }
+
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.badge-danger { background: rgba(255,51,51,0.2); color: #ff3333; border: 1px solid rgba(255,51,51,0.4); }
+.badge-warning { background: rgba(255,170,0,0.2); color: #ffaa00; border: 1px solid rgba(255,170,0,0.4); }
+.badge-success { background: rgba(0,255,136,0.15); color: #00ff88; border: 1px solid rgba(0,255,136,0.4); }
+.badge-info { background: rgba(0,136,255,0.2); color: #4488ff; border: 1px solid rgba(0,136,255,0.4); }
+
+.panel {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(8px);
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-primary);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: var(--transition);
+}
+.btn:hover { background: rgba(0,255,136,0.1); border-color: var(--color-primary); }
+.btn-danger { border-color: rgba(255,51,51,0.4); color: #ff3333; }
+.btn-danger:hover { background: rgba(255,51,51,0.1); }
+
+/* Range input styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(0,255,136,0.2);
+  border-radius: 2px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(0,255,136,0.5);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+}
