@@ -522,8 +522,8 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
       <div style={styles.section}>
         <SectionHead>Parties Involved</SectionHead>
         <div style={styles.partiesList}>
-          {entity.parties.map((party, i) => (
-            <div key={i} style={styles.partyItem}>{party}</div>
+          {entity.parties.map((party) => (
+            <div key={`party-${party}`} style={styles.partyItem}>{party}</div>
           ))}
         </div>
       </div>

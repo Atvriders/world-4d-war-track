@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const IMAGERY_URLS = {
-  satellite: '//unpkg.com/three-globe/example/img/earth-night.jpg',
-  dark: '//unpkg.com/three-globe/example/img/earth-dark.jpg',
-  terrain: '//unpkg.com/three-globe/example/img/earth-day.jpg',
+  satellite: 'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+  dark: 'https://unpkg.com/three-globe/example/img/earth-dark.jpg',
+  terrain: 'https://unpkg.com/three-globe/example/img/earth-day.jpg',
 };
 
 const ATMOSPHERE_COLORS = [
@@ -67,6 +67,8 @@ export default function GlobeSettings({
   visible,
   onToggle,
 }: GlobeSettingsProps) {
+  const [resetHover, setResetHover] = useState(false);
+
   const sectionLabel: React.CSSProperties = {
     fontSize: 10,
     fontWeight: 700,
@@ -307,19 +309,13 @@ export default function GlobeSettings({
               textTransform: 'uppercase',
               cursor: 'pointer',
               borderRadius: 4,
-              border: '1px solid #3a1a1a',
-              background: 'rgba(60, 10, 10, 0.5)',
+              border: resetHover ? '1px solid #ff4444' : '1px solid #3a1a1a',
+              background: resetHover ? 'rgba(100, 20, 20, 0.7)' : 'rgba(60, 10, 10, 0.5)',
               color: '#ff6666',
               transition: 'background 0.2s, border-color 0.2s',
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(100, 20, 20, 0.7)';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#ff4444';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60, 10, 10, 0.5)';
-              (e.currentTarget as HTMLButtonElement).style.borderColor = '#3a1a1a';
-            }}
+            onMouseEnter={() => setResetHover(true)}
+            onMouseLeave={() => setResetHover(false)}
           >
             Reset to Defaults
           </button>

@@ -76,6 +76,7 @@ function getZoneCenter(geoJSON: { geometry: { coordinates: unknown; type: string
 
 const QuickNav: React.FC<QuickNavProps> = ({ onFlyTo, conflictZones }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -126,11 +127,11 @@ const QuickNav: React.FC<QuickNavProps> = ({ onFlyTo, conflictZones }) => {
             {PREDEFINED_LOCATIONS.map(loc => (
               <button
                 key={loc.label}
-                style={styles.navBtn}
+                style={hoveredId === `nav-${loc.label}` ? styles.navBtnHover : styles.navBtn}
                 onClick={() => onFlyTo(loc.lat, loc.lng, loc.alt)}
                 title={`Fly to ${loc.label} (${loc.lat}°, ${loc.lng}°)`}
-                onMouseEnter={e => Object.assign((e.currentTarget as HTMLButtonElement).style, styles.navBtnHover)}
-                onMouseLeave={e => Object.assign((e.currentTarget as HTMLButtonElement).style, styles.navBtnBase)}
+                onMouseEnter={() => setHoveredId(`nav-${loc.label}`)}
+                onMouseLeave={() => setHoveredId(null)}
               >
                 {loc.label}
               </button>
@@ -146,11 +147,11 @@ const QuickNav: React.FC<QuickNavProps> = ({ onFlyTo, conflictZones }) => {
                 {topZones.map(zone => (
                   <button
                     key={zone.id}
-                    style={styles.zoneBtn}
+                    style={hoveredId === `zone-${zone.id}` ? styles.zoneBtnHover : styles.zoneBtn}
                     onClick={() => handleZoneFly(zone)}
                     title={`Fly to ${zone.name} (${zone.intensity})`}
-                    onMouseEnter={e => Object.assign((e.currentTarget as HTMLButtonElement).style, styles.zoneBtnHover)}
-                    onMouseLeave={e => Object.assign((e.currentTarget as HTMLButtonElement).style, styles.zoneBtnBase)}
+                    onMouseEnter={() => setHoveredId(`zone-${zone.id}`)}
+                    onMouseLeave={() => setHoveredId(null)}
                   >
                     ⚔️ {zone.name}
                   </button>

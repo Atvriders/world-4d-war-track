@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -569,6 +569,13 @@ export const WatchList: React.FC<WatchListProps> = ({
   onToggle,
 }) => {
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    };
+  }, []);
 
   // Build lookup maps for O(1) live data access
   const aircraftMap = useMemo(() => {
@@ -595,7 +602,7 @@ export const WatchList: React.FC<WatchListProps> = ({
     const ids = watchedEntities.map((w) => w.id).join('\n');
     navigator.clipboard.writeText(ids).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     });
   }
 

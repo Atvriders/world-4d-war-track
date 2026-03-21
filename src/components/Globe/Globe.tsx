@@ -2,7 +2,7 @@ import GlobeGLBase from 'react-globe.gl';
 // Cast to any so custom/undocumented props don't cause type errors
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GlobeGL = GlobeGLBase as any;
-import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 
 // ─── Inline interfaces (mirrors types/index.ts to avoid circular deps) ────────
 
@@ -233,6 +233,11 @@ function zoneCentroid(zone: ConflictZone): { lat: number; lng: number } | null {
   }
 }
 
+/** Escape HTML to prevent XSS in label callbacks */
+function esc(s: string): string {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ─── Path entry union (satellite ground tracks + aircraft trails) ─────────────
 
 type PathEntry =
@@ -282,15 +287,19 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }
   }, []);
 
-  // ── Derived data ────────────────────────────────────────────────────────────
+  // ── Derived data (memoized) ─────────────────────────────────────────────────
 
   // War zone polygon data
-  const polygonsData = layers.warZones ? conflictZones : [];
+  const polygonsData = useMemo(
+    () => (layers.warZones ? conflictZones : []),
+    [layers.warZones, conflictZones]
+  );
 
   // GPS hex bin points
-  const hexBinPoints = layers.gpsJam
-    ? gpsJamCells.flatMap(expandJamCell)
-    : [];
+  const hexBinPoints = useMemo(
+    () => (layers.gpsJam ? gpsJamCells.flatMap(expandJamCell) : []),
+    [layers.gpsJam, gpsJamCells]
+  );
 
   // Satellite points
   const satellitePoints = layers.satellites ? satellites : [];
@@ -302,61 +311,101 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   const shipPoints = layers.ships ? ships : [];
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
-  const satelliteTrackPaths: PathEntry[] = layers.satelliteOrbits
-    ? satellites
-        .filter((s) => s.groundTrack && s.groundTrack.length > 1)
-        .map((s) => ({
-          _kind: 'sat' as const,
-          sat: s,
-          coords: s.groundTrack.map(([lat, lng]) => ({ lat, lng, alt: 0 })),
-        }))
-    : [];
+  const satelliteTrackPaths: PathEntry[] = useMemo(
+    () =>
+      layers.satelliteOrbits
+        ? satellites
+            .filter((s) => s.groundTrack && s.groundTrack.length > 1)
+            .map((s) => ({
+              _kind: 'sat' as const,
+              sat: s,
+              coords: s.groundTrack.map(([lat, lng]) => ({ lat, lng, alt: 0 })),
+            }))
+        : [],
+    [layers.satelliteOrbits, satellites]
+  );
 
-  const aircraftTrailPaths: PathEntry[] = layers.aircraftTrails
-    ? aircraft
-        .filter((a) => !a.onGround && a.trail && a.trail.length > 1)
-        .map((a) => ({
-          _kind: 'aircraft' as const,
-          aircraft: a,
-          coords: a.trail.map(([lat, lng, alt]) => ({ lat, lng, alt: alt / 1_000_000 })),
-        }))
-    : [];
+  const aircraftTrailPaths: PathEntry[] = useMemo(
+    () =>
+      layers.aircraftTrails
+        ? aircraft
+            .filter((a) => !a.onGround && a.trail && a.trail.length > 1)
+            .map((a) => ({
+              _kind: 'aircraft' as const,
+              aircraft: a,
+              coords: a.trail.map(([lat, lng, alt]) => ({ lat, lng, alt: alt / 1_000_000 })),
+            }))
+        : [],
+    [layers.aircraftTrails, aircraft]
+  );
 
-  const allPaths: PathEntry[] = [...satelliteTrackPaths, ...aircraftTrailPaths];
+  const allPaths: PathEntry[] = useMemo(
+    () => [...satelliteTrackPaths, ...aircraftTrailPaths],
+    [satelliteTrackPaths, aircraftTrailPaths]
+  );
 
   // Satellite connection arcs (military/spy/recon → nearest conflict zone)
   const militaryCats: SatelliteEntity['category'][] = ['military', 'spy', 'reconnaissance'];
-  const arcsData = layers.satelliteConnections
-    ? satellites
-        .filter((s) => militaryCats.includes(s.category) && conflictZones.length > 0)
-        .flatMap((s) => {
-          // Find nearest conflict zone
-          let nearest: ConflictZone | null = null;
-          let minDist = Infinity;
-          for (const zone of conflictZones) {
-            const c = zoneCentroid(zone);
-            if (!c) continue;
-            const d =
-              Math.abs(s.lat - c.lat) + Math.abs(s.lng - c.lng);
-            if (d < minDist) {
-              minDist = d;
-              nearest = zone;
-            }
-          }
-          if (!nearest) return [];
-          const c = zoneCentroid(nearest)!;
-          return [
-            {
-              startLat: s.lat,
-              startLng: s.lng,
-              startAlt: s.alt / 6371,
-              endLat: c.lat,
-              endLng: c.lng,
-              endAlt: 0,
-            },
-          ];
-        })
-    : [];
+  const arcsData = useMemo(
+    () =>
+      layers.satelliteConnections
+        ? satellites
+            .filter((s) => militaryCats.includes(s.category) && conflictZones.length > 0)
+            .flatMap((s) => {
+              // Find nearest conflict zone
+              let nearest: ConflictZone | null = null;
+              let minDist = Infinity;
+              for (const zone of conflictZones) {
+                const c = zoneCentroid(zone);
+                if (!c) continue;
+                const d =
+                  Math.abs(s.lat - c.lat) + Math.abs(s.lng - c.lng);
+                if (d < minDist) {
+                  minDist = d;
+                  nearest = zone;
+                }
+              }
+              if (!nearest) return [];
+              const c = zoneCentroid(nearest)!;
+              return [
+                {
+                  startLat: s.lat,
+                  startLng: s.lng,
+                  startAlt: s.alt / 6371,
+                  endLat: c.lat,
+                  endLng: c.lng,
+                  endAlt: 0,
+                },
+              ];
+            })
+        : [],
+    [layers.satelliteConnections, satellites, conflictZones]
+  );
+
+  // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
+  const sharedGeo = useMemo(() => {
+    const THREE = (window as any).THREE;
+    if (!THREE) return null;
+    return {
+      aircraftGeo: new THREE.SphereGeometry(0.2, 4, 4),
+      shipGeo: new THREE.SphereGeometry(0.25, 4, 4),
+      materialCache: new Map<string, any>(),
+      THREE,
+    };
+  }, []);
+
+  // ── Memoized objectsData ──────────────────────────────────────────────────
+  const objectsData = useMemo(
+    () => [
+      ...(layers.aircraft
+        ? aircraftPoints.map((a) => ({ ...a, _type: 'aircraft' as const }))
+        : []),
+      ...(layers.ships
+        ? shipPoints.map((s) => ({ ...s, _type: 'ship' as const }))
+        : []),
+    ],
+    [layers.aircraft, layers.ships, aircraftPoints, shipPoints]
+  );
 
   // ── Click handlers ──────────────────────────────────────────────────────────
 
@@ -379,6 +428,64 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     (zone: object) => onEntityClick('conflict', zone),
     [onEntityClick]
   );
+
+  // ── Memoized label / color callbacks ──────────────────────────────────────
+
+  const pointColor = useCallback(
+    (d: object) => satelliteColor((d as SatelliteEntity).category),
+    []
+  );
+
+  const pointLabel = useCallback((d: object) => {
+    const s = d as SatelliteEntity;
+    return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
+      <b>${esc(s.name)}</b><br/>
+      Alt: ${s.alt.toFixed(0)} km | ${esc(s.category)}
+    </div>`;
+  }, []);
+
+  const polygonLabel = useCallback((d: object) => {
+    const z = d as ConflictZone;
+    return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
+      <b>${esc(z.name)}</b><br/>
+      Intensity: ${esc(z.intensity)} | Status: ${esc(z.status)}
+    </div>`;
+  }, []);
+
+  const objectLabel = useCallback((d: object) => {
+    const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
+    if (obj._type === 'aircraft') {
+      const a = obj as AircraftEntity;
+      return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
+        <b>${esc(a.callsign || a.icao24)}</b><br/>
+        Alt: ${(a.altitude / 1000).toFixed(1)} km | ${esc(a.country)}${a.isMilitary ? ' ✈ military' : ''}
+      </div>`;
+    }
+    const s = obj as ShipEntity;
+    return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
+      <b>${esc(s.name || s.mmsi)}</b><br/>
+      ${esc(s.type)} | ${esc(s.flag)} | ${s.speed} kn
+    </div>`;
+  }, []);
+
+  const objectThreeObject = useCallback((d: object) => {
+    const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
+    if (!sharedGeo) return null;
+    const { aircraftGeo, shipGeo, materialCache, THREE } = sharedGeo;
+    const color =
+      obj._type === 'aircraft'
+        ? (obj as AircraftEntity).isMilitary
+          ? '#ff3333'
+          : '#00aaff'
+        : shipColor((obj as ShipEntity).type);
+    let material = materialCache.get(color);
+    if (!material) {
+      material = new THREE.MeshBasicMaterial({ color });
+      materialCache.set(color, material);
+    }
+    const geometry = obj._type === 'aircraft' ? aircraftGeo : shipGeo;
+    return new THREE.Mesh(geometry, material);
+  }, [sharedGeo]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -403,13 +510,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         polygonStrokeColor={(d: object) => conflictStrokeColor((d as ConflictZone).intensity)}
         polygonAltitude={0.005}
         onPolygonClick={handleZoneClick}
-        polygonLabel={(d: object) => {
-          const z = d as ConflictZone;
-          return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-            <b>${z.name}</b><br/>
-            Intensity: ${z.intensity} | Status: ${z.status}
-          </div>`;
-        }}
+        polygonLabel={polygonLabel}
 
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
@@ -435,15 +536,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           const s = d as SatelliteEntity;
           return s.alt / 6371; // normalise to globe radius fraction
         }}
-        pointColor={(d: object) => satelliteColor((d as SatelliteEntity).category)}
+        pointColor={pointColor}
         pointRadius={(d: object) => ((d as SatelliteEntity).category === 'iss' ? 0.6 : 0.3)}
-        pointLabel={(d: object) => {
-          const s = d as SatelliteEntity;
-          return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-            <b>${s.name}</b><br/>
-            Alt: ${s.alt.toFixed(0)} km | ${s.category}
-          </div>`;
-        }}
+        pointLabel={pointLabel}
         onPointClick={handleSatelliteClick}
 
         // ── Aircraft points ────────────────────────────────────
@@ -478,14 +573,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
         // ── Custom HTML objects for aircraft + ships ───────────
         // (uses objectsData so we can overlay on top of satellite points)
-        objectsData={[
-          ...(layers.aircraft
-            ? aircraftPoints.map((a) => ({ ...a, _type: 'aircraft' as const }))
-            : []),
-          ...(layers.ships
-            ? shipPoints.map((s) => ({ ...s, _type: 'ship' as const }))
-            : []),
-        ]}
+        objectsData={objectsData}
         objectLat={(d: object) => (d as AircraftEntity & { _type: string }).lat}
         objectLng={(d: object) => (d as AircraftEntity & { _type: string }).lng}
         objectAltitude={(d: object) => {
@@ -493,40 +581,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           if (obj._type === 'aircraft') return (obj as AircraftEntity).altitude / 6_371_000;
           return 0.001; // ships at surface
         }}
-        objectThreeObject={(d: object) => {
-          // Build a small coloured sprite via THREE
-          const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-          const THREE = (window as any).THREE;
-          if (!THREE) return null;
-          const color =
-            obj._type === 'aircraft'
-              ? (obj as AircraftEntity).isMilitary
-                ? '#ff3333'
-                : '#00aaff'
-              : shipColor((obj as ShipEntity).type);
-          const geometry = new THREE.SphereGeometry(
-            obj._type === 'aircraft' ? 0.2 : 0.25,
-            8,
-            8
-          );
-          const material = new THREE.MeshBasicMaterial({ color });
-          return new THREE.Mesh(geometry, material);
-        }}
-        objectLabel={(d: object) => {
-          const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
-          if (obj._type === 'aircraft') {
-            const a = obj as AircraftEntity;
-            return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-              <b>${a.callsign || a.icao24}</b><br/>
-              Alt: ${(a.altitude / 1000).toFixed(1)} km | ${a.country}${a.isMilitary ? ' ✈ military' : ''}
-            </div>`;
-          }
-          const s = obj as ShipEntity;
-          return `<div style="background:rgba(0,0,0,0.8);padding:6px 10px;border-radius:4px;color:#fff;font-size:12px">
-            <b>${s.name || s.mmsi}</b><br/>
-            ${s.type} | ${s.flag} | ${s.speed} kn
-          </div>`;
-        }}
+        objectThreeObject={objectThreeObject}
+        objectLabel={objectLabel}
         onObjectClick={(d: object) => {
           const obj = d as (AircraftEntity | ShipEntity) & { _type: string };
           if (obj._type === 'aircraft') handleAircraftClick(obj);

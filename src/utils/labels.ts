@@ -1,6 +1,17 @@
 // Tooltip/label HTML formatting utilities for react-globe.gl label system
 // All labels use inline styles only (no CSS classes)
 
+// Escape user-supplied strings to prevent XSS in label HTML
+function esc(s: string | undefined | null): string {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const BASE_STYLE = `background:rgba(5,15,30,0.95);border:1px solid `;
 const BASE_STYLE_END = `;padding:8px 10px;font-family:'Courier New',monospace;color:#e0e8f0;font-size:11px;border-radius:4px;line-height:1.6;min-width:160px;max-width:260px`;
 
@@ -46,8 +57,8 @@ export function formatAircraftLabel(aircraft: {
     : '';
 
   const callsignDisplay = aircraft.callsign
-    ? aircraft.callsign.toUpperCase()
-    : aircraft.icao24.toUpperCase();
+    ? esc(aircraft.callsign).toUpperCase()
+    : esc(aircraft.icao24).toUpperCase();
 
   const altFt = mToFt(aircraft.altitude);
   const altM = Math.round(aircraft.altitude);
@@ -62,7 +73,7 @@ export function formatAircraftLabel(aircraft: {
   const content = `
 ${militaryBadge}
 <div style="color:#00ff88;font-weight:bold">&#9992; ${callsignDisplay}</div>
-<div style="color:#7a9ab0">Country: ${aircraft.country || 'Unknown'}</div>
+<div style="color:#7a9ab0">Country: ${esc(aircraft.country) || 'Unknown'}</div>
 ${aircraft.onGround
     ? `<div>Altitude: Ground</div>`
     : `<div>Alt: ${altFt.toLocaleString()} ft (${altM.toLocaleString()} m)</div>`
@@ -70,7 +81,7 @@ ${aircraft.onGround
 <div>Speed: ${speedKts} kts</div>
 <div>Heading: ${headingPadded}&deg; ${compass}</div>
 ${groundStatus}
-<div style="color:#4a6a80;font-size:10px">ICAO: ${aircraft.icao24.toUpperCase()}</div>
+<div style="color:#4a6a80;font-size:10px">ICAO: ${esc(aircraft.icao24).toUpperCase()}</div>
 `.trim().replace(/\n{2,}/g, '\n');
 
   return tooltipWrapper(content, borderColor);
@@ -97,17 +108,17 @@ export function formatShipLabel(ship: {
   const compass = headingToCompass(ship.heading);
 
   const destinationLine = ship.destination
-    ? `<div>Dest: ${ship.destination}</div>`
+    ? `<div>Dest: ${esc(ship.destination)}</div>`
     : '';
 
   const content = `
-<div style="color:${nameColor};font-weight:bold">${typeIcon} ${ship.name || 'UNKNOWN'}</div>
-<div style="color:#7a9ab0">Flag: ${ship.flag || 'Unknown'}</div>
-<div>Type: ${ship.type || 'Unknown'}</div>
+<div style="color:${nameColor};font-weight:bold">${typeIcon} ${esc(ship.name) || 'UNKNOWN'}</div>
+<div style="color:#7a9ab0">Flag: ${esc(ship.flag) || 'Unknown'}</div>
+<div>Type: ${esc(ship.type) || 'Unknown'}</div>
 <div>Speed: ${speedKts} kts</div>
 <div>Heading: ${headingPadded}&deg; ${compass}</div>
 ${destinationLine}
-<div style="color:#4a6a80;font-size:10px">MMSI: ${ship.mmsi}</div>
+<div style="color:#4a6a80;font-size:10px">MMSI: ${esc(ship.mmsi)}</div>
 `.trim().replace(/\n{2,}/g, '\n');
 
   return tooltipWrapper(content, borderColor);
@@ -134,16 +145,16 @@ export function formatSatelliteLabel(sat: {
   const velKms = sat.velocity.toFixed(2);
   const footprintKm = Math.round(sat.footprintRadius);
 
-  const categoryBadge = `<span style="background:${borderColor}22;border:1px solid ${borderColor};border-radius:2px;padding:0 4px;font-size:10px;color:${borderColor}">${sat.category.toUpperCase()}</span>`;
+  const categoryBadge = `<span style="background:${borderColor}22;border:1px solid ${borderColor};border-radius:2px;padding:0 4px;font-size:10px;color:${borderColor}">${esc(sat.category).toUpperCase()}</span>`;
 
   const content = `
-<div style="color:${nameColor};font-weight:bold">&#11088; ${sat.name}</div>
+<div style="color:${nameColor};font-weight:bold">&#11088; ${esc(sat.name)}</div>
 <div>${categoryBadge}</div>
-<div style="color:#7a9ab0">Country: ${sat.country || 'Unknown'}</div>
+<div style="color:#7a9ab0">Country: ${esc(sat.country) || 'Unknown'}</div>
 <div>Orbit: <span style="color:#aaccee">${orbit}</span> &mdash; ${altKm.toLocaleString()} km</div>
 <div>Velocity: ${velKms} km/s</div>
 <div>Footprint: ~${footprintKm.toLocaleString()} km</div>
-<div style="color:#4a6a80;font-size:10px">NORAD: ${sat.id}</div>
+<div style="color:#4a6a80;font-size:10px">NORAD: ${esc(sat.id)}</div>
 `.trim().replace(/\n{2,}/g, '\n');
 
   return tooltipWrapper(content, borderColor);
@@ -163,7 +174,7 @@ export function formatConflictLabel(zone: {
   const intensityColor = isCritical ? '#ff1111' : '#ffaa00';
 
   const partiesDisplay = zone.parties.length
-    ? zone.parties.join(' vs ')
+    ? zone.parties.map(p => esc(p)).join(' vs ')
     : 'Unknown';
 
   const casualtiesLine = zone.casualties?.total != null
@@ -171,12 +182,12 @@ export function formatConflictLabel(zone: {
     : '';
 
   const content = `
-<div style="color:#ff4444;font-weight:bold">&#128162; ${zone.name}</div>
-<div>Status: <span style="color:#ffcc00">${zone.status}</span></div>
-<div>Intensity: <span style="color:${intensityColor}">${zone.intensity.toUpperCase()}</span></div>
+<div style="color:#ff4444;font-weight:bold">&#128162; ${esc(zone.name)}</div>
+<div>Status: <span style="color:#ffcc00">${esc(zone.status)}</span></div>
+<div>Intensity: <span style="color:${intensityColor}">${esc(zone.intensity).toUpperCase()}</span></div>
 <div style="color:#7a9ab0;font-size:10px">${partiesDisplay}</div>
 ${casualtiesLine}
-<div style="color:#4a6a80;font-size:10px">Since: ${zone.startDate}</div>
+<div style="color:#4a6a80;font-size:10px">Since: ${esc(zone.startDate)}</div>
 `.trim().replace(/\n{2,}/g, '\n');
 
   return tooltipWrapper(content, borderColor);
@@ -207,7 +218,7 @@ export function formatGpsJamLabel(cell: {
 
   const content = `
 <div style="color:#ffcc00;font-weight:bold">&#9889; GPS JAMMING</div>
-<div>Type: ${cell.type}</div>
+<div>Type: ${esc(cell.type)}</div>
 <div>Level: <span style="color:${levelColor};font-weight:bold">${levelPct}%</span></div>
 <div>Radius: ~${cell.radius} km</div>
 <div>${confirmedBadge}</div>

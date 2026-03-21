@@ -20,9 +20,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ progress, status, isVisib
   const [logLines, setLogLines] = useState<string[]>([]);
 
   useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
     LOG_LINES.forEach((line, i) => {
-      setTimeout(() => setLogLines(prev => [...prev, line]), i * 400);
+      timers.push(setTimeout(() => setLogLines(prev => [...prev, line]), i * 400));
     });
+    return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
   return (

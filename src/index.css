@@ -1,4 +1,5 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+* { scrollbar-width: thin; scrollbar-color: rgba(0, 255, 136, 0.3) transparent; }
 html, body, #root { width: 100%; height: 100%; overflow: hidden; background: #000011; }
 
 body {
@@ -18,7 +19,7 @@ body {
   --color-bg: rgba(5, 15, 30, 0.92);
   --color-border: rgba(0, 255, 136, 0.3);
   --color-text: #e0e8f0;
-  --color-text-dim: #7a9ab0;
+  --color-text-dim: #94b4cc;
   --font-mono: 'Courier New', monospace;
   --transition: all 0.2s ease;
 }
@@ -118,6 +119,14 @@ body {
 .btn:hover { background: rgba(0,255,136,0.1); border-color: var(--color-primary); }
 .btn-danger { border-color: rgba(255,51,51,0.4); color: #ff3333; }
 .btn-danger:hover { background: rgba(255,51,51,0.1); }
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+*:focus-visible {
+  outline: 2px solid rgba(0, 255, 136, 0.6);
+  outline-offset: 2px;
+}
 
 /* Range input styling */
 input[type="range"] {
@@ -149,4 +158,8 @@ body::after {
     rgba(0, 0, 0, 0.05) 2px,
     rgba(0, 0, 0, 0.05) 4px
   );
+}
+
+@media (max-width: 768px) {
+  .btn { padding: 8px 14px; font-size: 13px; min-height: 44px; }
 }

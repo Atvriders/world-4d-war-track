@@ -91,6 +91,7 @@ export default function App() {
 
   // ── Globe ref ───────────────────────────────────────────────────────────────
   const globeRef = useRef<any>(null);
+  const loadTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleFlyTo = useCallback((lat: number, lng: number, altitude = 1.0) => {
     globeRef.current?.pointOfView({ lat, lng, altitude }, 1500);
@@ -198,9 +199,12 @@ export default function App() {
 
       setLoadingStatus('System ready.');
       setLoadingProgress(100);
-      setTimeout(() => setIsLoaded(true), 800);
+      loadTimerRef.current = setTimeout(() => setIsLoaded(true), 800);
     }
     loadData();
+    return () => {
+      if (loadTimerRef.current) clearTimeout(loadTimerRef.current);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Periodic refresh ────────────────────────────────────────────────────────
@@ -495,10 +499,10 @@ export default function App() {
               const t = type as 'aircraft' | 'ship' | 'satellite';
               if (watchedEntities.some(e => e.id === id)) return;
               const label = t === 'aircraft'
-                ? aircraft.find(a => a.icao24 === id)?.callsign ?? id
+                ? aircraft?.find(a => a.icao24 === id)?.callsign ?? id
                 : t === 'ship'
-                ? ships.find(s => s.mmsi === id)?.name ?? id
-                : satellites.find(s => s.id === id)?.name ?? id;
+                ? ships?.find(s => s.mmsi === id)?.name ?? id
+                : satellites?.find(s => s.id === id)?.name ?? id;
               setWatchedEntities(prev => [...prev, { type: t, id, label, addedAt: Date.now() }]);
             }}
             visible={showWatchList}

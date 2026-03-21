@@ -228,7 +228,8 @@ export function getAltitudeColor(altKm: number): string {
   const bright = '#00ffff'; // LEO color
   const dim = '#445566';    // GEO color
 
-  const t = Math.min(1, Math.max(0, (altKm - LEO_MAX) / (GEO - LEO_MAX)));
+  const range = GEO - LEO_MAX;
+  const t = range > 0 ? Math.min(1, Math.max(0, (altKm - LEO_MAX) / range)) : 0;
   return lerpColor(bright, dim, t);
 }
 

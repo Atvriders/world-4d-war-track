@@ -55,7 +55,9 @@ export function parseTLE(rawText: string): ParsedTle[] {
     if (
       name && line1 && line2 &&
       line1.startsWith('1 ') &&
-      line2.startsWith('2 ')
+      line2.startsWith('2 ') &&
+      line1.length >= 69 &&
+      line2.length >= 69
     ) {
       results.push({ name, tle1: line1, tle2: line2 });
       i += 3;
@@ -77,6 +79,7 @@ export function propagateSatellite(
 ): SatellitePosition | null {
   try {
     const satrec = satellite.twoline2satrec(tle1, tle2);
+    if (satrec.error !== 0) return null;
     const positionAndVelocity = satellite.propagate(satrec, date);
 
     if (
@@ -121,7 +124,7 @@ export function propagateSatellite(
 
       const dLat = lat2 - lat;
       const dLng = lng2 - lng;
-      heading = (Math.atan2(dLng, dLat) * 180) / Math.PI;
+      heading = (Math.atan2(dLng * Math.cos(lat * Math.PI / 180), dLat) * 180) / Math.PI;
       if (heading < 0) heading += 360;
     }
 
@@ -141,6 +144,7 @@ export function getSatelliteGroundTrack(
 ): [number, number][] {
   try {
     const satrec = satellite.twoline2satrec(tle1, tle2);
+    if (satrec.error !== 0) return [];
     const now = Date.now();
     const track: [number, number][] = [];
 

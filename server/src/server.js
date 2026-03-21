@@ -9,6 +9,15 @@ const PORT = 3001;
 // In-memory cache
 const cache = new Map(); // key → { data, expires }
 function getCached(key) {
+  // Evict oldest entries if cache grows too large
+  if (cache.size > 100) {
+    const entriesToDelete = [...cache.entries()]
+      .sort((a, b) => a[1].expires - b[1].expires)
+      .slice(0, cache.size - 100);
+    for (const [k] of entriesToDelete) {
+      cache.delete(k);
+    }
+  }
   const c = cache.get(key);
   return c && c.expires > Date.now() ? c.data : null;
 }
@@ -18,7 +27,16 @@ function setCached(key, data, ttlMs) {
 
 // Middleware
 app.use(compression());
-app.use(cors());
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*' }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
 app.use(express.json());
 
 // Request logging
@@ -51,17 +69,22 @@ app.get('/api/adsb/states', async (req, res) => {
   }
 
   adsbFetchInFlight = true;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch('https://opensky-network.org/api/states/all', {
       headers: { 'User-Agent': 'World4DWarTrack/1.0' },
+      signal: controller.signal,
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     setCached(CACHE_KEY, data, TTL_MS);
     res.json(data);
   } catch (err) {
     console.error('[adsb] fetch error:', err.message);
-    res.json({ time: Date.now() / 1000, states: [] });
+    res.status(502).json({ time: Date.now() / 1000, states: [] });
   } finally {
+    clearTimeout(timeoutId);
     adsbFetchInFlight = false;
   }
 });
@@ -92,16 +115,22 @@ app.get('/api/satellites/tle', async (req, res) => {
     return res.type('text/plain').send(cached);
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(url, {
       headers: { 'User-Agent': 'World4DWarTrack/1.0' },
+      signal: controller.signal,
     });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     setCached(CACHE_KEY, text, TTL_MS);
     res.type('text/plain').send(text);
   } catch (err) {
     console.error(`[satellites] fetch error for group "${group}":`, err.message);
-    res.type('text/plain').send('');
+    res.status(502).type('text/plain').send('');
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 
@@ -115,17 +144,22 @@ app.get('/api/ais/vessels', async (req, res) => {
     return res.json(cached);
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(
       'http://data.aishub.net/ws.php?username=0&format=1&output=json&compress=0',
-      { headers: { 'User-Agent': 'World4DWarTrack/1.0' } }
+      { headers: { 'User-Agent': 'World4DWarTrack/1.0' }, signal: controller.signal }
     );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     setCached(CACHE_KEY, data, TTL_MS);
     res.json(data);
   } catch (err) {
     console.error('[ais] fetch error:', err.message);
-    res.json([]);
+    res.status(502).json([]);
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 

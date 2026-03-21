@@ -302,12 +302,12 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     };
   }, []);
 
-  const handleDismissAll = useCallback(() => {
-    activeAlerts.forEach(a => onDismiss(a.id));
-  }, [alerts, onDismiss]); // eslint-disable-line
-
   const activeAlerts = alerts.filter(a => !a.dismissed).slice(0, 8);
   const totalCount = activeAlerts.length;
+
+  const handleDismissAll = useCallback(() => {
+    activeAlerts.forEach(a => onDismiss(a.id));
+  }, [activeAlerts, onDismiss]);
 
   const panelStyle: React.CSSProperties = {
     position: 'fixed',

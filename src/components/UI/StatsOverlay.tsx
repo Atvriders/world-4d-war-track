@@ -158,7 +158,7 @@ const StatsOverlay: React.FC<StatsOverlayProps> = ({
 
   // Satellite calculations
   const milSpySats = satellites.filter(s =>
-    ['military', 'spy', 'reconnaissance', 'intelligence']
+    ['military', 'spy', 'reconnaissance']
       .includes(s.category?.toLowerCase?.() ?? ''),
   );
   const navSats = satellites.filter(s =>

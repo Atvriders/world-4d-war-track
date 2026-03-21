@@ -99,7 +99,7 @@ const TimeControl: React.FC<TimeControlProps> = ({
       onTimeOffsetChange(timeOffset + playSpeed);
     }, 1000);
     return () => clearInterval(interval);
-  }, [isPlaying, timeOffset, playSpeed]);
+  }, [isPlaying, timeOffset, playSpeed, onTimeOffsetChange]);
 
   const fillPct =
     ((timeOffset - MIN_OFFSET) / (MAX_OFFSET - MIN_OFFSET)) * 100;

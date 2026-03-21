@@ -306,7 +306,7 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
         <div ref={trackRef} style={trackStyle}>
           {tripled.map((item, idx) => (
             <TickerItemNode
-              key={`${item.id}-${idx}`}
+              key={`${Math.floor(idx / items.length)}-${item.id}-${idx % items.length}`}
               item={item}
               onEventClick={onEventClick}
               separatorStyle={separatorStyle}

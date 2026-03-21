@@ -311,7 +311,7 @@ const EventFeed: React.FC<EventFeedProps> = ({
   const allEvents = useMemo<FlatEvent[]>(() => {
     const flat: FlatEvent[] = [];
     for (const zone of conflictZones) {
-      for (const ev of zone.events) {
+      for (const ev of zone.events || []) {
         flat.push({
           ...ev,
           zoneName: zone.name,
@@ -492,8 +492,24 @@ const EventFeed: React.FC<EventFeedProps> = ({
           scrollbarColor: 'rgba(40, 90, 160, 0.4) transparent',
         }}
       >
-        {filteredEvents.length === 0 ? (
+        {allEvents.length === 0 ? (
           <LoadingDots />
+        ) : filteredEvents.length === 0 ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '32px 16px',
+          }}>
+            <span style={{
+              fontSize: '11px',
+              color: '#4a7090',
+              letterSpacing: '0.08em',
+              textAlign: 'center',
+            }}>
+              No matching events
+            </span>
+          </div>
         ) : (
           filteredEvents.map((ev, i) => (
             <EventCard

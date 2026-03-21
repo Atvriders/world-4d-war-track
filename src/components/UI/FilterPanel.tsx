@@ -271,12 +271,12 @@ function LayerRow({ icon, label, layerKey, on, onToggle, countBadge, subLabel, i
 }
 
 const COLLAPSED_ICONS = [
-  { icon: '🛰️', title: 'Satellites' },
-  { icon: '✈️', title: 'Aircraft' },
-  { icon: '🚢', title: 'Ships' },
-  { icon: '⚔️', title: 'Conflicts' },
-  { icon: '📡', title: 'GPS Jamming' },
-  { icon: '🌍', title: 'Atmosphere' },
+  { icon: '🛰️', title: 'Satellites', layerKey: 'satellites' },
+  { icon: '✈️', title: 'Aircraft', layerKey: 'aircraft' },
+  { icon: '🚢', title: 'Ships', layerKey: 'ships' },
+  { icon: '⚔️', title: 'Conflicts', layerKey: 'warZones' },
+  { icon: '📡', title: 'GPS Jamming', layerKey: 'gpsJam' },
+  { icon: '🌍', title: 'Atmosphere', layerKey: 'atmosphere' },
 ];
 
 const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts }) => {
@@ -452,11 +452,15 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
         ) : (
           /* Collapsed: icon-only column */
           <div style={styles.collapsedIcon}>
-            {COLLAPSED_ICONS.map(({ icon, title }) => (
+            {COLLAPSED_ICONS.map(({ icon, title, layerKey }) => (
               <div
                 key={title}
                 title={title}
-                style={styles.collapsedIconItem}
+                style={{
+                  ...styles.collapsedIconItem,
+                  opacity: layers[layerKey as keyof LayerVisibility] ? 1 : 0.4,
+                }}
+                onClick={() => onToggleLayer(layerKey)}
               >
                 {icon}
               </div>

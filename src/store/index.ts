@@ -290,7 +290,7 @@ export const useStore = create<AppState>()(
 
       addAlert: (alert) =>
         set(
-          (state) => ({ alerts: [alert, ...state.alerts] }),
+          (state) => ({ alerts: [{ ...alert }, ...state.alerts].slice(0, 100) }),
           false,
           'addAlert'
         ),

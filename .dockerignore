@@ -1,0 +1,13 @@
+node_modules
+server/node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+*.md
+.github
+npm-debug.log
+.DS_Store
+coverage
+*.log

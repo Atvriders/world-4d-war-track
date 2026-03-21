@@ -331,6 +331,23 @@ world-4d-war-track/
 
 ---
 
+## 🛡️ Security & Reliability
+
+This project includes built-in protections:
+
+- **XSS Prevention** — All external API data (callsigns, vessel names, satellite names) is HTML-escaped before rendering
+- **Error Boundary** — React error boundary catches crashes and shows a recovery screen instead of a white page
+- **Security Headers** — Express server sets `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, and `Referrer-Policy`
+- **CORS Restriction** — Configurable via `CORS_ORIGIN` environment variable (defaults to permissive for development)
+- **Fetch Timeouts** — All upstream API calls have 15-second timeouts with `AbortController`
+- **Retry Limits** — Failed fetches retry up to 5 times with automatic backoff, then stop
+- **Cache Eviction** — Server-side cache limited to 100 entries with automatic oldest-entry eviction
+- **Alert Caps** — Alert store capped at 100 entries; deduplication keys cleaned hourly to prevent memory leaks
+- **Input Validation** — Coordinate bounds checking, NaN guards, and array length validation on all API responses
+- **Signal Handling** — Docker container properly forwards SIGTERM/SIGINT and waits for backend health before starting frontend
+
+---
+
 ## ⚠️ Disclaimer
 
 **This application is for educational and research purposes only.**

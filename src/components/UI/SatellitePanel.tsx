@@ -536,7 +536,7 @@ const SatellitePanel: React.FC<SatellitePanelProps> = ({
             }}
           >
             {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)
+              ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={`skeleton-${i}`} />)
               : filteredList.length === 0
               ? (
                 <div

@@ -500,8 +500,8 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
               <>
                 <div style={styles.expandedLabel}>Parties</div>
                 <div style={styles.partiesList}>
-                  {zone.parties.map((p, i) => (
-                    <div key={i} style={styles.partyItem}>{p}</div>
+                  {zone.parties.map((p) => (
+                    <div key={`${zone.id}-party-${p}`} style={styles.partyItem}>{p}</div>
                   ))}
                 </div>
               </>

@@ -318,13 +318,6 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
     };
   }, [minimized, visible, draw]);
 
-  // Redraw when data changes (not waiting for 2s interval)
-  useEffect(() => {
-    if (!minimized && visible) {
-      draw();
-    }
-  }, [aircraft, ships, satellites, conflictZones, minimized, visible, draw]);
-
   const handleToggle = () => {
     setMinimized((prev) => !prev);
     onToggle();

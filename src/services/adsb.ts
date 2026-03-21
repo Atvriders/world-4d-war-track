@@ -49,6 +49,9 @@ function isMilitaryAircraft(
 
 // ── OpenSky raw-state parser ─────────────────────────────────────────────────
 function parseState(raw: (string | number | boolean | null)[]): AircraftEntity | null {
+  // Guard against malformed or truncated state arrays
+  if (!Array.isArray(raw) || raw.length < 15) return null;
+
   const lat = raw[6] as number | null;
   const lng = raw[5] as number | null;
 
@@ -56,14 +59,20 @@ function parseState(raw: (string | number | boolean | null)[]): AircraftEntity |
   if (lat == null || lng == null) return null;
 
   const icao24 = (raw[0] as string) ?? '';
+  if (!icao24) return null;
+
   const rawCallsign = raw[1] as string | null;
   const callsign = rawCallsign?.trim() || icao24;
   const country = (raw[2] as string) ?? '';
-  const altitude = (raw[7] as number | null) ?? (raw[13] as number | null) ?? 0;
-  const velocity = (raw[9] as number | null) ?? 0;
-  const heading = (raw[10] as number | null) ?? 0;
-  const verticalRate = (raw[11] as number | null) ?? 0;
-  const onGround = (raw[8] as boolean) ?? false;
+  let altitude = Number(raw[7]) || Number(raw[13]) || 0;
+  if (isNaN(altitude)) altitude = 0;
+  let velocity = Number(raw[9]) || 0;
+  if (isNaN(velocity)) velocity = 0;
+  let heading = Number(raw[10]) || 0;
+  if (isNaN(heading)) heading = 0;
+  let verticalRate = Number(raw[11]) || 0;
+  if (isNaN(verticalRate)) verticalRate = 0;
+  const onGround = raw[8] === true;
   const squawk = raw[14] as string | null | undefined;
   const lastContact = ((raw[4] as number) ?? 0) * 1000; // epoch ms
 

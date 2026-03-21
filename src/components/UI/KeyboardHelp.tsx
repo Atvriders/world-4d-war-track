@@ -68,11 +68,11 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
           onClose();
         }
       }
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && visible) onClose();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [visible, onClose]);
 
   if (!visible) return null;
 

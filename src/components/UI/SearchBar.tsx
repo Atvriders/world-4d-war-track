@@ -76,6 +76,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blurTimeoutRef = useRef<number>();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -86,7 +87,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
       if (e.key === 'Escape') setIsOpen(false);
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      clearTimeout(blurTimeoutRef.current);
+    };
   }, []);
 
   const runSearch = useCallback(
@@ -191,6 +195,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const selectResult = (result: SearchResult) => {
+    clearTimeout(blurTimeoutRef.current);
     onSelect(result.type, result.entity);
     onFlyTo(result.lat, result.lng);
     setIsOpen(false);
@@ -320,7 +325,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           }}
           onBlur={() => {
             setIsFocused(false);
-            setTimeout(() => setIsOpen(false), 150);
+            blurTimeoutRef.current = window.setTimeout(() => setIsOpen(false), 150);
           }}
           placeholder="Search aircraft, ships, satellites, conflicts... (Ctrl+K)"
           style={inputStyle}
@@ -336,7 +341,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           ) : (
             results.map((result, idx) => (
               <div
-                key={`${result.type}-${idx}`}
+                key={`${result.type}-${(result as any).entity?.id || (result as any).entity?.icao24 || (result as any).entity?.mmsi || idx}`}
                 onMouseDown={() => selectResult(result)}
                 onMouseEnter={() => setActiveIndex(idx)}
                 style={{

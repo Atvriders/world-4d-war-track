@@ -273,7 +273,7 @@ const GpsJamPanel: React.FC<GpsJamPanelProps> = ({ gpsJamCells, onFlyTo, visible
 
                 return (
                   <div
-                    key={i}
+                    key={`${cell.lat}-${cell.lng}-${cell.type}`}
                     style={{
                       background: 'rgba(8, 22, 48, 0.82)',
                       border: `1px solid rgba(30, 180, 255, 0.15)`,

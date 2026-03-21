@@ -67,6 +67,7 @@ function haversineDistanceKm(lat1: number, lng1: number, lat2: number, lng2: num
 }
 
 export function getJammingIntensityAtPoint(lat: number, lng: number, cells: GpsJamCell[]): number {
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return 0;
   let total = 0;
   for (const cell of cells) {
     const dist = haversineDistanceKm(lat, lng, cell.lat, cell.lng);
@@ -78,16 +79,29 @@ export function getJammingIntensityAtPoint(lat: number, lng: number, cells: GpsJ
 
 export function getActiveJammingAlerts(cells: GpsJamCell[]): Alert[] {
   const now = new Date().toISOString();
-  return cells
+  const highAlerts: Alert[] = cells
     .filter((cell) => cell.level > 0.8)
-    .map((cell, index) => ({
-      id: `gps-jam-${index}-${cell.lat}-${cell.lng}`,
+    .map((cell) => ({
+      id: `gps-jam-${cell.lat.toFixed(4)}-${cell.lng.toFixed(4)}`,
       type: 'gps-jam' as const,
-      severity: 'critical' as const,
-      message: `Critical GPS ${cell.type} detected at (${cell.lat.toFixed(1)}, ${cell.lng.toFixed(1)}) — intensity ${Math.round(cell.level * 100)}%, radius ${cell.radius} km`,
+      severity: (cell.level > 0.9 ? 'critical' : 'warning') as 'critical' | 'warning',
+      message: `${cell.level > 0.9 ? 'Critical' : 'High'} GPS ${cell.type} detected at (${cell.lat.toFixed(1)}, ${cell.lng.toFixed(1)}) — intensity ${Math.round(cell.level * 100)}%, radius ${cell.radius} km`,
       lat: cell.lat,
       lng: cell.lng,
       timestamp: now,
       dismissed: false,
     }));
+  const mediumAlerts: Alert[] = cells
+    .filter((cell) => cell.level >= 0.5 && cell.level <= 0.8)
+    .map((cell) => ({
+      id: `gps-jam-${cell.lat.toFixed(4)}-${cell.lng.toFixed(4)}`,
+      type: 'gps-jam' as const,
+      severity: 'warning' as const,
+      message: `Moderate GPS ${cell.type} detected at (${cell.lat.toFixed(1)}, ${cell.lng.toFixed(1)}) — intensity ${Math.round(cell.level * 100)}%, radius ${cell.radius} km`,
+      lat: cell.lat,
+      lng: cell.lng,
+      timestamp: now,
+      dismissed: false,
+    }));
+  return [...highAlerts, ...mediumAlerts];
 }

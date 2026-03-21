@@ -20,6 +20,8 @@ const SATELLITE_INTERVAL = 300_000;     // 5 min
 const GPS_JAM_INTERVAL = 600_000;       // 10 min
 const RETRY_DELAY = 30_000;             // 30 s on failure
 const ALERT_CHECK_INTERVAL = 30_000;    // 30 s
+const MAX_RETRIES = 5;
+const ALERTED_KEYS_CLEANUP_MS = 3_600_000; // 1 hour
 
 const AIRCRAFT_CONFLICT_RADIUS_KM = 200;
 const SHIP_CONFLICT_RADIUS_KM = 300;
@@ -41,6 +43,26 @@ export function useDataRefresh(): { refresh: () => void } {
     setLastRefresh,
   } = useStore();
 
+  // Track retry timeouts so they can be cleared on unmount
+  const retryTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Track retry counts per source to prevent unbounded retries
+  const retryCounts = useRef<Record<string, number>>({
+    aircraft: 0,
+    ships: 0,
+    satellites: 0,
+    gpsJam: 0,
+  });
+
+  /** Schedule a retry if under the max limit, tracking the timer */
+  const scheduleRetry = useCallback((source: string, fn: () => void) => {
+    if (retryCounts.current[source] >= MAX_RETRIES) {
+      console.warn(`[useDataRefresh] ${source}: max retries (${MAX_RETRIES}) reached, giving up until next interval`);
+      return;
+    }
+    retryCounts.current[source]++;
+    retryTimers.current.push(setTimeout(fn, RETRY_DELAY));
+  }, []);
+
   // Stable fetch functions so interval callbacks don't capture stale closures
 
   const fetchAircraftData = useCallback(async () => {
@@ -50,18 +72,16 @@ export function useDataRefresh(): { refresh: () => void } {
       const data = await fetchAircraft();
       setAircraft(data);
       setLastRefresh('aircraft');
+      retryCounts.current.aircraft = 0;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] aircraft fetch failed:', message);
       setError('aircraft', message);
-      // Schedule a one-off retry
-      setTimeout(() => {
-        fetchAircraftData();
-      }, RETRY_DELAY);
+      scheduleRetry('aircraft', () => { fetchAircraftData(); });
     } finally {
       setLoading('aircraft', false);
     }
-  }, [setAircraft, setLoading, setError, setLastRefresh]);
+  }, [setAircraft, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   const fetchShipData = useCallback(async () => {
     setLoading('ships', true);
@@ -70,17 +90,16 @@ export function useDataRefresh(): { refresh: () => void } {
       const data = await fetchShips();
       setShips(data);
       setLastRefresh('ships');
+      retryCounts.current.ships = 0;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] ships fetch failed:', message);
       setError('ships', message);
-      setTimeout(() => {
-        fetchShipData();
-      }, RETRY_DELAY);
+      scheduleRetry('ships', () => { fetchShipData(); });
     } finally {
       setLoading('ships', false);
     }
-  }, [setShips, setLoading, setError, setLastRefresh]);
+  }, [setShips, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   const fetchSatelliteData = useCallback(async () => {
     setLoading('satellites', true);
@@ -89,17 +108,16 @@ export function useDataRefresh(): { refresh: () => void } {
       const data = await fetchAllSatellites();
       setSatellites(data);
       setLastRefresh('satellites');
+      retryCounts.current.satellites = 0;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] satellites fetch failed:', message);
       setError('satellites', message);
-      setTimeout(() => {
-        fetchSatelliteData();
-      }, RETRY_DELAY);
+      scheduleRetry('satellites', () => { fetchSatelliteData(); });
     } finally {
       setLoading('satellites', false);
     }
-  }, [setSatellites, setLoading, setError, setLastRefresh]);
+  }, [setSatellites, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   const fetchGpsJamData = useCallback(async () => {
     setLoading('gpsJam', true);
@@ -108,20 +126,21 @@ export function useDataRefresh(): { refresh: () => void } {
       const data = await getStaticGpsJamHotspots();
       setGpsJamCells(data);
       setLastRefresh('gpsJam');
+      retryCounts.current.gpsJam = 0;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error('[useDataRefresh] gpsJam fetch failed:', message);
       setError('gpsJam', message);
-      setTimeout(() => {
-        fetchGpsJamData();
-      }, RETRY_DELAY);
+      scheduleRetry('gpsJam', () => { fetchGpsJamData(); });
     } finally {
       setLoading('gpsJam', false);
     }
-  }, [setGpsJamCells, setLoading, setError, setLastRefresh]);
+  }, [setGpsJamCells, setLoading, setError, setLastRefresh, scheduleRetry]);
 
   // Public manual-refresh trigger — fetches all sources immediately
   const refresh = useCallback(() => {
+    // Reset retry counts on manual refresh
+    retryCounts.current = { aircraft: 0, ships: 0, satellites: 0, gpsJam: 0 };
     fetchAircraftData();
     fetchShipData();
     fetchSatelliteData();
@@ -143,6 +162,9 @@ export function useDataRefresh(): { refresh: () => void } {
       clearInterval(shipTimer);
       clearInterval(satelliteTimer);
       clearInterval(gpsJamTimer);
+      // Clear any pending retry timeouts
+      retryTimers.current.forEach((t) => clearTimeout(t));
+      retryTimers.current = [];
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -280,6 +302,14 @@ export function useAlertGenerator(): void {
     }
   }, [aircraft, ships, satellites, gpsJamCells, conflictZones, maybeAlert]);
 
+  // Periodically clear alertedKeys to prevent unbounded memory growth
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      alertedKeys.current.clear();
+    }, ALERTED_KEYS_CLEANUP_MS);
+    return () => clearInterval(cleanup);
+  }, []);
+
   useEffect(() => {
     // Run immediately on mount / data change
     runChecks();
@@ -319,17 +349,21 @@ export function useGlobeTime(): GlobeTimeResult {
     `${pad(currentTime.getUTCDate())} ${months[currentTime.getUTCMonth()]} ${currentTime.getUTCFullYear()}`,
   ].join(' ');
 
+  // Use a ref for timeOffset inside the interval to avoid recreating it every tick
+  const timeOffsetRef = useRef(timeOffset);
+  timeOffsetRef.current = timeOffset;
+
   // When playing, auto-increment timeOffset at rate of playSpeed min/s
   useEffect(() => {
     if (!isPlaying) return;
 
     const TICK_MS = 1000; // update every real second
     const timer = setInterval(() => {
-      setTimeOffset(timeOffset + playSpeed);
+      setTimeOffset(timeOffsetRef.current + playSpeed);
     }, TICK_MS);
 
     return () => clearInterval(timer);
-  }, [isPlaying, playSpeed, timeOffset, setTimeOffset]);
+  }, [isPlaying, playSpeed, setTimeOffset]);
 
   return { currentTime, displayTime };
 }

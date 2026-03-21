@@ -43,6 +43,7 @@ function detectShipType(
   country: string,
   vesselTypeCode?: number,
 ): ShipEntity['type'] {
+  if (!name) return 'other';
   const n = name.toUpperCase();
 
   // Warship detection
@@ -76,9 +77,9 @@ function detectShipType(
     if (vesselTypeCode >= 70 && vesselTypeCode <= 79) return 'cargo';
     if (vesselTypeCode >= 80 && vesselTypeCode <= 89) return 'tanker';
     if (vesselTypeCode >= 60 && vesselTypeCode <= 69) return 'passenger';
+    if (vesselTypeCode >= 35 && vesselTypeCode <= 37) return 'military';
     if (vesselTypeCode >= 30 && vesselTypeCode <= 39) return 'fishing';
     if (vesselTypeCode === 52) return 'tug';
-    if (vesselTypeCode >= 35 && vesselTypeCode <= 37) return 'military';
   }
 
   return 'other';
@@ -252,34 +253,44 @@ export async function fetchShips(): Promise<ShipEntity[]> {
     const data = await res.json() as unknown[];
 
     if (!Array.isArray(data) || data.length === 0) {
-      throw new Error('Empty or invalid AIS response');
+      return [];
     }
 
     // Normalise API response shape — adjust field names to match proxy contract
-    return data.map((raw): ShipEntity => {
+    return data.reduce<ShipEntity[]>((acc, raw) => {
       const r = raw as Record<string, unknown>;
       const mmsi = String(r['mmsi'] ?? r['MMSI'] ?? '000000000');
       const name = String(r['name'] ?? r['shipname'] ?? r['NAME'] ?? 'UNKNOWN');
       const country = String(r['country'] ?? r['flag_country'] ?? '');
       const flag = String(r['flag'] ?? r['flag_code'] ?? 'XX');
-      const lat = Number(r['lat'] ?? r['latitude'] ?? 0);
-      const lng = Number(r['lon'] ?? r['lng'] ?? r['longitude'] ?? 0);
-      const speed = Number(r['speed'] ?? r['sog'] ?? 0);
-      const heading = Number(r['heading'] ?? r['hdg'] ?? r['cog'] ?? 0);
-      const course = Number(r['course'] ?? r['cog'] ?? heading);
+      const lat = Number(r['lat'] ?? r['latitude'] ?? undefined);
+      const lng = Number(r['lon'] ?? r['lng'] ?? r['longitude'] ?? undefined);
+
+      // Skip ships with invalid coordinates
+      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return acc;
+      }
+
+      const rawSpeed = Number(r['speed'] ?? r['sog'] ?? 0);
+      const rawHeading = Number(r['heading'] ?? r['hdg'] ?? r['cog'] ?? 0);
+      const rawCourse = Number(r['course'] ?? r['cog'] ?? rawHeading);
+      const speed = isNaN(rawSpeed) ? 0 : rawSpeed;
+      const heading = isNaN(rawHeading) ? 0 : rawHeading;
+      const course = isNaN(rawCourse) ? 0 : rawCourse;
       const length = r['length'] != null ? Number(r['length']) : undefined;
       const destination = r['destination'] != null ? String(r['destination']) : undefined;
       const vesselTypeCode = r['type_code'] != null ? Number(r['type_code']) : undefined;
       const type = detectShipType(name, mmsi, country, vesselTypeCode);
       const trail = updateTrail(mmsi, lat, lng);
 
-      return {
+      acc.push({
         mmsi, name, country, flag, lat, lng,
         speed, heading, course, type, trail,
         length, destination,
         lastContact: Date.now(),
-      };
-    });
+      });
+      return acc;
+    }, []);
 
   } catch (err) {
     console.warn('[AIS] Proxy unavailable, using simulated data:', (err as Error).message);
