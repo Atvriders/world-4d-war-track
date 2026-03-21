@@ -28,6 +28,8 @@ import WarImpactPanel from './components/UI/WarImpactPanel';
 import EconomyPanel from './components/UI/EconomyPanel';
 import SourcesPanel from './components/UI/SourcesPanel';
 import ServerStatus from './components/UI/ServerStatus';
+import HudOverlay from './components/UI/HudOverlay';
+import LayerBar from './components/UI/LayerBar';
 
 import { fetchAircraft } from './services/adsb';
 import { fetchShips } from './services/ais';
@@ -49,7 +51,7 @@ interface LocalGlobeSettings {
 }
 
 const DEFAULT_GLOBE_SETTINGS: LocalGlobeSettings = {
-  imageryStyle: 'terrain',
+  imageryStyle: 'satellite',
   autoRotate: false,
   autoRotateSpeed: 0.5,
   showGraticules: false,
@@ -336,6 +338,9 @@ export default function App() {
         isVisible={!isLoaded}
       />
 
+      {/* HUD overlay — always visible over the globe */}
+      <HudOverlay globeRef={globeRef} />
+
       {isLoaded && (
         <>
           {/* Death toll summary bar — always visible at very top */}
@@ -553,6 +558,12 @@ export default function App() {
           <KeyboardHelp
             visible={showKeyboardHelp}
             onClose={() => setShowKeyboardHelp(v => !v)}
+          />
+
+          {/* Layer quick-toggle bar */}
+          <LayerBar
+            layers={layers}
+            onToggleLayer={(k) => store.toggleLayer(k)}
           />
 
           {/* Sources button */}

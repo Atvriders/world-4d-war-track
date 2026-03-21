@@ -25,6 +25,7 @@ import { WEAPON_RANGES } from '../../data/weaponRanges';
 import { NUCLEAR_SITES, type NuclearSite } from '../../data/nuclearSites';
 import { CHOKEPOINTS, type Chokepoint } from '../../data/chokepoints';
 import { ARMS_FLOWS, type ArmsFlow } from '../../data/armsFlows';
+import { AIRSPACE_CLOSURES } from '../../data/airspaceClosures';
 
 
 // ─── Inject chokepoint pulse animation CSS (once) ────────────────────────────
@@ -174,6 +175,7 @@ interface LayerVisibility {
   militaryBases: boolean;
   chokepoints: boolean;
   sanctionsZones: boolean;
+  airspaceClosures: boolean;
   armsFlows: boolean;
   tradeRoutes: boolean;
   atmosphere: boolean;
@@ -487,11 +489,10 @@ function expandJamCell(cell: GpsJamCell): { lat: number; lng: number; weight: nu
 }
 
 function hexBinColor(frac: number): string {
-  // gradient from yellow (#ffee00) → orange → red — low opacity to not cover globe
   const r = 255;
-  const g = Math.round(238 * (1 - frac));
-  const b = 0;
-  return `rgba(${r},${g},${b},0.15)`;
+  const g = Math.round(50 * (1 - frac));
+  const b = Math.round(50 * (1 - frac));
+  return `rgba(${r},${g},${b},0.6)`;
 }
 /** Cyan-to-purple gradient for drone activity heatmap */
 function droneHeatmapColor(t: number): string {
@@ -819,6 +820,51 @@ function oilFlowPulseSpeed(risk: Chokepoint['risk']): string {
     default:         return '2s';
   }
 }
+// ─── Country name labels (static dataset ~40 major countries) ────────────────
+const COUNTRY_LABELS = [
+  { name: 'UNITED STATES', lat: 39.8, lng: -98.6 },
+  { name: 'RUSSIA', lat: 61.5, lng: 105.3 },
+  { name: 'CHINA', lat: 35.9, lng: 104.2 },
+  { name: 'IRAN', lat: 32.4, lng: 53.7 },
+  { name: 'IRAQ', lat: 33.2, lng: 43.7 },
+  { name: 'SYRIA', lat: 35.0, lng: 38.0 },
+  { name: 'UKRAINE', lat: 48.4, lng: 31.2 },
+  { name: 'ISRAEL', lat: 31.0, lng: 34.8 },
+  { name: 'SAUDI ARABIA', lat: 23.9, lng: 45.1 },
+  { name: 'TURKEY', lat: 38.9, lng: 35.2 },
+  { name: 'INDIA', lat: 20.6, lng: 79.0 },
+  { name: 'PAKISTAN', lat: 30.4, lng: 69.3 },
+  { name: 'AFGHANISTAN', lat: 33.9, lng: 67.7 },
+  { name: 'EGYPT', lat: 26.8, lng: 30.8 },
+  { name: 'LIBYA', lat: 26.3, lng: 17.2 },
+  { name: 'SUDAN', lat: 15.6, lng: 32.5 },
+  { name: 'YEMEN', lat: 15.6, lng: 48.5 },
+  { name: 'SOMALIA', lat: 5.2, lng: 46.2 },
+  { name: 'ETHIOPIA', lat: 9.1, lng: 40.5 },
+  { name: 'KENYA', lat: -0.0, lng: 37.9 },
+  { name: 'SOUTH AFRICA', lat: -30.6, lng: 22.9 },
+  { name: 'NIGERIA', lat: 9.1, lng: 8.7 },
+  { name: 'MOROCCO', lat: 31.8, lng: -7.1 },
+  { name: 'ALGERIA', lat: 28.0, lng: 1.7 },
+  { name: 'FRANCE', lat: 46.2, lng: 2.2 },
+  { name: 'GERMANY', lat: 51.2, lng: 10.4 },
+  { name: 'UNITED KINGDOM', lat: 55.4, lng: -3.4 },
+  { name: 'POLAND', lat: 51.9, lng: 19.1 },
+  { name: 'JAPAN', lat: 36.2, lng: 138.3 },
+  { name: 'SOUTH KOREA', lat: 35.9, lng: 127.8 },
+  { name: 'NORTH KOREA', lat: 40.3, lng: 127.5 },
+  { name: 'TAIWAN', lat: 23.7, lng: 121.0 },
+  { name: 'AUSTRALIA', lat: -25.3, lng: 133.8 },
+  { name: 'BRAZIL', lat: -14.2, lng: -51.9 },
+  { name: 'MEXICO', lat: 23.6, lng: -102.6 },
+  { name: 'CANADA', lat: 56.1, lng: -106.3 },
+  { name: 'KUWAIT', lat: 29.3, lng: 47.5 },
+  { name: 'UAE', lat: 23.4, lng: 53.8 },
+  { name: 'QATAR', lat: 25.4, lng: 51.2 },
+  { name: 'MYANMAR', lat: 19.8, lng: 96.2 },
+];
+
+
 
 // ─── Module-level stable accessor functions for GlobeGL props ────────────────
 // These never change identity, so react-globe.gl won't rebuild WebGL layers.
@@ -846,7 +892,7 @@ function hexBinColorAccessor(d: object) {
 }
 function hexAltitudeAccessor(d: object) {
   const bin = d as { sumWeight: number };
-  return bin.sumWeight * 0.02;
+  return bin.sumWeight * 0.08;
 }
 
 function heatmapPointsAccessor(d: object) { return (d as { points: unknown[] }).points; }
@@ -995,21 +1041,25 @@ function arcLabelAccessor(d: object) {
       `Category: ${a.category.replace(/_/g, ' ')}<br/>` +
       `Value: ${a.value}</div>`;
   }
-  return (d as ArcConnection).label;
+  const arc = d as ArcConnection;
+  const beamColor = arc.type === 'gps-jam' ? '#ffdd00' : '#ff4444';
+  return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${beamColor};border-radius:4px;padding:6px 8px;font-family:monospace;font-size:11px;color:#eee;line-height:1.4">` +
+    `<b style="color:${beamColor}">${arc.label}</b><br/>` +
+    `<span style="color:#aaa">${arc.type === 'gps-jam' ? 'GPS Interference Link' : 'Satellite Downlink'}</span></div>`;
 }
 
 function arcStrokeAccessor(d: object) {
   if (isRefugeeArc(d)) return refugeeArcWidth((d as RefugeeArc).count);
   if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 1.8 : 1.2;
   if (isArmsFlowArc(d)) { const a = d as ArmsFlowArc; return armsFlowStroke(a.category, a.value); }
-  return 0.5;
+  return 1.5;
 }
 
 function arcDashLengthAccessor(d: object) {
   if (isRefugeeArc(d)) return 0.6;
   if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.3 : 0.5;
   if (isArmsFlowArc(d)) return 0.5;
-  return 0.4;
+  return 0.2;
 }
 
 function arcDashGapAccessor(d: object) {
@@ -1023,7 +1073,7 @@ function arcDashAnimateTimeAccessor(d: object) {
   if (isRefugeeArc(d)) return 2500;
   if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0 : 2000;
   if (isArmsFlowArc(d)) return 2000;
-  return 1500;
+  return 1000;
 }
 
 function ringLatAccessor(d: object) { return (d as FootprintRing).lat; }
@@ -1041,9 +1091,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
 
-  // Expose pointOfView to parent via ref
+  // Expose pointOfView to parent via ref (getter when called with no args, setter otherwise)
   useImperativeHandle(ref, () => ({
-    pointOfView(coords, ms = 1000) {
+    pointOfView(coords?: { lat: number; lng: number; altitude: number }, ms = 1000) {
+      if (!coords) {
+        // Getter — return current camera position
+        return globeRef.current?.pointOfView?.();
+      }
       globeRef.current?.pointOfView(coords, ms);
     },
   }));
@@ -1128,6 +1182,60 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Satellite points
   const satellitePoints = layers.satellites ? satellites : [];
+
+  // ── Merged labels: satellite diamond markers floating above the globe ──
+  const allLabels = useMemo(() => {
+    const labels: Array<{
+      name: string;
+      lat: number;
+      lng: number;
+      alt: number;
+      color: string;
+      size: number;
+    }> = [];
+
+    if (layers.satellites) {
+      // Top 20 satellites by altitude (most visible, floating above globe)
+      const topSats = [...satellites]
+        .sort((a, b) => b.alt - a.alt)
+        .slice(0, 20)
+        .map(s => ({
+          name: `◆ ${s.name}`,
+          lat: s.lat,
+          lng: s.lng,
+          alt: s.alt / 6371, // convert km to globe-radii
+          color: satelliteColor(s.category),
+          size: 1.0,
+        }));
+      labels.push(...topSats);
+    }
+
+    // Airspace closure labels (surface-level)
+    if (layers.airspaceClosures) {
+      const closureLabels = AIRSPACE_CLOSURES.filter(c => c.active).map(c => ({
+        name: `${c.name}\nAIRSPACE CLOSED`,
+        lat: c.lat,
+        lng: c.lng,
+        alt: 0.01,
+        color: 'rgba(255,100,100,0.9)',
+        size: 1.5,
+      }));
+      labels.push(...closureLabels);
+    }
+
+    // Country name labels (always visible, pinned to globe surface)
+    const countryLabels = COUNTRY_LABELS.map(c => ({
+      name: c.name,
+      lat: c.lat,
+      lng: c.lng,
+      alt: 0.001,
+      color: 'rgba(200,220,255,0.6)',
+      size: 1.2,
+    }));
+    labels.push(...countryLabels);
+
+    return labels;
+  }, [satellites, layers.satellites, layers.airspaceClosures]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
@@ -1350,7 +1458,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     const milArcs = layers.satelliteConnections ? getMilitarySatelliteConnections(
       satellites as any,
       conflictZones as any,
-      20
+      30
     ) : [];
     const jamArcs = layers.satelliteConnections ? getGpsJamConnections(satellites as any, gpsJamCells as any, 10) : [];
     // Refugee / displacement flow arcs
@@ -1516,7 +1624,6 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       : [],
     [layers.chokepoints]
   );
-
 // ── Unified HTML markers (military bases + energy infra + nuclear) ────────
   const htmlMarkers = useMemo(
     () => [...militaryBaseMarkers, ...energyMarkers, ...nuclearMarkers, ...piracyMarkers, ...chokepointMarkers],
@@ -1917,18 +2024,18 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} className="globe-container" style={{ width: '100%', height: '100%', background: '#000022' }}>
+    <div ref={containerRef} className="globe-container" style={{ width: '100%', height: '100%', background: '#000008' }}>
       <GlobeGL
         ref={globeRef}
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="/img/earth-blue-marble.jpg"
+        globeImageUrl="/img/earth-night.jpg"
         bumpImageUrl="/img/earth-topology.png"
-        backgroundImageUrl=""
+        backgroundImageUrl="/img/night-sky.png"
         onGlobeReady={handleGlobeReady}
-        atmosphereColor="#4488ff"
-        atmosphereAltitude={0.15}
+        atmosphereColor="#1a6aff"
+        atmosphereAltitude={0.25}
         showAtmosphere={layers.atmosphere}
 
         // ── War-zone polygons ──────────────────────────────────
@@ -1942,12 +2049,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         polygonLabel=""
         polygonsTransitionDuration={0}
 
+
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
         hexBinPointLat={hexBinPointLatAccessor}
         hexBinPointLng={hexBinPointLngAccessor}
         hexBinPointWeight={hexBinPointWeightAccessor}
-        hexBinResolution={4}
+        hexBinResolution={3}
         hexBinColor={hexBinColorAccessor}
         hexAltitude={hexAltitudeAccessor}
         // ── Drone activity heatmap ──────────────────────────────
@@ -2012,6 +2120,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         ringColor={ringColorAccessor}
         ringPropagationSpeed={2}
         ringRepeatPeriod={800}
+
+        // ── Satellite name labels (diamond markers) ─────────────────
+        labelsData={allLabels}
+        labelLat={(d: object) => (d as { lat: number }).lat}
+        labelLng={(d: object) => (d as { lng: number }).lng}
+        labelText={(d: object) => (d as { name: string }).name}
+        labelAltitude={(d: object) => (d as { alt: number }).alt}
+        labelSize={(d: object) => (d as { size: number }).size || 1.0}
+        labelColor={(d: object) => (d as { color: string }).color}
+        labelDotRadius={() => 0.3}
+        labelResolution={2}
 
         // HTML elements disabled — isBehindGlobe crash in three-render-objects
         // htmlElementsData={mergedHtmlMarkers}

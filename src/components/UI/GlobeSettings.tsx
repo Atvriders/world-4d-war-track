@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 const IMAGERY_URLS = {
-  satellite: '/img/earth-blue-marble.jpg',
+  satellite: '/img/earth-night.jpg',
   dark: '/img/earth-dark.jpg',
   terrain: '/img/earth-day.jpg',
 };

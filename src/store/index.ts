@@ -132,7 +132,7 @@ const DEFAULT_GLOBE_SETTINGS: AppState['globeSettings'] = {
   atmosphereColor: '#1a3a5c',
   showGraticules: false,
   showTerminator: true,
-  imageryStyle: 'terrain',
+  imageryStyle: 'satellite',
 };
 
 // === STORE ===

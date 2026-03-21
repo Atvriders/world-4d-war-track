@@ -267,7 +267,7 @@ function isSatelliteOverhead(
 export function getMilitarySatelliteConnections(
   satellites: SatelliteEntity[],
   conflictZones: ConflictZone[],
-  maxConnections = 20
+  maxConnections = 30
 ): ArcConnection[] {
   const MILITARY_CATEGORIES = new Set<string>(['military', 'spy', 'reconnaissance']);
 
@@ -306,8 +306,8 @@ export function getMilitarySatelliteConnections(
     const [endLat, endLng] = getConflictCenter(bestZone);
     const arcColor =
       sat.category === 'military'
-        ? 'rgba(255, 68, 68, 0.5)'
-        : 'rgba(255, 100, 0, 0.4)'; // spy / reconnaissance
+        ? 'rgba(255, 50, 50, 0.7)'
+        : 'rgba(255, 120, 0, 0.6)'; // spy / reconnaissance
 
     arcs.push({
       startLat: sat.lat,
