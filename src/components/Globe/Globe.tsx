@@ -372,20 +372,20 @@ function satelliteColorDim(category: SatelliteEntity['category']): string {
 
 function conflictCapColor(intensity: ConflictZone['intensity']): string {
   switch (intensity) {
-    case 'critical': return 'rgba(255,17,17,0.25)';
-    case 'high':     return 'rgba(255,102,0,0.2)';
-    case 'medium':   return 'rgba(255,170,0,0.15)';
-    case 'low':      return 'rgba(0,255,136,0.10)';
-    default:         return 'rgba(255,170,0,0.10)';
+    case 'critical': return 'rgba(255,17,17,0.06)';
+    case 'high':     return 'rgba(255,102,0,0.05)';
+    case 'medium':   return 'rgba(255,170,0,0.04)';
+    case 'low':      return 'rgba(0,255,136,0.03)';
+    default:         return 'rgba(255,170,0,0.03)';
   }
 }
 
 function conflictSideColor(intensity: ConflictZone['intensity']): string {
   switch (intensity) {
-    case 'critical': return 'rgba(255,17,17,0.12)';
-    case 'high':     return 'rgba(255,102,0,0.10)';
-    case 'medium':   return 'rgba(255,170,0,0.08)';
-    default:         return 'rgba(200,200,0,0.06)';
+    case 'critical': return 'rgba(255,17,17,0.04)';
+    case 'high':     return 'rgba(255,102,0,0.03)';
+    case 'medium':   return 'rgba(255,170,0,0.02)';
+    default:         return 'rgba(200,200,0,0.02)';
   }
 }
 
