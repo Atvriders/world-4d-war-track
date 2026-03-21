@@ -3,8 +3,8 @@ services:
   app:
     image: ghcr.io/atvriders/world-4d-war-track:latest
     ports:
-      - "3000:3000"
-      - "3001:3001"
+      - "3006:3000"
+      - "3007:3001"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
