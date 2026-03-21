@@ -838,8 +838,26 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     },
   }));
 
-  // Resize observer
+  // Use ResizeObserver on container for accurate dimensions
   useEffect(() => {
+    const el = containerRef.current;
+    if (el) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setDimensions({ width: rect.width, height: rect.height });
+      }
+      const observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          if (width > 0 && height > 0) {
+            setDimensions({ width, height });
+          }
+        }
+      });
+      observer.observe(el);
+      return () => observer.disconnect();
+    }
+    // Fallback to window resize if container not available
     const onResize = () =>
       setDimensions({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', onResize);
