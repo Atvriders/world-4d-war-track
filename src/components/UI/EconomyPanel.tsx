@@ -199,7 +199,7 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
 
               return (
                 <div
-                  key={commodity.name}
+                  key={`commodity-${commodity.name}`}
                   onClick={() => setExpandedIdx(isExpanded ? null : idx)}
                   style={{
                     background: 'rgba(8, 20, 45, 0.85)',

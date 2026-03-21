@@ -217,6 +217,11 @@ export default function App() {
   // ── Keyboard shortcuts ──────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Ctrl+K: focus search bar (SearchBar handles it too, but prevent 'k' toggling chokepoints)
+      if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        return;
+      }
       if (document.activeElement?.tagName === 'INPUT') return;
       switch (e.key.toLowerCase()) {
         case 's': store.toggleLayer('satellites'); break;
@@ -234,6 +239,9 @@ export default function App() {
         case 't': store.toggleLayer('threatRings'); break;
         case 'x': store.toggleLayer('cyberThreats'); break;
         case 'k': store.toggleLayer('chokepoints'); break;
+        case 'g': handleFlyTo(25, 15, 2.5); break;   // Global view
+        case 'e': handleFlyTo(50, 15, 1.5); break;   // Europe
+        case 'm': handleFlyTo(28, 45, 1.5); break;   // Middle East
         case 'f': document.documentElement.requestFullscreen?.(); break;
         case ' ':
           e.preventDefault();
@@ -542,7 +550,7 @@ export default function App() {
               fontFamily: 'monospace',
               fontSize: '11px',
               cursor: 'pointer',
-              zIndex: 100,
+              zIndex: 1250,
               letterSpacing: '0.05em',
             }}
             title="View data sources (U)"
@@ -565,7 +573,7 @@ export default function App() {
               fontFamily: 'monospace',
               fontSize: '12px',
               cursor: 'pointer',
-              zIndex: 100,
+              zIndex: 1250,
             }}
           >
             ⌨ ?

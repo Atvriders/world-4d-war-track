@@ -183,7 +183,7 @@ function SourceIndicator({ tooltip }: { tooltip: string }) {
         <span
           style={{
             position: 'absolute',
-            bottom: '100%',
+            top: '100%',
             left: '50%',
             transform: 'translateX(-50%)',
             background: 'rgba(5, 15, 30, 0.95)',
@@ -198,7 +198,7 @@ function SourceIndicator({ tooltip }: { tooltip: string }) {
             zIndex: 10,
             pointerEvents: 'none',
             boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-            marginBottom: 4,
+            marginTop: 4,
           }}
         >
           {tooltip}
@@ -566,9 +566,9 @@ function Sparkline({ counts, trend }: { counts: number[]; trend: 'rising' | 'fal
 function CasualtyBar({ military, civilian, total, militarySource, civilianSource }: { military?: number; civilian?: number; total?: number; militarySource?: string; civilianSource?: string }) {
   const mil = military ?? 0;
   const civ = civilian ?? 0;
-  const sum = mil + civ || total || 1;
-  const milPct = (mil / sum) * 100;
-  const civPct = (civ / sum) * 100;
+  const denominator = total || (mil + civ) || 1;
+  const milPct = Math.min(100, (mil / denominator) * 100);
+  const civPct = Math.min(100 - milPct, (civ / denominator) * 100);
 
   // If we have no military/civilian breakdown, show full bar as unknown
   if (!military && !civilian) {

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -122,13 +122,16 @@ const DATA_SOURCES: DataSource[] = [
 // ── Component ────────────────────────────────────────────────────────────────
 
 const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && visible) onClose();
+      if (e.key === 'Escape' && visible) onCloseRef.current();
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  }, [visible, onClose]);
+  }, [visible]);
 
   if (!visible) return null;
 
@@ -225,9 +228,9 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
 
         {/* Source cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {DATA_SOURCES.map((src) => (
+          {DATA_SOURCES.map((src, i) => (
             <div
-              key={src.category}
+              key={`source-${i}`}
               className="source-card"
               style={{
                 background: 'rgba(255, 255, 255, 0.03)',

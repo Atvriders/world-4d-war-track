@@ -17,16 +17,6 @@ interface Section {
 
 const SECTIONS: Section[] = [
   {
-    title: 'NAVIGATION',
-    rows: [
-      { key: 'G', action: 'Fly to Global view' },
-      { key: 'E', action: 'Fly to Europe' },
-      { key: 'M', action: 'Fly to Middle East' },
-      { key: 'U', action: 'Toggle Data Sources' },
-      { key: 'Ctrl+K', action: 'Search' },
-    ],
-  },
-  {
     title: 'LAYERS',
     rows: [
       { key: 'S', action: 'Toggle Satellites' },
@@ -52,7 +42,14 @@ const SECTIONS: Section[] = [
       { key: 'Space', action: 'Play/Pause time' },
       { key: '← / →', action: '-15 / +15 minutes' },
       { key: '0', action: 'Reset to Now (live)' },
-      { key: '+ / -', action: 'Speed up / slow down' },
+    ],
+  },
+  {
+    title: 'PANELS',
+    rows: [
+      { key: 'I', action: 'Toggle War Impact Panel' },
+      { key: 'Y', action: 'Toggle Economy Panel' },
+      { key: 'U', action: 'Toggle Data Sources' },
     ],
   },
   {
@@ -61,7 +58,6 @@ const SECTIONS: Section[] = [
       { key: '? or H', action: 'Show this help' },
       { key: 'Escape', action: 'Close panel / deselect' },
       { key: 'F', action: 'Toggle fullscreen' },
-      { key: 'I', action: 'Toggle War Impact Panel' },
     ],
   },
 ];

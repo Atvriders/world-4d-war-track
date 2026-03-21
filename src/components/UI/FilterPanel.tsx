@@ -26,6 +26,9 @@ interface LayerVisibility {
   weaponRanges: boolean;
   tradeRoutes: boolean;
   energyInfra: boolean;
+  airspaceClosures: boolean;
+  threatRings: boolean;
+  armsFlows: boolean;
   atmosphere: boolean;
 }
 
@@ -531,6 +534,30 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
                   onToggle={onToggleLayer}
                   countBadge="9"
                   subLabel="Oil/gas near conflict zones"
+                />
+                <LayerRow
+                  icon="✈"
+                  label="Airspace Closures"
+                  layerKey="airspaceClosures"
+                  on={layers.airspaceClosures}
+                  onToggle={onToggleLayer}
+                  subLabel="NOTAMs / restricted zones"
+                />
+                <LayerRow
+                  icon="🎯"
+                  label="Threat Rings"
+                  layerKey="threatRings"
+                  on={layers.threatRings}
+                  onToggle={onToggleLayer}
+                  subLabel="Proximity danger zones"
+                />
+                <LayerRow
+                  icon="🔫"
+                  label="Arms Flows"
+                  layerKey="armsFlows"
+                  on={layers.armsFlows}
+                  onToggle={onToggleLayer}
+                  subLabel="Weapons supply routes"
                 />
               </div>
 

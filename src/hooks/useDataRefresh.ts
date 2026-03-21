@@ -260,8 +260,8 @@ export function useAlertGenerator(): void {
     for (const cell of gpsJamCells) {
       if (cell.level < GPS_JAM_CRITICAL_LEVEL) continue;
 
-      const location = `${cell.lat.toFixed(2)}, ${cell.lng.toFixed(2)}`;
-      const key = `gps-jam-${cell.lat.toFixed(2)}-${cell.lng.toFixed(2)}`;
+      const location = `${cell.lat.toFixed(4)}, ${cell.lng.toFixed(4)}`;
+      const key = `gps-jam-${cell.lat.toFixed(4)}-${cell.lng.toFixed(4)}`;
       maybeAlert(key, {
         id: newId(),
         type: 'gps-jam',
@@ -445,9 +445,13 @@ export function useGlobeTime(): GlobeTimeResult {
     `${pad(currentTime.getUTCDate())} ${months[currentTime.getUTCMonth()]} ${currentTime.getUTCFullYear()}`,
   ].join(' ');
 
-  // Use a ref for timeOffset inside the interval to avoid recreating it every tick
+  // Use refs for timeOffset and playSpeed inside the interval to avoid
+  // recreating it every tick or when playSpeed changes mid-play
   const timeOffsetRef = useRef(timeOffset);
   timeOffsetRef.current = timeOffset;
+
+  const playSpeedRef = useRef(playSpeed);
+  playSpeedRef.current = playSpeed;
 
   // When playing, auto-increment timeOffset at rate of playSpeed min/s
   useEffect(() => {
@@ -455,11 +459,11 @@ export function useGlobeTime(): GlobeTimeResult {
 
     const TICK_MS = 1000; // update every real second
     const timer = setInterval(() => {
-      setTimeOffset(timeOffsetRef.current + playSpeed);
+      setTimeOffset(timeOffsetRef.current + playSpeedRef.current);
     }, TICK_MS);
 
     return () => clearInterval(timer);
-  }, [isPlaying, playSpeed, setTimeOffset]);
+  }, [isPlaying, setTimeOffset]);
 
   return { currentTime, displayTime };
 }

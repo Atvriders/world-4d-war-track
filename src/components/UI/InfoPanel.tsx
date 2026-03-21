@@ -520,7 +520,9 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
 
       <div style={styles.section}>
         <SectionHead>Casualties</SectionHead>
-        <InfoRow label="Total" value={<span style={{ color: '#ff6666', fontWeight: 700 }}>{formatNumber(entity.casualties.total)}</span>} />
+        {entity.casualties?.total != null && (
+          <InfoRow label="Total" value={<span style={{ color: '#ff6666', fontWeight: 700 }}>{formatNumber(entity.casualties.total)}</span>} />
+        )}
         {entity.casualties.military !== undefined && (
           <InfoRow label="Military" value={formatNumber(entity.casualties.military)} />
         )}
@@ -540,11 +542,11 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
             letterSpacing: '0.02em',
           }}>
             Sources: {[
-              entity.casualtySources.total,
-              entity.casualtySources.displaced && entity.casualtySources.displaced !== entity.casualtySources.total
-                ? entity.casualtySources.displaced
-                : null,
-            ].filter(Boolean).join(' · ')}
+              entity.casualtySources?.total,
+              entity.casualtySources?.military,
+              entity.casualtySources?.civilian,
+              entity.casualtySources?.displaced,
+            ].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i).join(' · ')}
           </div>
         )}
       </div>
@@ -624,7 +626,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     flyLng = sat.lng;
   } else if (type === 'aircraft') {
     const ac = data as AircraftEntity;
-    title = ac.callsign || ac.icao24.toUpperCase();
+    title = ac.callsign || ac.icao24?.toUpperCase() || 'UNKNOWN';
     if (ac.isMilitary) {
       badges = [<Badge key="mil" label="Military" color="#ff4444" bg="rgba(255,68,68,0.15)" />];
     }

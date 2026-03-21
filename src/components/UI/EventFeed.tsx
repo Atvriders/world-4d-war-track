@@ -334,7 +334,7 @@ const EventFeed: React.FC<EventFeedProps> = ({
   const zoneCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const zone of conflictZones) {
-      counts[zone.name] = zone.events.length;
+      counts[zone.name] = zone.events?.length ?? 0;
     }
     return counts;
   }, [conflictZones]);

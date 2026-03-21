@@ -189,6 +189,19 @@ interface NuclearMarker extends NuclearSite {
   _marker: 'nuclear';
 }
 
+interface EventMarker {
+  _marker: 'event';
+  _zoneName: string;
+  _zoneId: string;
+  id: string;
+  date: string;
+  type: string;
+  lat: number;
+  lng: number;
+  description: string;
+  fatalities: number;
+  source: string;
+}
 
 // ─── Carrier Strike Group types & helpers ──────────────────────────────────
 
@@ -325,6 +338,16 @@ export interface GlobeRef {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Escape HTML special characters to prevent XSS */
+function escHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function satelliteColor(category: SatelliteEntity['category']): string {
   switch (category) {
     case 'military':       return '#ff4444';
@@ -380,6 +403,15 @@ function shipColor(type: ShipEntity['type']): string {
   }
 }
 
+function shipTrailColor(type: string): string {
+  switch (type) {
+    case 'warship': case 'military': return 'rgba(255,51,51,0.40)';
+    case 'tanker': return 'rgba(255,136,0,0.40)';
+    case 'cargo': return 'rgba(51,136,255,0.40)';
+    default: return 'rgba(200,200,100,0.30)';
+  }
+}
+
 function cyberThreatColor(type: CyberThreat['type']): string {
   switch (type) {
     case 'ransomware':             return '#ff2222';
@@ -387,6 +419,7 @@ function cyberThreatColor(type: CyberThreat['type']): string {
     case 'ddos':                   return '#00ddff';
     case 'infrastructure':         return '#ff8800';
     case 'election_interference':  return '#ffdd00';
+    default:                       return '#ff8800';
   }
 }
 
@@ -407,6 +440,7 @@ function nuclearRiskColor(risk: NuclearSite['risk']): string {
     case 'high':     return '#ff8800';
     case 'medium':   return '#ffdd00';
     case 'low':      return '#44cc44';
+    default:         return '#888888';
   }
 }
 
@@ -690,6 +724,7 @@ function weaponRangeColor(type: 'ballistic' | 'cruise' | 'drone' | 'sam' | 'rock
     case 'drone':     return 'rgba(0,220,255,0.55)';
     case 'sam':       return 'rgba(255,255,0,0.55)';
     case 'rocket':    return 'rgba(255,255,255,0.55)';
+    default:          return 'rgba(200,200,200,0.40)';
   }
 }
 
@@ -886,6 +921,55 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     [layers.aircraftTrails, aircraft]
   );
 
+  // Ship trail paths
+  const shipTrailPaths: PathEntry[] = useMemo(
+    () =>
+      layers.shipTrails
+        ? ships
+            .filter((s) => s.trail && s.trail.length > 1)
+            .map((s) => ({
+              _kind: 'ship' as const,
+              ship: s,
+              coords: s.trail.map(([lat, lng]) => ({ lat, lng, alt: 0 })),
+            }))
+        : [],
+    [layers.shipTrails, ships]
+  );
+
+  // Front line paths (from conflict zones with line/polygon geometries)
+  const frontLinePaths: PathEntry[] = useMemo(
+    () => {
+      if (!layers.frontLines) return [];
+      const paths: PathEntry[] = [];
+      for (const zone of conflictZones) {
+        const geo = zone.geoJSON?.geometry;
+        if (!geo) continue;
+        const coordArrays: number[][][] = [];
+        if (geo.type === 'LineString') {
+          coordArrays.push(geo.coordinates as number[][]);
+        } else if (geo.type === 'MultiLineString') {
+          coordArrays.push(...(geo.coordinates as number[][][]));
+        } else if (geo.type === 'Polygon') {
+          coordArrays.push(...(geo.coordinates as number[][][]));
+        } else if (geo.type === 'MultiPolygon') {
+          for (const poly of geo.coordinates as number[][][][]) {
+            coordArrays.push(...poly);
+          }
+        }
+        for (const ring of coordArrays) {
+          if (ring.length < 2) continue;
+          paths.push({
+            _kind: 'frontline' as const,
+            zone,
+            coords: ring.map(([lng, lat]) => ({ lat, lng, alt: 0.003 })),
+          });
+        }
+      }
+      return paths;
+    },
+    [layers.frontLines, conflictZones]
+  );
+
   // Sea cable paths
   const seaCablePaths: PathEntry[] = useMemo(
     () =>
@@ -1022,7 +1106,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Satellite connection arcs: military/spy/recon → nearest conflict zone + nav → GPS jam cells
   const arcsData: ArcEntry[] = useMemo(() => {
-    if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats && !layers.tradeRoutes) return [];
+    if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats && !layers.tradeRoutes && !layers.armsFlows) return [];
     const milArcs = layers.satelliteConnections ? getMilitarySatelliteConnections(
       satellites as any,
       conflictZones as any,
@@ -1064,8 +1148,22 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           ...route,
         }))
       : [];
-    return [...milArcs, ...jamArcs, ...refugeeArcs, ...cyberArcs, ...tradeArcs];
-  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, layers.tradeRoutes, satellites, conflictZones, gpsJamCells]);
+    // Arms supply flow arcs
+    const armsArcs: ArmsFlowArc[] = layers.armsFlows
+      ? ARMS_FLOWS.map((flow) => ({
+          _isArmsFlow: true as const,
+          startLat: flow.startLat,
+          startLng: flow.startLng,
+          endLat: flow.endLat,
+          endLng: flow.endLng,
+          supplier: flow.supplier,
+          recipient: flow.recipient,
+          category: flow.category,
+          value: flow.value,
+        }))
+      : [];
+    return [...milArcs, ...jamArcs, ...refugeeArcs, ...cyberArcs, ...tradeArcs, ...armsArcs];
+  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, layers.tradeRoutes, layers.armsFlows, satellites, conflictZones, gpsJamCells]);
 
   // Satellite footprint rings
   const ringsData: FootprintRing[] = useMemo(
@@ -1268,7 +1366,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
       const typeLabel = fac.type.replace(/_/g, ' ').toUpperCase();
       const conflictLine = fac.nearConflict ? `Near conflict: ${fac.nearConflict}` : '';
-      label.innerHTML = `<b>${fac.name}</b><br/>${typeLabel} | ${fac.country}<br/>Capacity: ${fac.capacity}<br/>Risk: ${fac.risk.toUpperCase()}${conflictLine ? '<br/>' + conflictLine : ''}`;
+      label.innerHTML = `<b>${escHtml(fac.name)}</b><br/>${escHtml(typeLabel)} | ${escHtml(fac.country)}<br/>Capacity: ${escHtml(fac.capacity)}<br/>Risk: ${escHtml(fac.risk.toUpperCase())}${conflictLine ? '<br/>' + escHtml(conflictLine) : ''}`;
       wrapper.appendChild(label);
 
       wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
@@ -1481,12 +1579,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       tooltip.className = 'chokepoint-tooltip';
       const rlc = cp.risk === 'critical' ? '#ff2222' : cp.risk === 'high' ? '#ff8800' : '#ffdd00';
       const pctGlobal = flowM > 0 ? `${flowM.toFixed(1)}% of global` : 'N/A';
-      tooltip.innerHTML = `<div style="color:${rlc};font-weight:bold;font-size:12px;margin-bottom:4px">${cp.name}</div>`
-        + `<div>Width: <span style="color:#fff">${cp.width}</span></div>`
-        + `<div>Daily Traffic: <span style="color:#fff">${cp.dailyTraffic}</span></div>`
-        + `<div>Oil Flow: <span style="color:#fff">${cp.oilFlow}</span> <span style="color:#aab;font-size:10px">(${pctGlobal})</span></div>`
-        + `<div>Risk: <span style="color:${rlc}">${cp.risk.toUpperCase()}</span></div>`
-        + `<div>Threat: <span style="color:#ff8866">${cp.threat}</span></div>`;
+      tooltip.innerHTML = `<div style="color:${rlc};font-weight:bold;font-size:12px;margin-bottom:4px">${escHtml(cp.name)}</div>`
+        + `<div>Width: <span style="color:#fff">${escHtml(cp.width)}</span></div>`
+        + `<div>Daily Traffic: <span style="color:#fff">${escHtml(cp.dailyTraffic)}</span></div>`
+        + `<div>Oil Flow: <span style="color:#fff">${escHtml(cp.oilFlow)}</span> <span style="color:#aab;font-size:10px">(${escHtml(pctGlobal)})</span></div>`
+        + `<div>Risk: <span style="color:${rlc}">${escHtml(cp.risk.toUpperCase())}</span></div>`
+        + `<div>Threat: <span style="color:#ff8866">${escHtml(cp.threat)}</span></div>`;
 
       wrapper.appendChild(ring);
       wrapper.appendChild(cpDot);
@@ -1604,7 +1702,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%', background: '#000010' }}>
+    <div ref={containerRef} className="globe-container" style={{ width: '100%', height: '100%', background: '#000010' }}>
       <GlobeGL
         ref={globeRef}
         width={dimensions.width}
@@ -1648,7 +1746,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         heatmapPointLng={(d: object) => (d as { lng: number }).lng}
         heatmapPointWeight={(d: object) => (d as { weight: number }).weight}
         heatmapBandwidth={1.5}
-        heatmapColorFn={() => droneHeatmapColor}
+        heatmapColorFn={droneHeatmapColor}
         heatmapColorSaturation={2.0}
         heatmapBaseAltitude={0.006}
         heatmapTopAltitude={0.04}
@@ -1767,6 +1865,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
               ? ['rgba(255,50,50,0.8)', 'rgba(255,50,50,0.3)']
               : ['rgba(0,255,136,0.6)', 'rgba(0,255,136,0.2)'];
           }
+          if (isArmsFlowArc(d)) {
+            const a = d as ArmsFlowArc;
+            const c = armsFlowColor(a.category);
+            return [c, c.replace(/[\d.]+\)$/, '0.3)')];
+          }
           return (d as ArcConnection).color;
         }}
         arcLabel={(d: object) => {
@@ -1783,27 +1886,39 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
               `Status: <span style="color:${statusColor};font-weight:bold">${t.status.toUpperCase()}</span><br/>` +
               `<span style="color:#888">Trade route ${t.status === 'disrupted' ? 'blocked by conflict' : 'alternative shipping lane'}</span></div>`;
           }
+          if (isArmsFlowArc(d)) {
+            const a = d as ArmsFlowArc;
+            const c = armsFlowColor(a.category);
+            return `<div style="background:rgba(5,15,30,0.95);border:1px solid ${c};border-radius:4px;padding:8px 10px;font-family:monospace;font-size:11px;color:#cde;line-height:1.5">` +
+              `<b style="color:${c}">${a.supplier} \u2192 ${a.recipient}</b><br/>` +
+              `Category: ${a.category.replace(/_/g, ' ')}<br/>` +
+              `Value: ${a.value}</div>`;
+          }
           return (d as ArcConnection).label;
         }}
         arcAltAutoScale={0.3}
         arcStroke={(d: object) => {
           if (isRefugeeArc(d)) return refugeeArcWidth((d as RefugeeArc).count);
           if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 1.8 : 1.2;
+          if (isArmsFlowArc(d)) { const a = d as ArmsFlowArc; return armsFlowStroke(a.category, a.value); }
           return 0.5;
         }}
         arcDashLength={(d: object) => {
           if (isRefugeeArc(d)) return 0.6;
           if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.3 : 0.5;
+          if (isArmsFlowArc(d)) return 0.5;
           return 0.4;
         }}
         arcDashGap={(d: object) => {
           if (isRefugeeArc(d)) return 0.3;
           if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0.4 : 0.2;
+          if (isArmsFlowArc(d)) return 0.25;
           return 0.2;
         }}
         arcDashAnimateTime={(d: object) => {
           if (isRefugeeArc(d)) return 2500;
           if (isTradeRouteArc(d)) return (d as TradeRouteArc).status === 'disrupted' ? 0 : 2000;
+          if (isArmsFlowArc(d)) return 2000;
           return 1500;
         }}
 
