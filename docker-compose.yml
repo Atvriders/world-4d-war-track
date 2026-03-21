@@ -1,7 +1,6 @@
 version: '3.8'
 services:
   app:
-    build: .
     image: ghcr.io/atvriders/world-4d-war-track:latest
     ports:
       - "3000:3000"
