@@ -827,41 +827,21 @@ const COUNTRY_LABELS = [
   { name: 'RUSSIA', lat: 61.5, lng: 105.3 },
   { name: 'CHINA', lat: 35.9, lng: 104.2 },
   { name: 'IRAN', lat: 32.4, lng: 53.7 },
-  { name: 'IRAQ', lat: 33.2, lng: 43.7 },
-  { name: 'SYRIA', lat: 35.0, lng: 38.0 },
   { name: 'UKRAINE', lat: 48.4, lng: 31.2 },
   { name: 'ISRAEL', lat: 31.0, lng: 34.8 },
   { name: 'SAUDI ARABIA', lat: 23.9, lng: 45.1 },
   { name: 'TURKEY', lat: 38.9, lng: 35.2 },
   { name: 'INDIA', lat: 20.6, lng: 79.0 },
   { name: 'PAKISTAN', lat: 30.4, lng: 69.3 },
-  { name: 'AFGHANISTAN', lat: 33.9, lng: 67.7 },
   { name: 'EGYPT', lat: 26.8, lng: 30.8 },
-  { name: 'LIBYA', lat: 26.3, lng: 17.2 },
   { name: 'SUDAN', lat: 15.6, lng: 32.5 },
   { name: 'YEMEN', lat: 15.6, lng: 48.5 },
-  { name: 'SOMALIA', lat: 5.2, lng: 46.2 },
-  { name: 'ETHIOPIA', lat: 9.1, lng: 40.5 },
-  { name: 'KENYA', lat: -0.0, lng: 37.9 },
-  { name: 'SOUTH AFRICA', lat: -30.6, lng: 22.9 },
-  { name: 'NIGERIA', lat: 9.1, lng: 8.7 },
-  { name: 'MOROCCO', lat: 31.8, lng: -7.1 },
-  { name: 'ALGERIA', lat: 28.0, lng: 1.7 },
-  { name: 'FRANCE', lat: 46.2, lng: 2.2 },
-  { name: 'GERMANY', lat: 51.2, lng: 10.4 },
-  { name: 'UNITED KINGDOM', lat: 55.4, lng: -3.4 },
-  { name: 'POLAND', lat: 51.9, lng: 19.1 },
   { name: 'JAPAN', lat: 36.2, lng: 138.3 },
   { name: 'SOUTH KOREA', lat: 35.9, lng: 127.8 },
   { name: 'NORTH KOREA', lat: 40.3, lng: 127.5 },
   { name: 'TAIWAN', lat: 23.7, lng: 121.0 },
-  { name: 'AUSTRALIA', lat: -25.3, lng: 133.8 },
-  { name: 'BRAZIL', lat: -14.2, lng: -51.9 },
-  { name: 'MEXICO', lat: 23.6, lng: -102.6 },
-  { name: 'CANADA', lat: 56.1, lng: -106.3 },
-  { name: 'KUWAIT', lat: 29.3, lng: 47.5 },
-  { name: 'UAE', lat: 23.4, lng: 53.8 },
-  { name: 'QATAR', lat: 25.4, lng: 51.2 },
+  { name: 'POLAND', lat: 51.9, lng: 19.1 },
+  { name: 'UNITED KINGDOM', lat: 55.4, lng: -3.4 },
   { name: 'MYANMAR', lat: 19.8, lng: 96.2 },
 ];
 
@@ -921,7 +901,7 @@ function labelTextAccessor(d: object) { return (d as { name: string }).name; }
 function labelAltAccessor(d: object) { return (d as { alt: number }).alt; }
 function labelSizeAccessor(d: object) { return (d as { size: number }).size || 1.0; }
 function labelColorAccessor(d: object) { return (d as { color: string }).color; }
-function labelDotRadiusAccessor() { return 0.3; }
+function labelDotRadiusAccessor(d: object) { return (d as { _type?: string })._type ? 0.3 : 0; }
 
 function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
 function pathPointLatAccessor(pt: object) { return (pt as { lat: number }).lat; }
@@ -1225,108 +1205,53 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       _zone?: unknown;
     }> = [];
 
+    // Satellite labels (top 10)
     if (layers.satellites) {
-      // Top 15 satellites by altitude (most visible, floating above globe)
       const topSats = [...satellites]
         .sort((a, b) => b.alt - a.alt)
-        .slice(0, 15)
+        .slice(0, 10)
         .map(s => ({
           name: `◆ ${s.name}`,
           lat: s.lat,
           lng: s.lng,
-          alt: s.alt / 6371, // convert km to globe-radii
+          alt: s.alt / 6371,
           color: satelliteColor(s.category),
-          size: 1.0,
+          size: 0.8,
         }));
       labels.push(...topSats);
     }
 
-    // Airspace closure labels (surface-level)
-    if (layers.airspaceClosures) {
-      const closureLabels = AIRSPACE_CLOSURES.filter(c => c.active).map(c => ({
-        name: `${c.name}\nAIRSPACE CLOSED`,
-        lat: c.lat,
-        lng: c.lng,
-        alt: 0.01,
-        color: 'rgba(255,100,100,0.9)',
-        size: 1.5,
-      }));
-      labels.push(...closureLabels);
-    }
-
-    // Country name labels (always visible, pinned to globe surface)
+    // Country name labels (subtle background text, no dot)
     const countryLabels = COUNTRY_LABELS.map(c => ({
       name: c.name,
       lat: c.lat,
       lng: c.lng,
       alt: 0.001,
       color: 'rgba(200,220,255,0.6)',
-      size: 1.2,
+      size: 0.7,
     }));
     labels.push(...countryLabels);
 
-    // Aircraft labels (military only, top 20)
+    // Aircraft labels (military only, top 10)
     if (layers.aircraft) {
       const acLabels = aircraft
         .filter(a => !a.onGround && a.isMilitary)
-        .slice(0, 20)
+        .slice(0, 10)
         .map(a => ({
-          name: `✈ ${a.callsign || a.icao24}`,
+          name: a.callsign || a.icao24,
           lat: a.lat,
           lng: a.lng,
-          alt: a.altitude / 6_371_000, // normalize to globe radius
+          alt: a.altitude / 6_371_000,
           color: 'rgba(255,80,80,0.9)',
-          size: 0.8,
+          size: 0.7,
           _type: 'aircraft',
         }));
       labels.push(...acLabels);
     }
 
-    // Ship labels (warships only, top 5)
-    if (layers.ships) {
-      const shipLabels = ships
-        .filter(s => s.type === 'warship' || s.type === 'military')
-        .slice(0, 5)
-        .map(s => ({
-          name: `🚢 ${s.name || s.mmsi}`,
-          lat: s.lat,
-          lng: s.lng,
-          alt: 0.001,
-          color: 'rgba(255,80,80,0.8)',
-          size: 0.5,
-          _type: 'ship',
-        }));
-      labels.push(...shipLabels);
-    }
-
-    // Conflict zone labels (clickable to open info panel)
-    if (layers.warZones) {
-      const conflictLabels = conflictZones.map(zone => {
-        const geom = zone.geoJSON?.geometry;
-        const coords = geom?.type === 'MultiPolygon'
-          ? (geom.coordinates as number[][][][])[0][0]
-          : (geom?.coordinates as number[][][])?.[0];
-        if (!coords || coords.length === 0) return null;
-        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
-        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
-        return {
-          name: `⚔ ${zone.name}`,
-          lat: avgLat,
-          lng: avgLng,
-          alt: 0.005,
-          color: zone.intensity === 'critical' ? 'rgba(255,50,50,0.9)' :
-                 zone.intensity === 'high' ? 'rgba(255,140,0,0.9)' : 'rgba(255,200,0,0.9)',
-          size: 1.3,
-          _type: 'conflict',
-          _zone: zone,
-        };
-      }).filter(Boolean);
-      labels.push(...(conflictLabels as typeof labels));
-    }
-
-    // Cap total labels for performance
-    return labels.slice(0, 80);
-  }, [satellites, layers.satellites, layers.airspaceClosures, layers.warZones, conflictZones, aircraft, ships, layers.aircraft, layers.ships]);
+    // Cap total labels for performance (~40 max)
+    return labels.slice(0, 40);
+  }, [satellites, layers.satellites, aircraft, layers.aircraft]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
@@ -2256,13 +2181,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         labelDotRadius={labelDotRadiusAccessor}
         labelResolution={1}
         onLabelClick={(label: object) => {
-          const d = label as { _type?: string; _zone?: unknown };
-          if (d._type === 'conflict' && d._zone) {
-            onEntityClick('conflict', d._zone);
-          } else if (d._type === 'aircraft') {
+          const d = label as { _type?: string };
+          if (d._type === 'aircraft') {
             onEntityClick('aircraft', d);
-          } else if (d._type === 'ship') {
-            onEntityClick('ship', d);
           }
         }}
 

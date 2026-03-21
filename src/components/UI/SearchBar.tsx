@@ -262,7 +262,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    top: '48px',
+    top: '58px',
     left: '50%',
     transform: 'translateX(-50%)',
     zIndex: 1100,

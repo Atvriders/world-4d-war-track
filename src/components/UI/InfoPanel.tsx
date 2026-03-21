@@ -98,10 +98,10 @@ const shipTypeLabel: Record<ShipEntity['type'], string> = {
 const styles: Record<string, React.CSSProperties> = {
   panel: {
     position: 'fixed',
-    top: 0,
+    top: 56,
     right: 0,
     width: 320,
-    height: '100vh',
+    height: 'calc(100vh - 56px)',
     background: 'rgba(5, 15, 30, 0.95)',
     border: '1px solid rgba(0, 255, 136, 0.4)',
     borderRight: 'none',
@@ -110,7 +110,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     display: 'flex',
     flexDirection: 'column',
-    zIndex: 1000,
+    overflowY: 'auto',
+    zIndex: 1200,
     backdropFilter: 'blur(8px)',
     transition: 'transform 0.3s ease',
   },

@@ -10,7 +10,6 @@ interface TimeControlProps {
   onReset: () => void;
 }
 
-const SPEED_OPTIONS = [0.5, 1, 2, 5, 10, 60];
 const MIN_OFFSET = -180;
 const MAX_OFFSET = 360;
 
@@ -109,16 +108,16 @@ const TimeControl: React.FC<TimeControlProps> = ({
     bottom: '82px',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: '500px',
-    backgroundColor: 'rgba(10, 15, 20, 0.92)',
-    border: '1px solid #1f2937',
-    borderRadius: '8px',
-    padding: '10px 14px 8px',
+    width: '350px',
+    backgroundColor: 'rgba(10, 15, 20, 0.55)',
+    border: '1px solid rgba(31, 41, 55, 0.5)',
+    borderRadius: '6px',
+    padding: '6px 10px 4px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    gap: '4px',
     zIndex: 1000,
-    boxShadow: '0 4px 24px rgba(0,0,0,0.7)',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
     backdropFilter: 'blur(6px)',
     fontFamily: "'Courier New', Courier, monospace",
   };
@@ -130,24 +129,26 @@ const TimeControl: React.FC<TimeControlProps> = ({
   };
 
   const btnBase: React.CSSProperties = {
-    background: '#1f2937',
-    border: '1px solid #374151',
-    borderRadius: '4px',
+    background: 'rgba(31, 41, 55, 0.7)',
+    border: '1px solid rgba(55, 65, 81, 0.5)',
+    borderRadius: '3px',
     color: '#d1d5db',
     cursor: 'pointer',
-    fontSize: '13px',
-    padding: '4px 8px',
+    fontSize: '11px',
+    padding: '2px 6px',
+    height: '20px',
     lineHeight: 1,
     transition: 'background 0.15s, color 0.15s',
   };
 
   const playBtnStyle: React.CSSProperties = {
     ...btnBase,
-    fontSize: '16px',
-    padding: '4px 10px',
+    fontSize: '12px',
+    padding: '2px 8px',
+    height: '20px',
     color: isPlaying ? '#22c55e' : '#6b7280',
-    borderColor: isPlaying ? '#15803d' : '#374151',
-    background: isPlaying ? '#052e16' : '#1f2937',
+    borderColor: isPlaying ? '#15803d' : 'rgba(55, 65, 81, 0.5)',
+    background: isPlaying ? 'rgba(5, 46, 22, 0.7)' : 'rgba(31, 41, 55, 0.7)',
     boxShadow: isPlaying ? '0 0 6px rgba(34, 197, 94, 0.4)' : 'none',
   };
 
@@ -160,21 +161,12 @@ const TimeControl: React.FC<TimeControlProps> = ({
     whiteSpace: 'nowrap',
   };
 
-  const noteStyle: React.CSSProperties = {
-    fontSize: '10px',
-    color: '#6b7280',
-    textAlign: 'center',
-    marginTop: '0px',
-    letterSpacing: '0.02em',
-  };
-
   return (
     <div style={containerStyle}>
       <style>{sliderStyles}</style>
 
-      {/* Top row: transport controls + speed + time display */}
+      {/* Compact row: reset + play/pause + slider + time display */}
       <div style={rowStyle}>
-        {/* Reset */}
         <button
           style={btnBase}
           onClick={onReset}
@@ -183,16 +175,6 @@ const TimeControl: React.FC<TimeControlProps> = ({
           ⏮
         </button>
 
-        {/* -15m */}
-        <button
-          style={btnBase}
-          onClick={() => onTimeOffsetChange(Math.max(MIN_OFFSET, timeOffset - 15))}
-          title="-15 minutes"
-        >
-          ⏪ -15m
-        </button>
-
-        {/* Play / Pause */}
         <button
           style={playBtnStyle}
           onClick={onPlayPause}
@@ -201,48 +183,6 @@ const TimeControl: React.FC<TimeControlProps> = ({
           {isPlaying ? '⏸' : '▶'}
         </button>
 
-        {/* +15m */}
-        <button
-          style={btnBase}
-          onClick={() => onTimeOffsetChange(Math.min(MAX_OFFSET, timeOffset + 15))}
-          title="+15 minutes"
-        >
-          +15m ⏩
-        </button>
-
-        {/* Speed selector */}
-        <div style={{ display: 'flex', gap: '3px', marginLeft: '4px' }}>
-          {SPEED_OPTIONS.map((speed) => {
-            const isActive = playSpeed === speed;
-            return (
-              <button
-                key={speed}
-                style={{
-                  ...btnBase,
-                  fontSize: '11px',
-                  padding: '3px 5px',
-                  background: isActive ? '#14532d' : '#1f2937',
-                  color: isActive ? '#22c55e' : '#9ca3af',
-                  borderColor: isActive ? '#15803d' : '#374151',
-                  fontWeight: isActive ? 'bold' : 'normal',
-                }}
-                onClick={() => onSpeedChange(speed)}
-                title={`${speed}x speed`}
-              >
-                {speed}x
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Time display */}
-        <span style={timeDisplayStyle}>
-          {formatTimeDisplay(timeOffset)}
-        </span>
-      </div>
-
-      {/* Slider row */}
-      <div style={{ padding: '0 2px' }}>
         <input
           type="range"
           className="time-range-input"
@@ -253,28 +193,15 @@ const TimeControl: React.FC<TimeControlProps> = ({
           style={
             {
               '--fill-pct': `${fillPct.toFixed(2)}%`,
+              flex: 1,
             } as React.CSSProperties
           }
           onChange={(e) => onTimeOffsetChange(Number(e.target.value))}
         />
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '10px',
-            color: '#4b5563',
-            marginTop: '2px',
-          }}
-        >
-          <span>-3h</span>
-          <span>NOW</span>
-          <span>+6h</span>
-        </div>
-      </div>
 
-      {/* Warning note */}
-      <div style={noteStyle}>
-        ⚠ Satellite positions shown for predicted time — ADS-B/AIS always show latest live data
+        <span style={timeDisplayStyle}>
+          {formatTimeDisplay(timeOffset)}
+        </span>
       </div>
     </div>
   );
