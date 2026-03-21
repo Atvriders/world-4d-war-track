@@ -478,18 +478,18 @@ function expandJamCell(cell: GpsJamCell): { lat: number; lng: number; weight: nu
 }
 
 function hexBinColor(frac: number): string {
-  // gradient from yellow (#ffee00) → orange → red
+  // gradient from yellow (#ffee00) → orange → red — low opacity to not cover globe
   const r = 255;
   const g = Math.round(238 * (1 - frac));
   const b = 0;
-  return `rgba(${r},${g},${b},0.35)`;
+  return `rgba(${r},${g},${b},0.15)`;
 }
 /** Cyan-to-purple gradient for drone activity heatmap */
 function droneHeatmapColor(t: number): string {
   const r = Math.round(170 * t);
   const g = Math.round(255 * (1 - t));
   const b = 255;
-  return `rgba(${r},${g},${b},${(0.4 + 0.5 * t).toFixed(2)})`;
+  return `rgba(${r},${g},${b},${(0.1 + 0.2 * t).toFixed(2)})`;
 }
 
 /** Expand drone events into weighted lat/lng points for heatmap layer */
@@ -1716,7 +1716,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         hexBinPointLat={(d: object) => (d as { lat: number }).lat}
         hexBinPointLng={(d: object) => (d as { lng: number }).lng}
         hexBinPointWeight={(d: object) => (d as { weight: number }).weight}
-        hexBinResolution={3}
+        hexBinResolution={4}
         hexBinColor={(d: object) => {
           const bin = d as { sumWeight: number; points: unknown[] };
           const maxLevel = Math.min(1, bin.sumWeight / Math.max(1, bin.points.length));
