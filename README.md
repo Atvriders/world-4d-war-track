@@ -192,7 +192,7 @@ cd server && npm install && cd ..
 npm run dev:all
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ```bash
 # Frontend only (uses live APIs directly — no proxy)
@@ -245,16 +245,27 @@ docker compose up
 | Key | Action |
 |---|---|
 | `Ctrl+K` | Open global search |
+| `S` | Toggle satellites |
+| `A` | Toggle aircraft |
+| `V` | Toggle vessels |
+| `W` | Toggle war zones |
+| `J` | Toggle GPS jamming |
+| `O` | Toggle satellite orbits |
+| `F` | Fullscreen |
+| `Space` | Play / pause time |
+| `←` / `→` | Scrub time ±15 minutes |
+| `0` | Reset time to now |
 | `G` | Fly to global overview |
 | `E` | Fly to Europe |
 | `M` | Fly to Middle East |
-| `Time slider` | Advance/rewind satellite positions (±6 hours) |
+| `H` / `?` | Toggle keyboard help |
+| `Esc` | Close panels / deselect entity |
 
 ---
 
 ## 🧩 UI Panels & Components
 
-The interface is composed of 12 modular panels:
+The interface is composed of 20+ modular panels:
 
 | Component | Description |
 |---|---|
@@ -274,6 +285,11 @@ The interface is composed of 12 modular panels:
 | **GlobeSettings** | Imagery style selector, rotation toggle, layer opacity controls |
 | **Legend** | Map legend explaining color coding for conflict intensity and entity types |
 | **LoadingScreen** | Animated splash screen during initial data fetch |
+| **KeyboardHelp** | Keyboard shortcuts reference overlay (`H` or `?`) |
+| **HotspotsPanel** | Threat intelligence — regions with converging military activity |
+| **StatsOverlay** | Global statistics: entity counts, orbit class distribution |
+| **WatchList** | User-created tracking list for favorite aircraft, ships, or satellites |
+| **EventFeed** | Time-ordered conflict event timeline with filtering and sorting |
 
 ---
 
@@ -293,13 +309,21 @@ world-4d-war-track/
 │   │   ├── ais.ts          # AIS marine vessel integration
 │   │   ├── satellite.ts    # CelesTrak TLE fetch + SGP4 propagation
 │   │   └── gpsJam.ts       # GPS jamming hotspot data + intensity model
-│   ├── store/              # Zustand global state stores
-│   ├── types/              # TypeScript type definitions
-│   ├── utils/              # Shared utility functions
-│   └── App.tsx
+│   ├── store/
+│   │   └── index.ts        # Zustand global state (13 slices, 15+ actions)
+│   ├── types/
+│   │   └── index.ts        # TypeScript interfaces & enums
+│   ├── hooks/
+│   │   └── useDataRefresh.ts  # Data polling, alert generation, time playback
+│   ├── utils/
+│   │   ├── geoMath.ts      # Haversine distance, bbox, orbit classification
+│   │   ├── colors.ts       # Color palettes and entity categorization
+│   │   ├── labels.ts       # HTML tooltip generation for hover labels
+│   │   └── satelliteConnections.ts  # Satellite-to-ground beam math
+│   └── App.tsx             # Main app shell (state machine, UI orchestration)
 ├── server/
 │   └── src/
-│       └── server.ts       # Express proxy for external APIs
+│       └── server.js       # Express proxy for external APIs
 ├── Dockerfile
 ├── docker-compose.yml
 └── vite.config.ts
@@ -333,7 +357,7 @@ Contributions are welcome. Please open an issue or pull request on [GitHub](http
 
 ## 📄 License
 
-[MIT License](LICENSE) — Copyright © 2025 Atvriders
+[MIT License](LICENSE) — Copyright © 2025–2026 Atvriders
 
 ---
 
