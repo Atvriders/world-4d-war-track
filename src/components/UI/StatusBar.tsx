@@ -51,7 +51,7 @@ function getFreshness(
 
 const FRESHNESS_CONFIG = {
   live:    { color: '#00ff88', label: 'LIVE',    bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
-  stale:   { color: '#ff3b3b', label: 'STALE',   bg: 'rgba(255, 59, 59, 0.15)',  border: 'rgba(255, 59, 59, 0.5)' },
+  stale:   { color: '#ff3b3b', label: 'OFFLINE',  bg: 'rgba(255, 59, 59, 0.15)',  border: 'rgba(255, 59, 59, 0.5)' },
   waiting: { color: '#ffd700', label: 'WAITING', bg: 'rgba(255, 215, 0, 0.15)',  border: 'rgba(255, 215, 0, 0.5)' },
 };
 
