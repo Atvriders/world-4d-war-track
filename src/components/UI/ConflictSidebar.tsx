@@ -944,7 +944,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
         style={{
           position: 'fixed',
           top: '50%',
-          right: 320,
+          right: 0,
           transform: 'translateY(-50%)',
           zIndex: 999,
           fontFamily: "'Courier New', Courier, monospace",
@@ -962,7 +962,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
             padding: '12px 6px',
             background: 'rgba(8, 12, 20, 0.97)',
             border: '1px solid rgba(0, 255, 100, 0.28)',
-            borderRight: 'none',
+            borderRight: '1px solid rgba(0, 255, 100, 0.28)',
             borderRadius: '6px 0 0 6px',
             cursor: 'pointer',
             boxShadow: '-3px 0 14px rgba(0,0,0,0.5)',

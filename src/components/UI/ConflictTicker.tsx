@@ -212,7 +212,7 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
     display: 'flex',
     alignItems: 'center',
     gap: 6,
-    padding: '0 10px 0 12px',
+    padding: '0 10px 0 52px',
     height: '100%',
     background: 'rgba(2, 8, 20, 0.98)',
     borderRight: '1px solid rgba(0, 255, 136, 0.3)',
