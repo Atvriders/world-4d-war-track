@@ -78,21 +78,20 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
 
   return (
     <>
-      {/* ── Top-left: title block ──────────────────────────────────────── */}
+      {/* ── Top-left: title block (below DeathTollBar 24px + StatusBar 32px = 56px) */}
       <div
         style={{
           ...BASE,
-          top: 10,
+          top: 60,
           left: 52,
-          fontSize: '10.5px',
-          lineHeight: '1.55',
+          fontSize: '9px',
+          lineHeight: '1.4',
           color: '#00ccaa',
-          opacity: 0.72,
-          textShadow: '0 0 6px rgba(0,204,170,0.35)',
+          opacity: 0.5,
+          textShadow: '0 0 4px rgba(0,204,170,0.2)',
         }}
       >
-        <div style={{ fontWeight: 700 }}>WORLD 4D WAR TRACK</div>
-        <div>REAL-TIME INTELLIGENCE</div>
+        <div style={{ fontWeight: 700 }}>REAL-TIME INTELLIGENCE</div>
       </div>
 
       {/* ── Bottom-left: MGRS-style coordinates ────────────────────────── */}
@@ -116,9 +115,9 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
       <div
         style={{
           ...BASE,
-          top: 10,
-          right: 12,
-          fontSize: '10.5px',
+          top: 60,
+          right: 52,
+          fontSize: '9px',
           color: 'rgba(255,255,255,0.72)',
           textShadow: '0 0 4px rgba(255,255,255,0.15)',
           display: 'flex',

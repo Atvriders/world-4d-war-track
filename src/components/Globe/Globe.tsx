@@ -2206,7 +2206,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         width={dimensions.width}
         height={dimensions.height}
         // ── Globe appearance
-        globeImageUrl="/img/earth-night.jpg"
+        globeImageUrl="/img/earth-blue-marble.jpg"
         bumpImageUrl="/img/earth-topology.png"
         backgroundImageUrl="/img/night-sky.png"
         onGlobeReady={handleGlobeReady}
