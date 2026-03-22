@@ -123,13 +123,18 @@ async function refreshAdsb() {
     } else if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     } else {
-      latestAdsb = await res.json();
-      latestAdsbUpdated = Date.now();
-      console.log(`[bg] ADS-B refreshed: ${latestAdsb.states?.length || 0} aircraft`);
+      const data = await res.json();
+      // Only replace if we got actual data (don't overwrite seed with empty)
+      if (data.states && data.states.length > 0) {
+        latestAdsb = data;
+        latestAdsbUpdated = Date.now();
+        console.log(`[bg] ADS-B refreshed: ${data.states.length} aircraft`);
+      } else {
+        console.warn('[bg] ADS-B returned empty states, keeping existing data');
+      }
     }
   } catch (err) {
     console.warn('[bg] ADS-B refresh failed:', err.message);
-    // Keep existing data — stale is better than empty
   } finally {
     clearTimeout(timeoutId);
   }
@@ -157,9 +162,14 @@ async function refreshAis() {
     } else if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     } else {
-      latestAis = await res.json();
-      latestAisUpdated = Date.now();
-      console.log(`[bg] AIS refreshed: ${Array.isArray(latestAis) ? latestAis.length : '?'} vessels`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 1) {
+        latestAis = data;
+        latestAisUpdated = Date.now();
+        console.log(`[bg] AIS refreshed: ${data.length} vessels`);
+      } else {
+        console.warn('[bg] AIS returned insufficient data, keeping existing');
+      }
     }
   } catch (err) {
     console.warn('[bg] AIS refresh failed:', err.message);
@@ -293,9 +303,14 @@ async function refreshSatellites() {
       }
     }
 
-    latestSatPositions = { satellites: allSats, time: nowMs, count: allSats.length };
-    latestSatPositionsUpdated = nowMs;
-    console.log(`[bg] Satellites refreshed: ${allSats.length} positions computed`);
+    // Only replace if we got actual data (don't overwrite seed with empty)
+    if (allSats.length > 0) {
+      latestSatPositions = { satellites: allSats, time: nowMs, count: allSats.length };
+      latestSatPositionsUpdated = nowMs;
+      console.log(`[bg] Satellites refreshed: ${allSats.length} positions computed`);
+    } else {
+      console.warn('[bg] Satellites: 0 positions computed, keeping existing data');
+    }
   } catch (err) {
     console.error('[bg] Satellite refresh failed:', err.message);
   }
