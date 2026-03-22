@@ -166,13 +166,13 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
           userSelect: 'none',
         }}
       >
-        {/* Grand total — fixed left */}
+        {/* Grand total — fixed left, padded for FilterPanel */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 4,
-            padding: '0 8px',
+            padding: '0 8px 0 52px',
             borderRight: '1px solid rgba(255,68,68,0.3)',
             flexShrink: 0,
             height: '100%',

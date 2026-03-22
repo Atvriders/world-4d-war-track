@@ -93,7 +93,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 14px',
+          padding: '0 14px 0 52px',
           fontFamily: '"Courier New", Courier, monospace',
           boxSizing: 'border-box',
           userSelect: 'none',
