@@ -576,6 +576,11 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
                 )}
               </div>
               <div style={styles.eventDesc}>{evt.description}</div>
+              {evt.source && (
+                <div style={{ color: 'rgba(160, 175, 190, 0.45)', fontSize: 9, fontStyle: 'italic', marginTop: 1 }}>
+                  Source: {evt.source}
+                </div>
+              )}
             </div>
           ))}
         </div>
