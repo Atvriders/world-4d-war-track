@@ -124,28 +124,21 @@ async function refreshAdsb() {
       throw new Error(`HTTP ${res.status}`);
     } else {
       const data = await res.json();
-      // Only replace if we got actual data (don't overwrite seed with empty)
+      // Only replace if we got actual data
       if (data.states && data.states.length > 0) {
         latestAdsb = data;
         latestAdsbUpdated = Date.now();
         console.log(`[bg] ADS-B refreshed: ${data.states.length} aircraft`);
       } else {
-        console.warn('[bg] ADS-B returned empty states, keeping existing data');
+        console.warn(`[bg] ADS-B API returned empty, keeping ${latestAdsb.states?.length || 0} aircraft from previous fetch`);
       }
     }
   } catch (err) {
-    console.warn('[bg] ADS-B refresh failed:', err.message);
+    console.warn(`[bg] ADS-B refresh failed: ${err.message}, keeping ${latestAdsb.states?.length || 0} aircraft from previous fetch`);
   } finally {
     clearTimeout(timeoutId);
   }
 
-  // Seed data fallback — activate when external API returns nothing
-  if (!latestAdsb.states || latestAdsb.states.length === 0) {
-    const seed = generateSeedAircraft();
-    latestAdsb = seed;
-    latestAdsbUpdated = Date.now();
-    console.log('[bg] ADS-B using SEED/TEST data: 10 aircraft (external API unavailable)');
-  }
 }
 
 /** Fetch AIS vessel data from AISHub — runs every 60s */
@@ -168,21 +161,15 @@ async function refreshAis() {
         latestAisUpdated = Date.now();
         console.log(`[bg] AIS refreshed: ${data.length} vessels`);
       } else {
-        console.warn('[bg] AIS returned insufficient data, keeping existing');
+        console.warn(`[bg] AIS API returned empty, keeping ${latestAis.length} vessels from previous fetch`);
       }
     }
   } catch (err) {
-    console.warn('[bg] AIS refresh failed:', err.message);
+    console.warn(`[bg] AIS refresh failed: ${err.message}, keeping ${latestAis.length} vessels from previous fetch`);
   } finally {
     clearTimeout(timeoutId);
   }
 
-  // Seed data fallback — activate when external API returns nothing
-  if (!Array.isArray(latestAis) || latestAis.length <= 1) {
-    latestAis = generateSeedShips();
-    latestAisUpdated = Date.now();
-    console.log('[bg] AIS using SEED/TEST data: 6 vessels (external API unavailable)');
-  }
 }
 
 /** Fetch TLE data for a single group from CelesTrak */
@@ -309,79 +296,12 @@ async function refreshSatellites() {
       latestSatPositionsUpdated = nowMs;
       console.log(`[bg] Satellites refreshed: ${allSats.length} positions computed`);
     } else {
-      console.warn('[bg] Satellites: 0 positions computed, keeping existing data');
+      console.warn(`[bg] Satellites API returned empty, keeping ${latestSatPositions.count || 0} satellites from previous fetch`);
     }
   } catch (err) {
-    console.error('[bg] Satellite refresh failed:', err.message);
+    console.error(`[bg] Satellite refresh failed: ${err.message}, keeping ${latestSatPositions.count || 0} satellites from previous fetch`);
   }
 
-  // Seed data fallback — activate when external API returns nothing
-  if (latestSatPositions.count === 0) {
-    latestSatPositions = generateSeedSatellites();
-    latestSatPositionsUpdated = Date.now();
-    console.log('[bg] Satellites using SEED/TEST data: 10 satellites (external API unavailable)');
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// SEED DATA — Used when external APIs return nothing (test data mode)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function generateSeedAircraft() {
-  const routes = [
-    // Military near Ukraine
-    { icao: 'ae1234', cs: 'RCH401', lat: 50.1, lng: 30.5, alt: 10000, vel: 250, head: 90, mil: true, country: 'United States' },
-    { icao: 'ae5678', cs: 'DUKE21', lat: 33.5, lng: 44.2, alt: 8500, vel: 220, head: 270, mil: true, country: 'United States' },
-    { icao: 'ae9012', cs: 'NAVY01', lat: 14.5, lng: 42.8, alt: 5000, vel: 180, head: 180, mil: true, country: 'United States' },
-    // Civilian airliners
-    { icao: 'a1b2c3', cs: 'UAE512', lat: 25.2, lng: 55.3, alt: 11000, vel: 260, head: 315, mil: false, country: 'United Arab Emirates' },
-    { icao: 'd4e5f6', cs: 'DLH438', lat: 50.0, lng: 8.5, alt: 10500, vel: 240, head: 180, mil: false, country: 'Germany' },
-    { icao: 'g7h8i9', cs: 'BAW123', lat: 51.5, lng: -0.1, alt: 9000, vel: 230, head: 90, mil: false, country: 'United Kingdom' },
-    { icao: 'j1k2l3', cs: 'AFR789', lat: 48.9, lng: 2.3, alt: 10800, vel: 245, head: 200, mil: false, country: 'France' },
-    { icao: 'm4n5o6', cs: 'THY456', lat: 41.0, lng: 28.9, alt: 9500, vel: 235, head: 120, mil: false, country: 'Turkey' },
-    { icao: 'p7q8r9', cs: 'SIA321', lat: 1.3, lng: 103.8, alt: 11500, vel: 270, head: 350, mil: false, country: 'Singapore' },
-    { icao: 's1t2u3', cs: 'QTR55', lat: 25.3, lng: 51.5, alt: 8000, vel: 220, head: 45, mil: false, country: 'Qatar' },
-  ];
-
-  return {
-    time: Math.floor(Date.now() / 1000),
-    states: routes.map(r => [
-      r.icao, r.cs, r.country, Date.now()/1000, Date.now()/1000,
-      r.lng, r.lat, r.alt, false, r.vel,
-      r.head, r.vel > 0 ? 1 : 0, null, r.alt, r.cs === 'RCH401' ? '7700' : null
-    ]),
-  };
-}
-
-function generateSeedShips() {
-  return [
-    { mmsi: '338000001', shipname: 'USS DWIGHT D EISENHOWER', country: 'United States', lat: 14.8, lon: 42.5, sog: 18, hdg: 180, type: 70, length: 332 },
-    { mmsi: '338000002', shipname: 'USS GERALD R FORD', country: 'United States', lat: 34.2, lon: 33.8, sog: 15, hdg: 90, type: 70, length: 337 },
-    { mmsi: '413000001', shipname: 'COSCO SHIPPING STAR', country: 'China', lat: 1.3, lon: 103.8, sog: 12, hdg: 270, type: 70, length: 366 },
-    { mmsi: '636000001', shipname: 'EVER GIVEN', country: 'Panama', lat: 30.5, lon: 32.3, sog: 8, hdg: 170, type: 70, length: 400 },
-    { mmsi: '211000001', shipname: 'MSC BEATRICE', country: 'Germany', lat: 51.3, lon: 2.1, sog: 14, hdg: 45, type: 70, length: 366 },
-    { mmsi: '273000001', shipname: 'RFS MARSHAL USTINOV', country: 'Russia', lat: 44.5, lon: 33.5, sog: 12, hdg: 225, type: 35, length: 186 },
-  ];
-}
-
-function generateSeedSatellites() {
-  const now = Date.now();
-  return {
-    satellites: [
-      { id: '25544', name: 'ISS (ZARYA)', category: 'iss', country: 'International', lat: 45.2, lng: -75.3, alt: 408, velocity: 7.66, heading: 45, footprintRadius: 2300, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '48274', name: 'GPS III-5', category: 'navigation', country: 'USA', lat: 20.0, lng: 30.0, alt: 20200, velocity: 3.87, heading: 0, footprintRadius: 12000, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '39084', name: 'USA-245 (TOPAZ)', category: 'military', country: 'USA', lat: 35.0, lng: 45.0, alt: 350, velocity: 7.7, heading: 135, footprintRadius: 1800, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '44713', name: 'STARLINK-1007', category: 'starlink', country: 'USA', lat: 40.0, lng: -100.0, alt: 550, velocity: 7.6, heading: 45, footprintRadius: 940, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '44714', name: 'STARLINK-1008', category: 'starlink', country: 'USA', lat: 42.0, lng: -95.0, alt: 550, velocity: 7.6, heading: 45, footprintRadius: 940, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '28654', name: 'NOAA-18', category: 'weather', country: 'USA', lat: -10.0, lng: 70.0, alt: 854, velocity: 7.4, heading: 0, footprintRadius: 2800, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '36585', name: 'GLONASS-M 47', category: 'navigation', country: 'Russia', lat: 55.0, lng: 40.0, alt: 19100, velocity: 3.9, heading: 270, footprintRadius: 11000, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '38857', name: 'GALILEO-FM3', category: 'navigation', country: 'EU', lat: 10.0, lng: -20.0, alt: 23222, velocity: 3.6, heading: 90, footprintRadius: 13000, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '44715', name: 'STARLINK-1010', category: 'starlink', country: 'USA', lat: 30.0, lng: 60.0, alt: 550, velocity: 7.6, heading: 200, footprintRadius: 940, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-      { id: '39166', name: 'USA-247 (LACROSSE)', category: 'spy', country: 'USA', lat: 48.0, lng: 37.0, alt: 420, velocity: 7.65, heading: 170, footprintRadius: 2000, isActive: true, groundTrack: [], lastUpdated: now, tle1: '', tle2: '' },
-    ],
-    time: now,
-    count: 10,
-  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -476,16 +396,35 @@ app.get('*', (req, res) => {
 // START SERVER + BACKGROUND FETCH INTERVALS
 // ═══════════════════════════════════════════════════════════════════════════════
 
+async function initialFetch() {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    console.log(`[boot] Initial data fetch attempt ${attempt}/3...`);
+    await refreshAdsb();
+    await refreshAis();
+    await refreshSatellites();
+
+    const hasData = (latestAdsb.states?.length > 0) ||
+                    (latestAis.length > 0) ||
+                    (latestSatPositions.count > 0);
+    if (hasData) {
+      console.log(`[boot] Data loaded: ${latestAdsb.states?.length || 0} aircraft, ${latestAis.length} vessels, ${latestSatPositions.count} satellites`);
+      break;
+    }
+    if (attempt < 3) {
+      console.log(`[boot] No data yet, retrying in 10s...`);
+      await new Promise(r => setTimeout(r, 10000));
+    }
+  }
+}
+
 app.listen(PORT, () => {
   console.log(`[${new Date().toISOString()}] World4DWarTrack server listening on port ${PORT}`);
   console.log(`  API: http://localhost:${PORT}/api/health`);
   console.log(`  Frontend: http://localhost:${PORT}/`);
   console.log('  Starting background data fetching...');
 
-  // Kick off initial fetches immediately
-  refreshAdsb();
-  refreshAis();
-  refreshSatellites();
+  // Kick off initial fetches with retry logic
+  initialFetch();
 
   // Schedule recurring background fetches
   setInterval(refreshAdsb, 60_000);        // every 60 seconds
