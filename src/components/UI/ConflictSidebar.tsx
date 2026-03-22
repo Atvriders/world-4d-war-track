@@ -214,7 +214,7 @@ const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'fixed',
     top: 0,
-    right: 320,
+    right: 0,
     height: '100vh',
     zIndex: 999,
     display: 'flex',
