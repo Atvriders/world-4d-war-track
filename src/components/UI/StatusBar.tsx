@@ -39,18 +39,20 @@ function formatDate(date: Date): string {
 
 function getFreshness(
   lastRefresh: StatusBarProps['lastRefresh'],
-  hasErrors: boolean,
-): 'live' | 'stale' | 'connecting' {
-  const slowest = Math.min(lastRefresh.satellites, lastRefresh.aircraft, lastRefresh.ships, lastRefresh.gpsJam);
-  if (slowest === 0) return hasErrors ? 'connecting' : 'connecting';
-  const age = Date.now() - slowest;
-  return age < 120_000 ? 'live' : 'stale';
+  hasData: boolean,
+): 'live' | 'stale' | 'waiting' {
+  // Check if ANY source has been refreshed
+  const fastest = Math.max(lastRefresh.satellites, lastRefresh.aircraft, lastRefresh.ships, lastRefresh.gpsJam);
+  if (fastest === 0 && !hasData) return 'waiting';
+  if (fastest === 0 && hasData) return 'live'; // static data (conflicts, GPS jam) loaded
+  const age = Date.now() - fastest;
+  return age < 1_200_000 ? 'live' : 'stale'; // 20 min threshold (matches polling interval)
 }
 
 const FRESHNESS_CONFIG = {
-  live:       { color: '#00ff88', label: 'LIVE',       bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
-  stale:      { color: '#ff3b3b', label: 'STALE',      bg: 'rgba(255, 59, 59, 0.15)',  border: 'rgba(255, 59, 59, 0.5)' },
-  connecting: { color: '#ffd700', label: 'CONNECTING', bg: 'rgba(255, 215, 0, 0.15)',  border: 'rgba(255, 215, 0, 0.5)' },
+  live:    { color: '#00ff88', label: 'LIVE',    bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
+  stale:   { color: '#ff3b3b', label: 'STALE',   bg: 'rgba(255, 59, 59, 0.15)',  border: 'rgba(255, 59, 59, 0.5)' },
+  waiting: { color: '#ffd700', label: 'WAITING', bg: 'rgba(255, 215, 0, 0.15)',  border: 'rgba(255, 215, 0, 0.5)' },
 };
 
 const StatusBar: React.FC<StatusBarProps> = ({
@@ -71,8 +73,8 @@ const StatusBar: React.FC<StatusBarProps> = ({
   }, []);
 
   const anySyncing = isLoading.satellites || isLoading.aircraft || isLoading.ships || isLoading.gpsJam;
-  const hasErrors = !!(errors.satellites || errors.aircraft || errors.ships || errors.gpsJam);
-  const freshness = getFreshness(lastRefresh, hasErrors);
+  const hasData = activeConflicts > 0 || aircraft > 0 || ships > 0 || satellites > 0;
+  const freshness = getFreshness(lastRefresh, hasData);
   const conf = anySyncing ? { color: '#ffa500', label: 'SYNCING', bg: 'rgba(255, 165, 0, 0.15)', border: 'rgba(255, 165, 0, 0.5)' } : FRESHNESS_CONFIG[freshness];
 
   return (
