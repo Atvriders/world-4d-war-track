@@ -389,6 +389,10 @@ function SatelliteInfo({ entity, onFlyTo }: { entity: SatelliteEntity; onFlyTo: 
       <div style={styles.groundTrackNote}>
         ◎ Next 90 min orbit path active
       </div>
+
+      <div style={{ color: 'rgba(160, 175, 190, 0.45)', fontSize: 9, fontStyle: 'italic', marginTop: 2 }}>
+        Data source: CelesTrak / NORAD (SGP4 propagation)
+      </div>
     </>
   );
 }
@@ -446,6 +450,10 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
           <InfoRow label="Squawk" value={entity.squawk} />
         )}
       </div>
+
+      <div style={{ color: 'rgba(160, 175, 190, 0.45)', fontSize: 9, fontStyle: 'italic', marginTop: 2 }}>
+        Data source: OpenSky Network (ADS-B)
+      </div>
     </>
   );
 }
@@ -472,6 +480,10 @@ function ShipInfo({ entity, onFlyTo }: { entity: ShipEntity; onFlyTo: (lat: numb
         {entity.destination && (
           <InfoRow label="Destination" value={entity.destination} />
         )}
+      </div>
+
+      <div style={{ color: 'rgba(160, 175, 190, 0.45)', fontSize: 9, fontStyle: 'italic', marginTop: 2 }}>
+        Data source: AISHub (AIS)
       </div>
     </>
   );
