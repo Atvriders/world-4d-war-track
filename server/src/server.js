@@ -18,9 +18,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ── In-memory data stores ────────────────────────────────────────────────────
 let latestAdsb = { time: 0, states: [] };
 let latestAdsbUpdated = 0;
+let adsbRateLimitedUntil = 0; // epoch ms — skip fetches until this time
 
 let latestAis = [];
 let latestAisUpdated = 0;
+let aisRateLimitedUntil = 0;
 
 let latestSatPositions = { satellites: [], time: 0, count: 0 };
 let latestSatPositionsUpdated = 0;
@@ -111,6 +113,12 @@ function computeGroundTrack(satrec, baseTime) {
 
 /** Fetch ADS-B data from OpenSky — runs every 60s */
 async function refreshAdsb() {
+  // Skip if we're in a rate-limit backoff period
+  if (Date.now() < adsbRateLimitedUntil) {
+    const waitMin = Math.round((adsbRateLimitedUntil - Date.now()) / 60000);
+    console.log(`[bg] ADS-B rate limited, skipping (${waitMin}min remaining)`);
+    return;
+  }
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10_000);
   try {
@@ -119,7 +127,8 @@ async function refreshAdsb() {
       headers: { 'User-Agent': UA },
     });
     if (res.status === 429) {
-      console.warn('[bg] ADS-B rate limited, keeping stale data');
+      adsbRateLimitedUntil = Date.now() + 30 * 60_000; // back off 30 minutes
+      console.warn('[bg] ADS-B rate limited (429), backing off 30 minutes');
     } else if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     } else {
@@ -143,6 +152,10 @@ async function refreshAdsb() {
 
 /** Fetch AIS vessel data from AISHub — runs every 60s */
 async function refreshAis() {
+  if (Date.now() < aisRateLimitedUntil) {
+    console.log(`[bg] AIS rate limited, skipping (${Math.round((aisRateLimitedUntil - Date.now()) / 60000)}min remaining)`);
+    return;
+  }
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10_000);
   try {
@@ -151,7 +164,8 @@ async function refreshAis() {
       { signal: controller.signal, headers: { 'User-Agent': UA } }
     );
     if (res.status === 429) {
-      console.warn('[bg] AIS rate limited, keeping stale data');
+      aisRateLimitedUntil = Date.now() + 15 * 60_000; // back off 15 minutes
+      console.warn('[bg] AIS rate limited (429), backing off 15 minutes');
     } else if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     } else {
@@ -427,7 +441,7 @@ app.listen(PORT, () => {
   initialFetch();
 
   // Schedule recurring background fetches
-  setInterval(refreshAdsb, 60_000);        // every 60 seconds
-  setInterval(refreshAis, 60_000);         // every 60 seconds
-  setInterval(refreshSatellites, 3_600_000); // every 60 minutes
+  setInterval(refreshAdsb, 900_000);       // every 15 minutes (OpenSky free: ~100 req/day)
+  setInterval(refreshAis, 300_000);        // every 5 minutes (AISHub is more lenient)
+  setInterval(refreshSatellites, 3_600_000); // every 60 minutes (CelesTrak fair use)
 });
