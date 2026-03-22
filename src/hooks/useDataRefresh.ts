@@ -75,8 +75,7 @@ export function useDataRefresh(): { refresh: () => void } {
     setError('aircraft', null);
     try {
       const data = await fetchAircraft();
-      setAircraft(data);
-      setLastRefresh('aircraft');
+      if (data.length > 0) { setAircraft(data); setLastRefresh('aircraft'); }
       retryCounts.current.aircraft = 0;
       // Dismiss offline alert if it was active
       const store = useStore.getState();
@@ -119,8 +118,7 @@ export function useDataRefresh(): { refresh: () => void } {
     setError('ships', null);
     try {
       const data = await fetchShips();
-      setShips(data);
-      setLastRefresh('ships');
+      if (data.length > 0) { setShips(data); setLastRefresh('ships'); }
       retryCounts.current.ships = 0;
       // Dismiss offline alert if it was active
       const store = useStore.getState();
@@ -163,8 +161,7 @@ export function useDataRefresh(): { refresh: () => void } {
     setError('satellites', null);
     try {
       const data = await fetchSatellitePositions();
-      setSatellites(data);
-      setLastRefresh('satellites');
+      if (data.length > 0) { setSatellites(data); setLastRefresh('satellites'); }
       retryCounts.current.satellites = 0;
       // Dismiss offline alert if it was active
       const store = useStore.getState();

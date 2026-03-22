@@ -33,7 +33,7 @@ import LayerBar from './components/UI/LayerBar';
 
 import { fetchAircraft } from './services/adsb';
 import { fetchShips } from './services/ais';
-import { fetchAllSatellites } from './services/satellite';
+import { fetchSatellitePositions } from './services/satellite';
 import { getStaticGpsJamHotspots, getActiveJammingAlerts } from './services/gpsJam';
 import { CONFLICT_ZONES } from './data/conflicts';
 
@@ -181,11 +181,11 @@ export default function App() {
 
       // Fetch live data in background (non-blocking)
       Promise.allSettled([
-        fetchAircraft().then(ac => { store.setAircraft(ac as any); store.setLastRefresh('aircraft'); })
+        fetchAircraft().then(ac => { if (ac.length > 0) { store.setAircraft(ac as any); store.setLastRefresh('aircraft'); } })
           .catch(e => store.setError('aircraft', String(e))),
-        fetchShips().then(ships => { store.setShips(ships as any); store.setLastRefresh('ships'); })
+        fetchShips().then(ships => { if (ships.length > 0) { store.setShips(ships as any); store.setLastRefresh('ships'); } })
           .catch(e => store.setError('ships', String(e))),
-        fetchAllSatellites().then(sats => { store.setSatellites(sats as any); store.setLastRefresh('satellites'); })
+        fetchSatellitePositions().then(sats => { if (sats.length > 0) { store.setSatellites(sats as any); store.setLastRefresh('satellites'); } })
           .catch(e => store.setError('satellites', String(e))),
       ]);
     }
