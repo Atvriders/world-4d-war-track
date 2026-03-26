@@ -1098,6 +1098,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [cameraAltitude, setCameraAltitude] = useState(1.2);
+  const cameraAltDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   // Expose pointOfView to parent via ref (getter when called with no args, setter otherwise)
   useImperativeHandle(ref, () => ({
@@ -1153,8 +1154,6 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       // Allow tilting from near-horizon (looking up at sky) to past-horizon (see sky/satellites)
       controls.minPolarAngle = 0.2;
       controls.maxPolarAngle = Math.PI * 0.85;
-
-      const cameraAltDebounceRef = useRef<ReturnType<typeof setTimeout>>();
 
       // Auto-tilt camera upward as user zooms in so sky/satellites become visible
       const handleControlsChange = () => {
