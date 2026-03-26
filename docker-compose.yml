@@ -7,6 +7,8 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - AISHUB_USERNAME=        # Get free account at https://www.aishub.net/
+      # - AISSTREAM_API_KEY=    # Optional: free key from https://aisstream.io/
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/api/health"]
