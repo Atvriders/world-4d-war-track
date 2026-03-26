@@ -2516,7 +2516,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements — re-enabled with custom visibility modifier to avoid isBehindGlobe crash
+        // HTML elements — uses htmlElementVisibilityModifier to bypass isBehindGlobe crash
         htmlElementsData={mergedHtmlMarkers}
         htmlLat={(d: object) => (d as { lat: number }).lat}
         htmlLng={(d: object) => (d as { lng: number }).lng}
