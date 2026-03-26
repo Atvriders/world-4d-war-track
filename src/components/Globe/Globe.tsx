@@ -1214,10 +1214,22 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [layers.droneActivity, conflictZones, performanceMode]);
 
 
-  // ── Merged points (satellites disabled, aircraft/ships use HTML icons) ───
+  // ── Merged points: aircraft + ships ─────────────────────────────────────
   const allPoints = useMemo(() => {
-    return [] as any[];
-  }, []);
+    const pts: any[] = [];
+    if (layers.aircraft) {
+      for (const a of aircraft) {
+        if (a.onGround) continue;
+        pts.push({ ...a, _type: 'aircraft' });
+      }
+    }
+    if (layers.ships) {
+      for (const s of ships) {
+        pts.push({ ...s, _type: 'ship' });
+      }
+    }
+    return pts;
+  }, [aircraft, ships, layers.aircraft, layers.ships]);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
@@ -1280,18 +1292,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }));
     otherLabels.push(...countryLabels);
 
-    // Aircraft labels — only show when zoomed in (zoomTier <= 2, i.e. altitude < 1.5)
-    // Military always shown when zoomed in; civilian only when very close
-    if (layers.aircraft && zoomTier <= 2) {
+    // Aircraft labels — show at all zoom levels with ✈ icon
+    if (layers.aircraft) {
       const airborne = aircraft.filter(a => !a.onGround);
-      // Sort military first, then by altitude descending
       const sorted = [...airborne].sort((a, b) => {
         if (a.isMilitary && !b.isMilitary) return -1;
         if (!a.isMilitary && b.isMilitary) return 1;
         return b.altitude - a.altitude;
       });
-      // Limit: show more labels when zoomed in closer
-      const maxLabels = zoomTier === 0 ? 30 : zoomTier === 1 ? 15 : 8;
+      const maxLabels = performanceMode === 'low' ? 20 : 60;
       const acLabels = sorted
         .slice(0, maxLabels)
         .map(a => {
@@ -1312,14 +1321,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       otherLabels.push(...acLabels);
     }
 
-    // Ship labels (warships first) — only show when zoomed in
-    if (layers.ships && zoomTier <= 2) {
+    // Ship labels (warships first) — show at all zoom levels with 🚢 icon
+    if (layers.ships) {
       const sorted = [...ships].sort((a, b) => {
         const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
         const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
         return bWar - aWar;
       });
-      const maxShipLabels = zoomTier === 0 ? 20 : zoomTier === 1 ? 10 : 5;
+      const maxShipLabels = performanceMode === 'low' ? 10 : 40;
       const shipLabels = sorted
         .slice(0, maxShipLabels)
         .map(s => {
@@ -1401,7 +1410,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }
 
     // Cap other labels for performance, but always keep ALL conflict labels
-    const totalCap = performanceMode === 'low' ? 30 : 100;
+    const totalCap = performanceMode === 'low' ? 50 : 150;
     const otherCap = Math.max(0, totalCap - conflictLabels.length);
     return [...conflictLabels, ...otherLabels.slice(0, otherCap)];
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
@@ -2287,21 +2296,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Arc callbacks now use module-level functions (arcStartLatAccessor, arcColorAccessor, etc.)
 
-  // ── Imperative HTML elements (bypasses react-kapsule sync render) ──────────
-  // react-kapsule propagates props during React's render phase, causing DOM
-  // mutations from CSS2DRenderer that trigger React error #321. By setting
-  // htmlElement props imperatively in useEffect (after render), we avoid this.
-  useEffect(() => {
-    const globe = globeRef.current;
-    if (!globe) return;
-    globe
-      .htmlElementsData(mergedHtmlMarkers)
-      .htmlLat((d: object) => (d as { lat: number }).lat)
-      .htmlLng((d: object) => (d as { lng: number }).lng)
-      .htmlAltitude(0.008)
-      .htmlElement(mergedHtmlElement)
-      .htmlTransitionDuration(0);
-  }, [mergedHtmlMarkers, mergedHtmlElement]);
+  // HTML elements layer disabled — causes React #321 in production.
+  // Aircraft/ships rendered as points + labels instead.
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
