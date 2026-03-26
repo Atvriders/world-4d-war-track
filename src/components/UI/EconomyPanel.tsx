@@ -61,16 +61,17 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
     maxWidth: 'calc(100vw - 240px)',
     maxHeight: 'calc(100vh - 140px)',
     zIndex: 1200,
-    fontFamily: '"Share Tech Mono", "Courier New", monospace',
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     display: 'flex',
     flexDirection: 'column',
   };
 
   const headerStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.97)',
-    border: '1px solid rgba(255, 180, 40, 0.45)',
-    borderBottom: collapsed ? undefined : '1px solid rgba(255, 180, 40, 0.18)',
-    borderRadius: collapsed ? '6px' : '6px 6px 0 0',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderBottom: collapsed ? undefined : '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: collapsed ? '8px' : '8px 8px 0 0',
     padding: '7px 11px',
     display: 'flex',
     alignItems: 'center',
@@ -80,15 +81,16 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
   };
 
   const bodyStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.95)',
-    border: '1px solid rgba(255, 180, 40, 0.45)',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderTop: 'none',
-    borderRadius: '0 0 6px 6px',
+    borderRadius: '0 0 8px 8px',
     overflowY: 'auto',
     overflowX: 'hidden',
     padding: '8px 8px 6px 8px',
     scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(255, 180, 40, 0.22) transparent',
+    scrollbarColor: 'rgba(60, 180, 255, 0.2) transparent',
     flex: 1,
     minHeight: 0,
   };
@@ -105,8 +107,9 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              color: 'rgba(255, 200, 80, 0.95)',
-              letterSpacing: '0.06em',
+              color: '#3CB8FF',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const,
             }}
           >
             GLOBAL ECONOMY IMPACT
@@ -179,10 +182,11 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
           {/* Subtitle */}
           <div
             style={{
-              fontSize: '9px',
-              color: 'rgba(255, 180, 80, 0.60)',
+              fontSize: '10px',
+              color: '#4A6480',
               letterSpacing: '0.10em',
-              fontWeight: 700,
+              fontWeight: 600,
+              fontFamily: "'Rajdhani', sans-serif",
               textTransform: 'uppercase',
               marginBottom: '8px',
             }}
@@ -202,8 +206,8 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
                   key={`commodity-${commodity.name}`}
                   onClick={() => setExpandedIdx(isExpanded ? null : idx)}
                   style={{
-                    background: 'rgba(8, 20, 45, 0.85)',
-                    border: '1px solid rgba(255, 180, 40, 0.18)',
+                    background: 'rgba(12, 20, 36, 0.5)',
+                    border: '1px solid rgba(60, 180, 255, 0.08)',
                     borderLeft: `3px solid ${changeColor(commodity.trend)}`,
                     borderRadius: '4px',
                     padding: '8px 10px 7px 10px',
@@ -333,7 +337,7 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
           {/* Separator */}
           <div
             style={{
-              borderTop: '1px solid rgba(255, 180, 40, 0.25)',
+              borderTop: '1px solid rgba(60, 180, 255, 0.10)',
               margin: '10px 0 8px 0',
             }}
           />
@@ -341,10 +345,11 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
           {/* Trade Route Disruptions */}
           <div
             style={{
-              fontSize: '9px',
-              color: 'rgba(255, 180, 80, 0.60)',
+              fontSize: '10px',
+              color: '#4A6480',
               letterSpacing: '0.10em',
-              fontWeight: 700,
+              fontWeight: 600,
+              fontFamily: "'Rajdhani', sans-serif",
               textTransform: 'uppercase',
               marginBottom: '6px',
             }}
@@ -376,8 +381,9 @@ const EconomyPanel: React.FC<EconomyPanelProps> = ({ visible, onToggle }) => {
                   key={h}
                   style={{
                     fontSize: '8px',
-                    fontWeight: 700,
-                    color: 'rgba(255, 200, 120, 0.65)',
+                    fontWeight: 600,
+                    color: '#4A6480',
+                    fontFamily: "'Rajdhani', sans-serif",
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
                   }}

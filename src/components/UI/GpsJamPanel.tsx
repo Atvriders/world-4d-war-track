@@ -107,16 +107,17 @@ const GpsJamPanel: React.FC<GpsJamPanelProps> = ({ gpsJamCells, onFlyTo, visible
     width: '310px',
     maxWidth: 'calc(100vw - 32px)',
     zIndex: 1150,
-    fontFamily: '"Share Tech Mono", "Courier New", monospace',
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     display: 'flex',
     flexDirection: 'column',
   };
 
   const headerStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.97)',
-    border: '1px solid rgba(30, 180, 255, 0.38)',
-    borderBottom: collapsed ? undefined : '1px solid rgba(30, 180, 255, 0.18)',
-    borderRadius: collapsed ? '6px' : '6px 6px 0 0',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderBottom: collapsed ? undefined : '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: collapsed ? '8px' : '8px 8px 0 0',
     padding: '7px 11px',
     display: 'flex',
     alignItems: 'center',
@@ -126,28 +127,30 @@ const GpsJamPanel: React.FC<GpsJamPanelProps> = ({ gpsJamCells, onFlyTo, visible
   };
 
   const bodyStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.93)',
-    border: '1px solid rgba(30, 180, 255, 0.38)',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderTop: 'none',
-    borderRadius: '0 0 6px 6px',
+    borderRadius: '0 0 8px 8px',
     overflowY: 'auto',
     overflowX: 'hidden',
     padding: '8px 8px 6px 8px',
     scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(30, 180, 255, 0.25) transparent',
+    scrollbarColor: 'rgba(60, 180, 255, 0.2) transparent',
   };
 
   const statRowStyle: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
     fontSize: '11px',
-    color: 'rgba(170, 200, 235, 0.78)',
+    color: '#8BA4BE',
+    fontFamily: "'Rajdhani', sans-serif",
     padding: '2px 0',
-    borderBottom: '1px solid rgba(30, 180, 255, 0.08)',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
   };
 
   const dividerStyle: React.CSSProperties = {
-    borderTop: '1px solid rgba(30, 180, 255, 0.12)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.08)',
     margin: '6px 0',
   };
 
@@ -160,7 +163,7 @@ const GpsJamPanel: React.FC<GpsJamPanelProps> = ({ gpsJamCells, onFlyTo, visible
         title="Toggle GPS Interference Monitor"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(30, 200, 255, 0.95)', letterSpacing: '0.06em' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: '#3CB8FF', letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>
             📡 GPS INTERFERENCE MONITOR
           </span>
         </div>
@@ -275,8 +278,8 @@ const GpsJamPanel: React.FC<GpsJamPanelProps> = ({ gpsJamCells, onFlyTo, visible
                   <div
                     key={`${cell.lat}-${cell.lng}-${cell.type}`}
                     style={{
-                      background: 'rgba(8, 22, 48, 0.82)',
-                      border: `1px solid rgba(30, 180, 255, 0.15)`,
+                      background: 'rgba(12, 20, 36, 0.5)',
+                      border: '1px solid rgba(60, 180, 255, 0.08)',
                       borderLeft: `3px solid ${intensityColor}`,
                       borderRadius: '4px',
                       padding: '6px 8px 6px 9px',

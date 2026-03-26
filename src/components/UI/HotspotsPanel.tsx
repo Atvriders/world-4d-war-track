@@ -333,16 +333,17 @@ const HotspotsPanel: React.FC<HotspotsPanelProps> = ({
     width: '320px',
     maxWidth: 'calc(100vw - 32px)',
     zIndex: 1150,
-    fontFamily: '"Share Tech Mono", "Courier New", monospace',
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     display: 'flex',
     flexDirection: 'column',
   };
 
   const headerStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.97)',
-    border: '1px solid rgba(255, 60, 60, 0.40)',
-    borderBottom: collapsed ? undefined : '1px solid rgba(255, 60, 60, 0.18)',
-    borderRadius: collapsed ? '6px' : '6px 6px 0 0',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderBottom: collapsed ? undefined : '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: collapsed ? '8px' : '8px 8px 0 0',
     padding: '7px 11px',
     display: 'flex',
     alignItems: 'center',
@@ -352,15 +353,16 @@ const HotspotsPanel: React.FC<HotspotsPanelProps> = ({
   };
 
   const bodyStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.93)',
-    border: '1px solid rgba(255, 60, 60, 0.40)',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderTop: 'none',
-    borderRadius: '0 0 6px 6px',
+    borderRadius: '0 0 8px 8px',
     overflowY: 'auto',
     overflowX: 'hidden',
     padding: '8px 8px 6px 8px',
     scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(255, 60, 60, 0.22) transparent',
+    scrollbarColor: 'rgba(60, 180, 255, 0.2) transparent',
   };
 
   // -------------------------------------------------------------------------
@@ -380,8 +382,9 @@ const HotspotsPanel: React.FC<HotspotsPanelProps> = ({
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              color: 'rgba(255, 120, 120, 0.95)',
-              letterSpacing: '0.06em',
+              color: '#3CB8FF',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const,
             }}
           >
             🎯 THREAT HOTSPOTS
@@ -448,10 +451,11 @@ const HotspotsPanel: React.FC<HotspotsPanelProps> = ({
           {/* Subtitle */}
           <div
             style={{
-              fontSize: '9px',
-              color: 'rgba(255, 100, 100, 0.60)',
+              fontSize: '10px',
+              color: '#4A6480',
               letterSpacing: '0.10em',
-              fontWeight: 700,
+              fontWeight: 600,
+              fontFamily: "'Rajdhani', sans-serif",
               textTransform: 'uppercase',
               marginBottom: '6px',
               display: 'flex',
@@ -499,8 +503,8 @@ const HotspotsPanel: React.FC<HotspotsPanelProps> = ({
                   <div
                     key={hs.id}
                     style={{
-                      background: 'rgba(8, 20, 45, 0.85)',
-                      border: '1px solid rgba(255, 60, 60, 0.14)',
+                      background: 'rgba(12, 20, 36, 0.5)',
+                      border: '1px solid rgba(60, 180, 255, 0.08)',
                       borderLeft: `3px solid ${color}`,
                       borderRadius: '4px',
                       padding: '7px 9px 6px 10px',

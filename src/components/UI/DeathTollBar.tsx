@@ -126,17 +126,17 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
         cursor: 'pointer',
         whiteSpace: 'nowrap',
         transition: 'opacity 0.15s',
-        borderRight: '1px solid rgba(255,68,68,0.15)',
+        borderRight: '1px solid rgba(255, 56, 56, 0.1)',
       }}
       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
       title={`${zone.name} — ${(zone.casualties.total ?? 0).toLocaleString()} deaths (click to fly)`}
     >
       <span style={{ fontSize: 10 }}>{countryFlags(zone.countries)}</span>
-      <span style={{ color: '#aab', fontSize: 9, fontFamily: "'Courier New', monospace" }}>
+      <span style={{ color: 'rgba(200, 200, 210, 0.7)', fontSize: 9, fontFamily: "'Rajdhani', sans-serif", fontWeight: 500 }}>
         {zone.name}
       </span>
-      <span style={{ color: '#ff4444', fontWeight: 700, fontSize: 10, fontFamily: "'Courier New', monospace" }}>
+      <span style={{ color: '#FF3838', fontWeight: 700, fontSize: 10, fontFamily: "'Share Tech Mono', monospace" }}>
         {formatDeaths(zone.casualties.total ?? 0)}
       </span>
     </span>
@@ -160,12 +160,13 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
           right: 0,
           height: 24,
           zIndex: 1100,
-          background: 'rgba(10,0,0,0.55)',
-          borderBottom: '1px solid rgba(255,40,40,0.25)',
+          background: 'rgba(20, 8, 8, 0.6)',
+          borderBottom: '1px solid rgba(255, 60, 60, 0.15)',
           display: 'flex',
           alignItems: 'center',
-          fontFamily: "'Courier New', monospace",
-          backdropFilter: 'blur(4px)',
+          fontFamily: "'Rajdhani', sans-serif",
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           userSelect: 'none',
         }}
       >
@@ -176,20 +177,21 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
             alignItems: 'center',
             gap: 4,
             padding: '0 8px 0 52px',
-            borderRight: '1px solid rgba(255,68,68,0.3)',
+            borderRight: '1px solid rgba(255, 56, 56, 0.2)',
             flexShrink: 0,
             height: '100%',
           }}
         >
-          <span style={{ color: '#888', fontSize: 8, letterSpacing: 1, textTransform: 'uppercase' }}>
+          <span style={{ color: 'rgba(255, 180, 180, 0.5)', fontSize: 8, letterSpacing: 1, textTransform: 'uppercase', fontFamily: "'Rajdhani', sans-serif", fontWeight: 600 }}>
             DEATHS:
           </span>
           <span
             style={{
-              color: '#ff4444',
+              color: '#FF3838',
               fontWeight: 800,
               fontSize: 11,
               letterSpacing: 0.5,
+              fontFamily: "'Share Tech Mono', monospace",
               animation: 'deathPulse 2.5s ease-in-out infinite',
             }}
           >
@@ -198,7 +200,7 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
         </div>
 
         {/* Separator */}
-        <span style={{ color: 'rgba(255,68,68,0.3)', padding: '0 4px', flexShrink: 0, fontSize: 9 }}>|</span>
+        <span style={{ color: 'rgba(255, 56, 56, 0.2)', padding: '0 4px', flexShrink: 0, fontSize: 9 }}>|</span>
 
         {/* Scrolling per-conflict strip */}
         <div
@@ -233,11 +235,12 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
               padding: '0 8px',
               flexShrink: 0,
               whiteSpace: 'nowrap',
-              borderLeft: '1px solid rgba(255,68,68,0.15)',
+              borderLeft: '1px solid rgba(255, 56, 56, 0.1)',
               height: '100%',
               display: 'flex',
               alignItems: 'center',
               transition: 'color 0.15s',
+              fontFamily: "'Rajdhani', sans-serif",
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00ff88'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'rgba(0, 255, 136, 0.5)'; }}

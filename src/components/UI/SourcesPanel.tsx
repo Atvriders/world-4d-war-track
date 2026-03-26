@@ -142,11 +142,12 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9000,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: '"Courier New", Courier, monospace',
+        fontFamily: "'Rajdhani', sans-serif",
       }}
     >
       <style>{`
@@ -154,25 +155,26 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
           width: 4px;
         }
         .sources-panel-card::-webkit-scrollbar-track {
-          background: rgba(5, 15, 30, 0.5);
+          background: rgba(8, 14, 28, 0.5);
         }
         .sources-panel-card::-webkit-scrollbar-thumb {
-          background: rgba(0, 255, 136, 0.3);
+          background: rgba(60, 180, 255, 0.3);
           border-radius: 2px;
         }
         .source-card:hover {
-          background: rgba(0, 255, 136, 0.06) !important;
-          border-color: rgba(0, 255, 136, 0.35) !important;
+          background: rgba(60, 180, 255, 0.06) !important;
+          border-color: rgba(60, 180, 255, 0.3) !important;
         }
         .source-link {
-          color: #4488cc;
+          color: #3CB8FF;
           text-decoration: none;
           font-size: 10px;
+          font-family: 'Share Tech Mono', monospace;
           word-break: break-all;
           transition: color 0.15s;
         }
         .source-link:hover {
-          color: #66aaee;
+          color: #6AD0FF;
           text-decoration: underline;
         }
       `}</style>
@@ -186,10 +188,11 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
           maxWidth: '95vw',
           maxHeight: '85vh',
           overflowY: 'auto',
-          backgroundColor: 'rgba(5, 15, 30, 0.95)',
-          border: '1px solid rgba(0, 255, 136, 0.5)',
-          borderRadius: '6px',
-          boxShadow: '0 0 30px rgba(0, 255, 136, 0.15), 0 0 60px rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'rgba(8, 14, 28, 0.9)',
+          backdropFilter: 'blur(14px)',
+          border: '1px solid rgba(60, 180, 255, 0.2)',
+          borderRadius: '8px',
+          boxShadow: '0 0 30px rgba(60, 180, 255, 0.08), 0 0 60px rgba(0, 0, 0, 0.8)',
           padding: '24px',
           boxSizing: 'border-box',
         }}
@@ -200,16 +203,17 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
             textAlign: 'center',
             marginBottom: '20px',
             paddingBottom: '16px',
-            borderBottom: '1px solid rgba(0, 255, 136, 0.3)',
+            borderBottom: '1px solid rgba(60, 180, 255, 0.15)',
           }}
         >
           <h2
             style={{
               margin: 0,
               fontSize: '16px',
-              color: '#00ff88',
+              fontFamily: "'Rajdhani', sans-serif",
+              color: '#3CB8FF',
               letterSpacing: '3px',
-              fontWeight: 'bold',
+              fontWeight: 700,
             }}
           >
             DATA SOURCES
@@ -218,7 +222,8 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
             style={{
               margin: '6px 0 0',
               fontSize: '10px',
-              color: 'rgba(150, 180, 170, 0.6)',
+              fontFamily: "'Rajdhani', sans-serif",
+              color: '#6AAED4',
               letterSpacing: '1px',
             }}
           >
@@ -233,9 +238,9 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
               key={`source-${i}`}
               className="source-card"
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(0, 255, 136, 0.12)',
-                borderRadius: '4px',
+                background: 'rgba(60, 180, 255, 0.03)',
+                border: '1px solid rgba(60, 180, 255, 0.1)',
+                borderRadius: '6px',
                 padding: '10px 12px',
                 transition: 'background 0.15s, border-color 0.15s',
               }}
@@ -254,6 +259,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                   style={{
                     color: '#d0dce8',
                     fontSize: '12px',
+                    fontFamily: "'Rajdhani', sans-serif",
                     fontWeight: 700,
                     letterSpacing: '0.06em',
                     flex: 1,
@@ -264,15 +270,16 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                 {src.refresh && (
                   <span
                     style={{
-                      color: 'rgba(0, 255, 136, 0.5)',
-                      fontSize: '8px',
+                      color: 'rgba(60, 180, 255, 0.6)',
+                      fontSize: '9px',
+                      fontFamily: "'Rajdhani', sans-serif",
                       fontWeight: 700,
                       letterSpacing: '0.08em',
                       textTransform: 'uppercase',
-                      background: 'rgba(0, 255, 136, 0.08)',
-                      padding: '2px 6px',
-                      borderRadius: '2px',
-                      border: '1px solid rgba(0, 255, 136, 0.15)',
+                      background: 'rgba(60, 180, 255, 0.08)',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(60, 180, 255, 0.15)',
                       flexShrink: 0,
                     }}
                   >
@@ -287,8 +294,9 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                 <div style={{ display: 'flex', gap: '6px', marginBottom: '3px' }}>
                   <span
                     style={{
-                      color: 'rgba(150, 180, 170, 0.5)',
+                      color: '#4A6480',
                       fontSize: '9px',
+                      fontFamily: "'Rajdhani', sans-serif",
                       fontWeight: 700,
                       letterSpacing: '0.1em',
                       textTransform: 'uppercase',
@@ -298,7 +306,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                   >
                     SOURCE
                   </span>
-                  <span style={{ color: '#b0c0cc', fontSize: '10px' }}>
+                  <span style={{ color: '#8BA4BE', fontFamily: "'Rajdhani', sans-serif", fontSize: '10px' }}>
                     {src.source}
                   </span>
                 </div>
@@ -346,7 +354,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                     >
                       COVER
                     </span>
-                    <span style={{ color: 'rgba(180, 200, 190, 0.65)', fontSize: '10px' }}>
+                    <span style={{ color: '#6AAED4', fontFamily: "'Rajdhani', sans-serif", fontSize: '10px' }}>
                       {src.coverage}
                     </span>
                   </div>
@@ -368,7 +376,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                     >
                       LICENSE
                     </span>
-                    <span style={{ color: 'rgba(180, 200, 190, 0.65)', fontSize: '10px' }}>
+                    <span style={{ color: '#6AAED4', fontFamily: "'Rajdhani', sans-serif", fontSize: '10px' }}>
                       {src.license}
                     </span>
                   </div>
@@ -390,7 +398,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
                     >
                       NOTE
                     </span>
-                    <span style={{ color: 'rgba(180, 200, 190, 0.55)', fontSize: '10px', fontStyle: 'italic' }}>
+                    <span style={{ color: '#6AAED4', fontFamily: "'Rajdhani', sans-serif", fontSize: '10px', fontStyle: 'italic' }}>
                       {src.notes}
                     </span>
                   </div>
@@ -405,14 +413,15 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
           style={{
             marginTop: '20px',
             paddingTop: '12px',
-            borderTop: '1px solid rgba(0, 255, 136, 0.2)',
+            borderTop: '1px solid rgba(60, 180, 255, 0.12)',
             textAlign: 'center',
           }}
         >
           <span
             style={{
               fontSize: '10px',
-              color: '#555',
+              fontFamily: "'Rajdhani', sans-serif",
+              color: '#4A6480',
               letterSpacing: '1px',
             }}
           >
@@ -422,7 +431,8 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ visible, onClose }) => {
           <span
             style={{
               fontSize: '10px',
-              color: '#444',
+              fontFamily: "'Rajdhani', sans-serif",
+              color: '#4A6480',
               letterSpacing: '1px',
             }}
           >

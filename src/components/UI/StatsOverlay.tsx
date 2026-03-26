@@ -57,7 +57,7 @@ const SectionDivider: React.FC = () => (
   <div
     style={{
       height: 1,
-      background: 'rgba(0, 255, 136, 0.12)',
+      background: 'rgba(60, 180, 255, 0.08)',
       margin: '5px 0',
     }}
   />
@@ -80,8 +80,11 @@ const StatRow: React.FC<StatRowProps> = ({ label, value }) => (
   >
     <span
       style={{
-        color: '#4a6a7a',
+        color: '#4A6480',
         fontSize: 9,
+        fontFamily: "'Rajdhani', sans-serif",
+        fontWeight: 600,
+        textTransform: 'uppercase' as const,
         letterSpacing: '0.06em',
         whiteSpace: 'nowrap',
         flexShrink: 0,
@@ -91,8 +94,9 @@ const StatRow: React.FC<StatRowProps> = ({ label, value }) => (
     </span>
     <span
       style={{
-        color: '#e0f8f0',
+        color: '#E4EEF8',
         fontSize: 10,
+        fontFamily: "'Share Tech Mono', monospace",
         fontWeight: 700,
         textAlign: 'right',
         letterSpacing: '0.04em',
@@ -112,10 +116,12 @@ const Section: React.FC<SectionProps> = ({ title, children }) => (
   <div>
     <div
       style={{
-        color: '#00ff88',
-        fontSize: 8,
-        fontWeight: 700,
-        letterSpacing: '0.14em',
+        color: '#4A6480',
+        fontSize: 10,
+        fontWeight: 600,
+        fontFamily: "'Rajdhani', sans-serif",
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase' as const,
         marginBottom: 3,
         opacity: 0.85,
       }}
@@ -184,12 +190,12 @@ const StatsOverlay: React.FC<StatsOverlayProps> = ({
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 900,
-        background: 'rgba(2, 8, 20, 0.82)',
-        border: '1px solid rgba(0, 255, 136, 0.2)',
-        borderRadius: 5,
-        fontFamily: '"Courier New", Courier, monospace',
+        background: 'rgba(8, 14, 28, 0.8)',
+        border: '1px solid rgba(60, 180, 255, 0.15)',
+        borderRadius: 8,
+        fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
         boxSizing: 'border-box',
-        backdropFilter: 'blur(4px)',
+        backdropFilter: 'blur(14px)',
         userSelect: 'none',
       }}
     >
@@ -202,14 +208,14 @@ const StatsOverlay: React.FC<StatsOverlayProps> = ({
           justifyContent: 'space-between',
           padding: '4px 10px',
           cursor: 'pointer',
-          borderBottom: minimized ? 'none' : '1px solid rgba(0, 255, 136, 0.12)',
+          borderBottom: minimized ? 'none' : '1px solid rgba(60, 180, 255, 0.08)',
           pointerEvents: 'all',
         }}
       >
-        <span style={{ color: '#00ff88', fontSize: 8, fontWeight: 700, letterSpacing: '0.14em' }}>
+        <span style={{ color: '#3CB8FF', fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', fontFamily: "'Rajdhani', sans-serif", textTransform: 'uppercase' as const }}>
           STATS
         </span>
-        <span style={{ color: 'rgba(0, 255, 136, 0.6)', fontSize: 9 }}>
+        <span style={{ color: 'rgba(60, 184, 255, 0.6)', fontSize: 9 }}>
           {minimized ? '\u25BC' : '\u25B2'}
         </span>
       </div>

@@ -268,16 +268,17 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
     maxWidth: 'calc(100vw - 240px)',
     maxHeight: 'calc(100vh - 140px)',
     zIndex: 1200,
-    fontFamily: '"Share Tech Mono", "Courier New", monospace',
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     display: 'flex',
     flexDirection: 'column',
   };
 
   const headerStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.97)',
-    border: '1px solid rgba(255, 80, 40, 0.45)',
-    borderBottom: collapsed ? undefined : '1px solid rgba(255, 80, 40, 0.18)',
-    borderRadius: collapsed ? '6px' : '6px 6px 0 0',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderBottom: collapsed ? undefined : '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: collapsed ? '8px' : '8px 8px 0 0',
     padding: '7px 11px',
     display: 'flex',
     alignItems: 'center',
@@ -287,15 +288,16 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
   };
 
   const bodyStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.95)',
-    border: '1px solid rgba(255, 80, 40, 0.45)',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderTop: 'none',
-    borderRadius: '0 0 6px 6px',
+    borderRadius: '0 0 8px 8px',
     overflowY: 'auto',
     overflowX: 'hidden',
     padding: '8px 8px 6px 8px',
     scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(255, 80, 40, 0.22) transparent',
+    scrollbarColor: 'rgba(60, 180, 255, 0.2) transparent',
     flex: 1,
     minHeight: 0,
   };
@@ -309,8 +311,9 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
             style={{
               fontSize: '12px',
               fontWeight: 700,
-              color: 'rgba(255, 140, 80, 0.95)',
-              letterSpacing: '0.06em',
+              color: '#3CB8FF',
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase' as const,
             }}
           >
             WAR IMPACT
@@ -383,10 +386,11 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
           {/* Subtitle */}
           <div
             style={{
-              fontSize: '9px',
-              color: 'rgba(255, 120, 80, 0.60)',
+              fontSize: '10px',
+              color: '#4A6480',
               letterSpacing: '0.10em',
-              fontWeight: 700,
+              fontWeight: 600,
+              fontFamily: "'Rajdhani', sans-serif",
               textTransform: 'uppercase',
               marginBottom: '8px',
             }}
@@ -425,8 +429,8 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
                   <div
                     key={zone.id}
                     style={{
-                      background: 'rgba(8, 20, 45, 0.85)',
-                      border: '1px solid rgba(255, 80, 40, 0.18)',
+                      background: 'rgba(12, 20, 36, 0.5)',
+                      border: '1px solid rgba(60, 180, 255, 0.08)',
                       borderLeft: `3px solid ${zone.color || sColor}`,
                       borderRadius: '4px',
                       padding: '9px 10px 8px 10px',
@@ -468,7 +472,7 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
                     </div>
 
                     {/* Casualties */}
-                    <div style={{ fontSize: '10px', color: 'rgba(180, 200, 230, 0.70)', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: '10px', color: '#8BA4BE', lineHeight: 1.5 }}>
                       {cas.total != null && (
                         <div>
                           Deaths: {formatNumber(cas.total)}
@@ -495,10 +499,10 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
                     />
 
                     {/* Air Traffic Impact */}
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(100, 200, 255, 0.85)', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#4A6480', fontFamily: "'Rajdhani', sans-serif", textTransform: 'uppercase' as const, marginBottom: '2px' }}>
                       Air Traffic Impact:
                     </div>
-                    <div style={{ fontSize: '10px', color: 'rgba(180, 200, 230, 0.70)', lineHeight: 1.6, paddingLeft: '8px' }}>
+                    <div style={{ fontSize: '10px', color: '#8BA4BE', lineHeight: 1.6, paddingLeft: '8px' }}>
                       <div>
                         Military:{' '}
                         <span style={{ color: milAircraft > 0 ? '#ff8c00' : 'rgba(140,165,200,0.50)' }}>
@@ -518,10 +522,10 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
                     </div>
 
                     {/* Sea Traffic Impact */}
-                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(100, 200, 255, 0.85)', marginTop: '4px', marginBottom: '2px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: '#4A6480', fontFamily: "'Rajdhani', sans-serif", textTransform: 'uppercase' as const, marginTop: '4px', marginBottom: '2px' }}>
                       Sea Traffic Impact:
                     </div>
-                    <div style={{ fontSize: '10px', color: 'rgba(180, 200, 230, 0.70)', lineHeight: 1.6, paddingLeft: '8px' }}>
+                    <div style={{ fontSize: '10px', color: '#8BA4BE', lineHeight: 1.6, paddingLeft: '8px' }}>
                       <div>
                         Warships:{' '}
                         <span style={{ color: warships > 0 ? '#ff8c00' : 'rgba(140,165,200,0.50)' }}>
@@ -537,7 +541,7 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
                     </div>
 
                     {/* GPS Disruption */}
-                    <div style={{ fontSize: '10px', color: 'rgba(180, 200, 230, 0.70)', marginTop: '4px' }}>
+                    <div style={{ fontSize: '10px', color: '#8BA4BE', marginTop: '4px' }}>
                       GPS Disruption:{' '}
                       <span
                         style={{
@@ -554,7 +558,7 @@ const WarImpactPanel: React.FC<WarImpactPanelProps> = ({
 
                     {/* Disruption Score */}
                     <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ fontSize: '10px', color: 'rgba(180, 200, 230, 0.70)', flexShrink: 0 }}>
+                      <div style={{ fontSize: '10px', color: '#8BA4BE', flexShrink: 0 }}>
                         Disruption Score:
                       </div>
                       <div

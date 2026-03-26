@@ -124,9 +124,9 @@ function LegendItem({ swatch, label }: LegendItemProps) {
       </div>
       <span
         style={{
-          color: 'rgba(180, 200, 190, 0.75)',
+          color: '#8BA4BE',
           fontSize: 10,
-          fontFamily: "'Courier New', Courier, monospace",
+          fontFamily: "'Rajdhani', sans-serif",
           letterSpacing: '0.04em',
           whiteSpace: 'nowrap',
         }}
@@ -143,16 +143,16 @@ function SectionHead({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        color: 'rgba(0, 200, 80, 0.55)',
+        color: '#4A6480',
         fontSize: 9,
-        fontWeight: 700,
+        fontWeight: 600,
         letterSpacing: '0.2em',
         textTransform: 'uppercase' as const,
-        fontFamily: "'Courier New', Courier, monospace",
+        fontFamily: "'Rajdhani', sans-serif",
         marginTop: 8,
         marginBottom: 3,
         paddingBottom: 2,
-        borderBottom: '1px solid rgba(0, 255, 100, 0.1)',
+        borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
       }}
     >
       {children}
@@ -172,7 +172,7 @@ const Legend: React.FC = () => {
         bottom: 20,
         left: 20,
         zIndex: 1000,
-        fontFamily: "'Courier New', Courier, monospace",
+        fontFamily: "'Rajdhani', sans-serif",
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
@@ -184,13 +184,13 @@ const Legend: React.FC = () => {
         <div
           style={{
             width: 220,
-            background: 'rgba(8, 12, 18, 0.97)',
-            border: '1px solid rgba(0, 255, 100, 0.2)',
-            borderRadius: 4,
+            background: 'rgba(8, 14, 28, 0.85)',
+            border: '1px solid rgba(60, 180, 255, 0.15)',
+            borderRadius: 8,
             padding: '10px 12px 12px',
             marginBottom: 6,
             boxShadow: '0 4px 24px rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(8px)',
+            backdropFilter: 'blur(14px)',
             pointerEvents: 'all',
             maxHeight: 'calc(100vh - 120px)',
             overflowY: 'auto',
@@ -199,13 +199,14 @@ const Legend: React.FC = () => {
           {/* Card header */}
           <div
             style={{
-              color: 'rgba(0, 255, 100, 0.9)',
+              color: '#3CB8FF',
               fontSize: 10,
+              fontFamily: "'Rajdhani', sans-serif",
               fontWeight: 700,
               letterSpacing: '0.18em',
               textTransform: 'uppercase' as const,
               marginBottom: 4,
-              borderBottom: '1px solid rgba(0, 255, 100, 0.2)',
+              borderBottom: '1px solid rgba(60, 180, 255, 0.15)',
               paddingBottom: 5,
             }}
           >
@@ -325,11 +326,11 @@ const Legend: React.FC = () => {
         onClick={() => setOpen((v) => !v)}
         style={{
           pointerEvents: 'all',
-          background: open ? 'rgba(0, 255, 100, 0.12)' : 'rgba(8, 12, 18, 0.93)',
-          border: '1px solid rgba(0, 255, 100, 0.3)',
-          borderRadius: 4,
-          color: 'rgba(0, 255, 100, 0.9)',
-          fontFamily: "'Courier New', Courier, monospace",
+          background: open ? 'rgba(60, 180, 255, 0.1)' : 'rgba(8, 14, 28, 0.85)',
+          border: '1px solid rgba(60, 180, 255, 0.25)',
+          borderRadius: 6,
+          color: '#3CB8FF',
+          fontFamily: "'Rajdhani', sans-serif",
           fontSize: 10,
           fontWeight: 700,
           letterSpacing: '0.14em',
@@ -341,14 +342,14 @@ const Legend: React.FC = () => {
           transition: 'background 0.15s, border-color 0.15s',
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0, 255, 100, 0.18)';
-          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0, 255, 100, 0.55)';
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60, 180, 255, 0.15)';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(60, 180, 255, 0.45)';
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.background = open
-            ? 'rgba(0, 255, 100, 0.12)'
-            : 'rgba(8, 12, 18, 0.93)';
-          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0, 255, 100, 0.3)';
+            ? 'rgba(60, 180, 255, 0.1)'
+            : 'rgba(8, 14, 28, 0.85)';
+          (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(60, 180, 255, 0.25)';
         }}
         title={open ? 'Collapse map key' : 'Expand map key'}
         aria-label={open ? 'Collapse map key' : 'Expand map key'}

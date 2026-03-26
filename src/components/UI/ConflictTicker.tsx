@@ -29,18 +29,18 @@ const CHAR_WIDTH_PX = 7.5;
 
 // Alert type → label + color mappings
 const ALERT_LABEL_MAP: Record<string, { label: string; emoji: string; color: string }> = {
-  'gps-jam':           { label: 'GPS JAM',  emoji: '📡', color: '#ffd700' },
-  'military-aircraft': { label: 'MILITARY', emoji: '✈️', color: '#ff3b3b' },
-  'warship':           { label: 'WARSHIP',  emoji: '🚢', color: '#ff8c00' },
-  'conflict-event':    { label: 'CONFLICT', emoji: '⚔️', color: '#ff3b3b' },
-  'satellite-pass':    { label: 'SAT',      emoji: '🛰️', color: '#00ff88' },
-  'system':            { label: 'SYS',      emoji: '🔷', color: '#38bdf8' },
+  'gps-jam':           { label: 'GPS JAM',  emoji: '📡', color: '#FFB020' },
+  'military-aircraft': { label: 'MILITARY', emoji: '✈️', color: '#FF3838' },
+  'warship':           { label: 'WARSHIP',  emoji: '🚢', color: '#FFB020' },
+  'conflict-event':    { label: 'CONFLICT', emoji: '⚔️', color: '#FF3838' },
+  'satellite-pass':    { label: 'SAT',      emoji: '🛰️', color: '#6AAED4' },
+  'system':            { label: 'SYS',      emoji: '🔷', color: '#6AAED4' },
 };
 
 const SEVERITY_TEXT_COLOR: Record<string, string> = {
-  critical: '#ff3b3b',
-  warning:  '#ffd700',
-  info:     '#94a3b8',
+  critical: '#FF3838',
+  warning:  '#FFB020',
+  info:     '#6AAED4',
 };
 
 const CONFLICT_TYPE_LABEL: Record<string, { emoji: string; label: string }> = {
@@ -62,7 +62,7 @@ const TICKER_CSS = `
     100% { transform: translateX(-50%); }
   }
   @keyframes ticker-pulse-red {
-    0%, 100% { color: #ff3b3b; opacity: 1; }
+    0%, 100% { color: #FF3838; opacity: 1; }
     50%       { color: #ff6b6b; opacity: 0.65; }
   }
   .ticker-item-critical {
@@ -197,12 +197,14 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
     right: 0,
     height: 36,
     zIndex: 999,
-    background: 'rgba(2, 8, 20, 0.96)',
-    borderTop: '1px solid rgba(255, 59, 59, 0.25)',
+    background: 'rgba(8, 14, 28, 0.6)',
+    backdropFilter: 'blur(10px)',
+    WebkitBackdropFilter: 'blur(10px)',
+    borderTop: '1px solid rgba(255, 60, 60, 0.12)',
     display: 'flex',
     alignItems: 'center',
     overflow: 'hidden',
-    fontFamily: '"Courier New", Courier, monospace',
+    fontFamily: "'Share Tech Mono', 'Courier New', monospace",
     boxSizing: 'border-box',
     userSelect: 'none',
   };
@@ -214,24 +216,26 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
     gap: 6,
     padding: '0 10px 0 52px',
     height: '100%',
-    background: 'rgba(2, 8, 20, 0.98)',
-    borderRight: '1px solid rgba(0, 255, 136, 0.3)',
+    background: 'rgba(8, 14, 28, 0.85)',
+    borderRight: '1px solid rgba(255, 60, 60, 0.18)',
     zIndex: 1,
   };
 
   const liveIntelStyle: React.CSSProperties = {
-    color: '#00ff88',
+    color: '#FF3838',
+    fontFamily: "'Rajdhani', 'Courier New', sans-serif",
     fontSize: 10,
     fontWeight: 700,
     letterSpacing: '0.12em',
     whiteSpace: 'nowrap',
+    textTransform: 'uppercase',
   };
 
   const liveDotStyle: React.CSSProperties = {
     width: 6,
     height: 6,
     borderRadius: '50%',
-    background: '#ff3b3b',
+    background: '#FF3838',
     flexShrink: 0,
     animation: 'ticker-pulse-red 1.1s ease-in-out infinite',
   };
@@ -252,7 +256,7 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
     top: 0,
     bottom: 0,
     width: 32,
-    background: 'linear-gradient(to right, rgba(2,8,20,0.95) 0%, transparent 100%)',
+    background: 'linear-gradient(to right, rgba(8,14,28,0.9) 0%, transparent 100%)',
     zIndex: 2,
     pointerEvents: 'none',
   };
@@ -264,7 +268,7 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
     top: 0,
     bottom: 0,
     width: 32,
-    background: 'linear-gradient(to left, rgba(2,8,20,0.95) 0%, transparent 100%)',
+    background: 'linear-gradient(to left, rgba(8,14,28,0.9) 0%, transparent 100%)',
     zIndex: 2,
     pointerEvents: 'none',
   };
@@ -278,7 +282,7 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
   };
 
   const separatorStyle: React.CSSProperties = {
-    color: '#374151',
+    color: 'rgba(255, 60, 60, 0.2)',
     fontSize: 11,
     margin: '0 8px',
     flexShrink: 0,
@@ -350,6 +354,7 @@ const TickerItemNode: React.FC<TickerItemNodeProps> = ({
 
   const labelStyle: React.CSSProperties = {
     color: item.labelColor,
+    fontFamily: "'Rajdhani', 'Courier New', sans-serif",
     fontWeight: 700,
     fontSize: 10,
     letterSpacing: '0.06em',
@@ -358,10 +363,12 @@ const TickerItemNode: React.FC<TickerItemNodeProps> = ({
     borderRadius: 3,
     padding: '1px 4px',
     flexShrink: 0,
+    textTransform: 'uppercase',
   };
 
   const textStyle: React.CSSProperties = {
     color: item.isCritical ? undefined : item.textColor,
+    fontFamily: "'Share Tech Mono', 'Courier New', monospace",
     fontSize: 11,
     letterSpacing: '0.02em',
   };

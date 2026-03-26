@@ -50,7 +50,7 @@ interface FilterPanelProps {
   onMobileClose?: () => void;
 }
 
-const PANEL_WIDTH = 280;
+const PANEL_WIDTH = 240;
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
@@ -60,13 +60,16 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100vh',
     zIndex: 1000,
     display: 'flex',
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
     pointerEvents: 'none',
   },
   panel: {
     height: '100%',
-    background: 'rgba(10, 14, 20, 0.96)',
-    borderRight: '1px solid rgba(0, 255, 100, 0.2)',
+    background: 'rgba(8, 14, 28, 0.65)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderRight: '1px solid rgba(60, 180, 255, 0.12)',
+    borderRadius: 0,
     display: 'flex',
     flexDirection: 'column',
     overflowY: 'auto',
@@ -79,17 +82,19 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     top: '50%',
     transform: 'translateY(-50%)',
-    width: 24,
+    width: 32,
     height: 56,
-    background: 'rgba(10, 14, 20, 0.96)',
-    border: '1px solid rgba(0, 255, 100, 0.3)',
+    background: 'rgba(8, 14, 28, 0.55)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderLeft: 'none',
     borderRadius: '0 6px 6px 0',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: 'rgba(0, 255, 100, 0.8)',
+    color: '#3CB8FF',
     fontSize: 14,
     pointerEvents: 'all',
     userSelect: 'none',
@@ -98,21 +103,23 @@ const styles: Record<string, React.CSSProperties> = {
     boxShadow: '3px 0 10px rgba(0,0,0,0.5)',
   },
   header: {
-    padding: '16px 14px 10px',
-    borderBottom: '1px solid rgba(0, 255, 100, 0.15)',
+    padding: '10px 12px',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
     flexShrink: 0,
   },
   headerTitle: {
-    color: 'rgba(0, 255, 100, 0.9)',
+    color: '#4A6480',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: '0.18em',
+    fontWeight: 600,
+    letterSpacing: '0.12em',
     textTransform: 'uppercase' as const,
     margin: 0,
     whiteSpace: 'nowrap',
   },
   headerSubtitle: {
-    color: 'rgba(120, 160, 130, 0.6)',
+    color: '#4A6480',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     letterSpacing: '0.1em',
     marginTop: 3,
@@ -125,26 +132,28 @@ const styles: Record<string, React.CSSProperties> = {
     paddingBottom: 16,
   },
   section: {
-    padding: '10px 0 4px',
-    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    padding: '10px 12px',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
   },
   sectionLabel: {
-    color: 'rgba(0, 200, 80, 0.5)',
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: '0.2em',
+    color: '#4A6480',
+    fontFamily: "'Rajdhani', sans-serif",
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: '0.12em',
     textTransform: 'uppercase' as const,
-    padding: '0 14px 6px',
+    padding: '0 0 6px',
     whiteSpace: 'nowrap',
   },
   row: {
     display: 'flex',
     alignItems: 'center',
-    padding: '5px 14px',
+    padding: '5px 0',
     cursor: 'pointer',
     transition: 'background 0.12s',
     gap: 8,
     minHeight: 32,
+    borderRadius: 4,
   },
   icon: {
     fontSize: 14,
@@ -160,25 +169,29 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: 'hidden',
   },
   labelMain: {
-    color: 'rgba(200, 220, 210, 0.9)',
-    fontSize: 11,
+    color: '#8BA4BE',
+    fontFamily: "'Rajdhani', sans-serif",
+    fontSize: 12,
+    fontWeight: 400,
     whiteSpace: 'nowrap',
     display: 'flex',
     alignItems: 'center',
     gap: 5,
   },
   labelSub: {
-    color: 'rgba(200, 60, 60, 0.85)',
+    color: 'rgba(139, 164, 190, 0.6)',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     letterSpacing: '0.05em',
     whiteSpace: 'nowrap',
   },
   countBadge: {
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'rgba(60, 184, 255, 0.08)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderRadius: 8,
-    color: 'rgba(150, 180, 160, 0.7)',
-    fontSize: 9,
+    color: '#3CB8FF',
+    fontFamily: "'Share Tech Mono', monospace",
+    fontSize: 10,
     padding: '1px 5px',
     letterSpacing: '0.03em',
     whiteSpace: 'nowrap' as const,
@@ -220,7 +233,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
-    borderRadius: 6,
+    borderRadius: 4,
     transition: 'background 0.12s',
   },
 };
@@ -238,8 +251,8 @@ function ToggleSwitch({ on }: ToggleSwitchProps) {
     <div
       style={{
         ...styles.switchTrack,
-        background: on ? 'rgba(0, 200, 80, 0.7)' : 'rgba(60, 70, 65, 0.8)',
-        border: on ? '1px solid rgba(0,255,100,0.4)' : '1px solid rgba(100,120,110,0.3)',
+        background: on ? 'rgba(60, 184, 255, 0.7)' : 'rgba(40, 50, 70, 0.8)',
+        border: on ? '1px solid rgba(60, 184, 255, 0.5)' : '1px solid rgba(60, 180, 255, 0.15)',
       }}
     >
       <div
@@ -268,8 +281,8 @@ function LayerRow({ icon, label, layerKey, on, onToggle, countBadge, subLabel, i
     <div
       style={{
         ...styles.row,
-        paddingLeft: indent ? 30 : 14,
-        background: hovered ? 'rgba(0, 255, 100, 0.04)' : 'transparent',
+        paddingLeft: indent ? 20 : 4,
+        background: hovered ? 'rgba(60, 180, 255, 0.06)' : 'transparent',
         opacity: on ? 1 : 0.55,
       }}
       onClick={() => onToggle(layerKey)}
@@ -278,7 +291,7 @@ function LayerRow({ icon, label, layerKey, on, onToggle, countBadge, subLabel, i
     >
       <span style={styles.icon}>{icon}</span>
       <div style={styles.labelGroup}>
-        <span style={styles.labelMain}>
+        <span style={{ ...styles.labelMain, color: on ? '#E4EEF8' : '#8BA4BE' }}>
           <span>{label}</span>
           {countBadge && <span style={styles.countBadge}>{countBadge}</span>}
         </span>
@@ -326,10 +339,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
             width: '100vw',
             height: '100vh',
             zIndex: 1500,
-            background: 'rgba(10, 14, 20, 0.97)',
+            background: 'rgba(8, 14, 28, 0.92)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Courier New', Courier, monospace",
+            fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
             overflowY: 'auto',
           }}
         >
@@ -339,7 +354,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '12px 14px',
-            borderBottom: '1px solid rgba(0, 255, 100, 0.2)',
+            borderBottom: '1px solid rgba(60, 180, 255, 0.12)',
             flexShrink: 0,
           }}>
             <div>
@@ -351,10 +366,10 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
               style={{
                 width: 44,
                 height: 44,
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(0, 255, 100, 0.3)',
+                background: 'rgba(60, 180, 255, 0.08)',
+                border: '1px solid rgba(60, 180, 255, 0.2)',
                 borderRadius: 6,
-                color: '#00ff88',
+                color: '#3CB8FF',
                 fontSize: 20,
                 cursor: 'pointer',
                 display: 'flex',

@@ -115,10 +115,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, index, onFlyTo }) => {
     padding: '8px 10px 8px 11px',
     marginBottom: '5px',
     background: hovered
-      ? 'rgba(30, 50, 80, 0.92)'
+      ? 'rgba(20, 35, 60, 0.7)'
       : isCritical
       ? undefined
-      : 'rgba(10, 20, 38, 0.88)',
+      : 'rgba(12, 20, 36, 0.5)',
     animation: isCritical
       ? `efFadeInUp 0.35s cubic-bezier(0.22,1,0.36,1) ${index * 40}ms both, efCriticalBg 2.2s ease-in-out infinite`
       : `efFadeInUp 0.35s cubic-bezier(0.22,1,0.36,1) ${index * 40}ms both`,
@@ -144,7 +144,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, index, onFlyTo }) => {
           fontSize: '9px',
           fontWeight: 700,
           letterSpacing: '0.08em',
-          color: '#b0c8e8',
+          color: '#8BA4BE',
           flexShrink: 0,
         }}>
           {EVENT_TYPE_LABELS[event.type]}
@@ -171,7 +171,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, index, onFlyTo }) => {
         {/* Date */}
         <span style={{
           fontSize: '9px',
-          color: '#6688aa',
+          color: '#4A6480',
           letterSpacing: '0.04em',
           flexShrink: 0,
           whiteSpace: 'nowrap',
@@ -184,7 +184,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, index, onFlyTo }) => {
       <p style={{
         margin: '4px 0 0',
         fontSize: '11px',
-        color: '#ccdaee',
+        color: '#8BA4BE',
         lineHeight: 1.45,
         display: '-webkit-box',
         WebkitLineClamp: 2,
@@ -355,15 +355,16 @@ const EventFeed: React.FC<EventFeedProps> = ({
     right: '16px',
     width: `${PANEL_WIDTH}px`,
     maxHeight: 'calc(100vh - 80px)',
-    background: 'rgba(6, 14, 28, 0.96)',
-    border: '1px solid rgba(40, 80, 140, 0.5)',
-    borderRadius: '6px',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: '8px',
     boxShadow: '0 4px 32px rgba(0,0,0,0.7)',
     display: visible ? 'flex' : 'none',
     flexDirection: 'column',
     overflow: 'hidden',
     zIndex: 1200,
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     boxSizing: 'border-box',
   };
 
@@ -372,7 +373,7 @@ const EventFeed: React.FC<EventFeedProps> = ({
       {/* ── Header ── */}
       <div style={{
         padding: '10px 12px 8px',
-        borderBottom: '1px solid rgba(40, 80, 140, 0.4)',
+        borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
@@ -382,7 +383,8 @@ const EventFeed: React.FC<EventFeedProps> = ({
           fontSize: '11px',
           fontWeight: 700,
           letterSpacing: '0.1em',
-          color: '#88bbdd',
+          color: '#3CB8FF',
+          textTransform: 'uppercase' as const,
           flex: 1,
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -428,9 +430,9 @@ const EventFeed: React.FC<EventFeedProps> = ({
       {zoneCountStr.length > 0 && (
         <div style={{
           padding: '5px 12px',
-          borderBottom: '1px solid rgba(30, 60, 100, 0.3)',
+          borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
           fontSize: '9px',
-          color: '#4a6888',
+          color: '#4A6480',
           letterSpacing: '0.06em',
           whiteSpace: 'nowrap',
           overflow: 'hidden',
@@ -446,7 +448,7 @@ const EventFeed: React.FC<EventFeedProps> = ({
         display: 'flex',
         gap: '4px',
         padding: '7px 10px',
-        borderBottom: '1px solid rgba(30, 60, 100, 0.3)',
+        borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
         flexWrap: 'wrap',
         flexShrink: 0,
       }}>

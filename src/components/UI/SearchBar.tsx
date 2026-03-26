@@ -210,10 +210,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return (
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
           <span>✈️</span>
-          <span style={{ fontFamily: 'monospace', color: '#00ff88', fontWeight: 600 }}>
+          <span style={{ fontFamily: "'Share Tech Mono', monospace", color: '#3CB8FF', fontWeight: 600 }}>
             {a.callsign || a.icao24}
           </span>
-          <span style={{ color: '#aaa', fontSize: '11px' }}>– {a.country}</span>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", color: '#6AAED4', fontSize: '11px' }}>– {a.country}</span>
           {a.isMilitary && (
             <span style={styles.badgeMil}>MIL</span>
           )}
@@ -226,8 +226,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return (
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
           <span>🚢</span>
-          <span style={{ color: '#00bfff', fontWeight: 600 }}>{s.name}</span>
-          <span style={{ color: '#aaa', fontSize: '11px' }}>– Flag: {s.flag} – {s.type}</span>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", color: '#3CB8FF', fontWeight: 600 }}>{s.name}</span>
+          <span style={{ fontFamily: "'Share Tech Mono', monospace", color: '#6AAED4', fontSize: '11px' }}>– Flag: {s.flag} – {s.type}</span>
           {isWarship && (
             <span style={styles.badgeWarship}>WARSHIP</span>
           )}
@@ -241,8 +241,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return (
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
           <span>🛰️</span>
-          <span style={{ color: '#c084fc', fontWeight: 600 }}>{s.name}</span>
-          <span style={{ color: '#aaa', fontSize: '11px' }}>– {s.category} – {altKm}km {orbit}</span>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", color: '#c084fc', fontWeight: 600 }}>{s.name}</span>
+          <span style={{ fontFamily: "'Share Tech Mono', monospace", color: '#6AAED4', fontSize: '11px' }}>– {s.category} – {altKm}km {orbit}</span>
         </span>
       );
     }
@@ -251,8 +251,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
       return (
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100%' }}>
           <span>⚔️</span>
-          <span style={{ color: '#ff4444', fontWeight: 600 }}>{c.name}</span>
-          <span style={{ color: '#aaa', fontSize: '11px' }}>
+          <span style={{ fontFamily: "'Rajdhani', sans-serif", color: '#ff4444', fontWeight: 600 }}>{c.name}</span>
+          <span style={{ fontFamily: "'Share Tech Mono', monospace", color: '#6AAED4', fontSize: '11px' }}>
             – {c.intensity} – {c.countries.slice(0, 2).join(', ')}
           </span>
         </span>
@@ -275,47 +275,55 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const inputWrapStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    background: 'rgba(10, 14, 20, 0.95)',
-    border: isFocused ? '1px solid #00ff88' : '1px solid rgba(0, 255, 136, 0.3)',
-    borderRadius: isOpen && results.length > 0 ? '8px 8px 0 0' : '8px',
+    background: 'rgba(8, 14, 28, 0.7)',
+    border: isFocused ? '1px solid rgba(60, 180, 255, 0.4)' : '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: '20px',
     padding: '6px 12px',
     width: isFocused ? '380px' : '350px',
     transition: 'width 0.2s ease, border-color 0.2s ease',
     boxShadow: isFocused
-      ? '0 0 12px rgba(0, 255, 136, 0.25)'
+      ? '0 0 12px rgba(60, 180, 255, 0.2)'
       : '0 2px 8px rgba(0,0,0,0.6)',
-    backdropFilter: 'blur(8px)',
+    backdropFilter: 'blur(14px)',
   };
 
   const inputStyle: React.CSSProperties = {
     background: 'transparent',
     border: 'none',
     outline: 'none',
-    color: '#e0e0e0',
-    fontFamily: 'monospace',
-    fontSize: '13px',
+    color: '#E4EEF8',
+    fontFamily: "'Rajdhani', sans-serif",
+    fontSize: '14px',
+    fontWeight: 500,
     width: '100%',
     marginLeft: '8px',
   };
 
   const dropdownStyle: React.CSSProperties = {
-    background: 'rgba(10, 14, 20, 0.98)',
-    border: '1px solid rgba(0, 255, 136, 0.3)',
-    borderTop: 'none',
-    borderRadius: '0 0 8px 8px',
+    background: 'rgba(8, 14, 28, 0.7)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: '8px',
+    marginTop: '4px',
     width: isFocused ? '380px' : '350px',
     maxHeight: '320px',
     overflowY: 'auto',
     boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
-    backdropFilter: 'blur(8px)',
+    backdropFilter: 'blur(14px)',
   };
 
   return (
     <div style={containerStyle}>
+      <style>{`
+        .hud-search-input::placeholder {
+          color: #4A6480;
+          opacity: 1;
+        }
+      `}</style>
       <div style={inputWrapStyle}>
-        <span style={{ fontSize: '14px', color: '#888', flexShrink: 0 }}>🔍</span>
+        <span style={{ fontSize: '14px', color: '#3CB8FF', flexShrink: 0 }}>🔍</span>
         <input
           ref={inputRef}
+          className="hud-search-input"
           type="text"
           value={query}
           onChange={handleChange}
@@ -329,7 +337,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
             blurTimeoutRef.current = window.setTimeout(() => setIsOpen(false), 150);
           }}
           placeholder="Search aircraft, ships, satellites, conflicts... (Ctrl+K)"
-          style={inputStyle}
+          style={{
+            ...inputStyle,
+            // placeholder color handled via CSS class below
+          }}
         />
       </div>
 
@@ -349,11 +360,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   ...styles.resultItem,
                   background:
                     activeIndex === idx
-                      ? 'rgba(0, 255, 136, 0.08)'
+                      ? 'rgba(60, 180, 255, 0.08)'
                       : 'transparent',
                   borderLeft:
                     activeIndex === idx
-                      ? '2px solid #00ff88'
+                      ? '2px solid #3CB8FF'
                       : '2px solid transparent',
                 }}
               >
@@ -379,32 +390,36 @@ const styles: Record<string, React.CSSProperties> = {
   },
   emptyState: {
     padding: '12px 16px',
-    color: '#666',
+    color: '#4A6480',
     fontSize: '12px',
-    fontFamily: 'monospace',
+    fontFamily: "'Share Tech Mono', monospace",
     textAlign: 'center',
   },
   badgeMil: {
-    background: 'rgba(255, 165, 0, 0.2)',
-    border: '1px solid rgba(255, 165, 0, 0.6)',
+    background: 'rgba(255, 165, 0, 0.15)',
+    border: '1px solid rgba(255, 165, 0, 0.4)',
     color: '#ffa500',
     fontSize: '9px',
+    fontFamily: "'Rajdhani', sans-serif",
     fontWeight: 700,
     padding: '1px 4px',
     borderRadius: '3px',
     marginLeft: 'auto',
     letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
   },
   badgeWarship: {
-    background: 'rgba(255, 40, 40, 0.2)',
-    border: '1px solid rgba(255, 40, 40, 0.6)',
+    background: 'rgba(255, 40, 40, 0.15)',
+    border: '1px solid rgba(255, 40, 40, 0.4)',
     color: '#ff2828',
     fontSize: '9px',
+    fontFamily: "'Rajdhani', sans-serif",
     fontWeight: 700,
     padding: '1px 4px',
     borderRadius: '3px',
     marginLeft: 'auto',
     letterSpacing: '0.5px',
+    textTransform: 'uppercase' as const,
   },
 };
 

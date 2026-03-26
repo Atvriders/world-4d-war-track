@@ -57,7 +57,7 @@ function getIntensityFill(intensity: ConflictZone['intensity']): number {
 }
 
 function getIntensityColor(intensity: ConflictZone['intensity']): string {
-  return { low: '#00ff88', medium: '#ffcc00', high: '#ff6600', critical: '#ff2200' }[intensity] ?? '#00ff88';
+  return { low: '#4AEAAF', medium: '#ffcc00', high: '#ff6600', critical: '#ff2200' }[intensity] ?? '#4AEAAF';
 }
 
 const eventTypeIcon: Record<ConflictEvent['type'], string> = {
@@ -72,15 +72,15 @@ const eventTypeIcon: Record<ConflictEvent['type'], string> = {
 };
 
 const satelliteCategoryColor: Record<SatelliteEntity['category'], string> = {
-  military: '#ff4444',
-  spy: '#ff4444',
-  reconnaissance: '#ff6600',
-  navigation: '#00aaff',
-  commercial: '#888888',
-  weather: '#00ccff',
-  starlink: '#aaaaff',
-  iss: '#00ff88',
-  other: '#666666',
+  military: '#FF5A5A',
+  spy: '#FF5A5A',
+  reconnaissance: '#FF8C42',
+  navigation: '#3CB8FF',
+  commercial: '#7A8FA0',
+  weather: '#50C8FF',
+  starlink: '#9AAEFF',
+  iss: '#4AEAAF',
+  other: '#5A6A7A',
 };
 
 const shipTypeLabel: Record<ShipEntity['type'], string> = {
@@ -104,17 +104,18 @@ const styles: Record<string, React.CSSProperties> = {
     right: 0,
     width: 320,
     height: 'calc(100vh - 56px)',
-    background: 'rgba(5, 15, 30, 0.95)',
-    border: '1px solid rgba(0, 255, 136, 0.4)',
+    background: 'rgba(8, 14, 28, 0.75)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderRight: 'none',
+    borderRadius: 0,
     color: '#e0e8f0',
-    fontFamily: 'monospace',
+    fontFamily: 'Rajdhani, sans-serif',
     fontSize: 12,
     display: 'flex',
     flexDirection: 'column',
     overflowY: 'auto',
     zIndex: 1200,
-    backdropFilter: 'blur(8px)',
+    backdropFilter: 'blur(14px)',
     transition: 'transform 0.3s ease',
   },
   panelVisible: {
@@ -124,8 +125,8 @@ const styles: Record<string, React.CSSProperties> = {
     transform: 'translateX(100%)',
   },
   header: {
-    padding: '12px 14px 10px',
-    borderBottom: '1px solid rgba(0, 255, 136, 0.25)',
+    padding: '14px 16px 12px',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.1)',
     display: 'flex',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
@@ -140,10 +141,11 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
   },
   title: {
-    fontSize: 14,
+    fontFamily: 'Rajdhani, sans-serif',
+    fontSize: 15,
     fontWeight: 700,
-    color: '#00ff88',
-    letterSpacing: '0.05em',
+    color: '#E4EEF8',
+    letterSpacing: '0.08em',
     textTransform: 'uppercase',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -155,17 +157,18 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
   },
   badge: {
+    fontFamily: 'Rajdhani',
     fontSize: 10,
-    fontWeight: 700,
+    fontWeight: 600,
     padding: '2px 6px',
-    borderRadius: 2,
+    borderRadius: 3,
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
   },
   closeBtn: {
     background: 'none',
-    border: '1px solid rgba(0, 255, 136, 0.3)',
-    color: '#00ff88',
+    border: '1px solid rgba(60, 180, 255, 0.2)',
+    color: '#3CB8FF',
     cursor: 'pointer',
     fontSize: 14,
     width: 26,
@@ -174,7 +177,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    borderRadius: 2,
+    borderRadius: 4,
     lineHeight: 1,
   },
   body: {
@@ -184,6 +187,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: 14,
+    fontFamily: 'Rajdhani, sans-serif',
   },
   section: {
     display: 'flex',
@@ -191,12 +195,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 6,
   },
   sectionLabel: {
+    fontFamily: 'Rajdhani',
     fontSize: 10,
-    fontWeight: 700,
-    color: 'rgba(0, 255, 136, 0.6)',
-    letterSpacing: '0.1em',
+    fontWeight: 600,
+    color: '#4A6480',
+    letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    borderBottom: '1px solid rgba(0, 255, 136, 0.15)',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
     paddingBottom: 3,
     marginBottom: 2,
   },
@@ -207,11 +212,13 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   rowLabel: {
-    color: 'rgba(224, 232, 240, 0.55)',
+    color: '#6A8AAA',
+    fontFamily: 'Rajdhani',
     flexShrink: 0,
   },
   rowValue: {
-    color: '#e0e8f0',
+    color: '#C8D8E8',
+    fontFamily: 'Share Tech Mono, monospace',
     textAlign: 'right',
     wordBreak: 'break-all',
   },
@@ -228,48 +235,48 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   divider: {
-    borderTop: '1px solid rgba(0, 255, 136, 0.12)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.08)',
     margin: '2px 0',
   },
   flyBtn: {
     width: '100%',
     padding: '8px 0',
-    background: 'rgba(0, 255, 136, 0.12)',
-    border: '1px solid rgba(0, 255, 136, 0.5)',
-    color: '#00ff88',
-    fontFamily: 'monospace',
+    background: 'rgba(60, 180, 255, 0.1)',
+    border: '1px solid rgba(60, 180, 255, 0.4)',
+    color: '#3CB8FF',
+    fontFamily: 'Rajdhani',
     fontSize: 12,
-    fontWeight: 700,
-    letterSpacing: '0.08em',
+    fontWeight: 600,
+    letterSpacing: '0.1em',
     textTransform: 'uppercase',
     cursor: 'pointer',
-    borderRadius: 2,
+    borderRadius: 4,
     transition: 'background 0.15s ease',
     flexShrink: 0,
   },
   footer: {
     padding: '10px 14px',
-    borderTop: '1px solid rgba(0, 255, 136, 0.15)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.1)',
     flexShrink: 0,
   },
   groundTrackNote: {
-    background: 'rgba(0, 255, 136, 0.06)',
-    border: '1px solid rgba(0, 255, 136, 0.2)',
-    borderRadius: 2,
+    background: 'rgba(60, 180, 255, 0.06)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: 4,
     padding: '6px 8px',
-    color: 'rgba(0, 255, 136, 0.8)',
+    color: '#6AAED4',
     fontSize: 11,
   },
   intensityBar: {
     height: 8,
-    borderRadius: 2,
-    background: 'rgba(255,255,255,0.1)',
+    borderRadius: 3,
+    background: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
     flex: 1,
   },
   intensityBarFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
     transition: 'width 0.4s ease',
   },
   intensityRow: {
@@ -278,9 +285,9 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   eventItem: {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(0,255,136,0.12)',
-    borderRadius: 2,
+    background: 'rgba(12, 20, 36, 0.5)',
+    border: '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: 4,
     padding: '6px 8px',
     display: 'flex',
     flexDirection: 'column',
@@ -296,7 +303,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   eventDate: {
-    color: 'rgba(0, 255, 136, 0.7)',
+    color: 'rgba(60, 180, 255, 0.7)',
     fontSize: 10,
   },
   eventDesc: {
@@ -315,9 +322,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   partyItem: {
     padding: '3px 6px',
-    background: 'rgba(255,255,255,0.05)',
-    borderLeft: '2px solid rgba(0,255,136,0.4)',
-    borderRadius: '0 2px 2px 0',
+    background: 'rgba(12, 20, 36, 0.5)',
+    borderLeft: '2px solid rgba(60, 180, 255, 0.3)',
+    borderRadius: '0 4px 4px 0',
     fontSize: 11,
   },
 };
@@ -358,11 +365,11 @@ function SatelliteInfo({ entity, onFlyTo }: { entity: SatelliteEntity; onFlyTo: 
           <span
             style={{
               ...styles.statusDot,
-              background: entity.isActive ? '#00ff88' : '#666666',
-              boxShadow: entity.isActive ? '0 0 6px #00ff88' : 'none',
+              background: entity.isActive ? '#4AEAAF' : '#666666',
+              boxShadow: entity.isActive ? '0 0 6px #4AEAAF' : 'none',
             }}
           />
-          <span style={{ color: entity.isActive ? '#00ff88' : '#888888' }}>
+          <span style={{ color: entity.isActive ? '#4AEAAF' : '#888888' }}>
             {entity.isActive ? 'Active' : 'Inactive'}
           </span>
         </div>
@@ -414,11 +421,11 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
           <span
             style={{
               ...styles.statusDot,
-              background: entity.onGround ? '#888888' : '#00ff88',
-              boxShadow: entity.onGround ? 'none' : '0 0 6px #00ff88',
+              background: entity.onGround ? '#888888' : '#4AEAAF',
+              boxShadow: entity.onGround ? 'none' : '0 0 6px #4AEAAF',
             }}
           />
-          <span style={{ color: entity.onGround ? '#888888' : '#00ff88' }}>
+          <span style={{ color: entity.onGround ? '#888888' : '#4AEAAF' }}>
             {entity.onGround ? 'On Ground' : 'Airborne'}
           </span>
         </div>
@@ -447,7 +454,7 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
 
       <div style={styles.section}>
         <SectionHead>Identification</SectionHead>
-        <InfoRow label="ICAO24" value={<span style={{ color: '#aaddff', fontFamily: 'monospace' }}>{entity.icao24?.toUpperCase()}</span>} />
+        <InfoRow label="ICAO24" value={<span style={{ color: '#8AC8F0', fontFamily: 'Share Tech Mono, monospace' }}>{entity.icao24?.toUpperCase()}</span>} />
         {entity.squawk && (
           <InfoRow label="Squawk" value={entity.squawk} />
         )}
@@ -466,7 +473,7 @@ function ShipInfo({ entity, onFlyTo }: { entity: ShipEntity; onFlyTo: (lat: numb
       <div style={styles.section}>
         <SectionHead>Identification</SectionHead>
         <InfoRow label="Flag" value={<span>{countryToFlag(entity.flag)} {entity.flag}</span>} />
-        <InfoRow label="MMSI" value={<span style={{ fontFamily: 'monospace', color: '#aaddff' }}>{entity.mmsi}</span>} />
+        <InfoRow label="MMSI" value={<span style={{ fontFamily: 'Share Tech Mono, monospace', color: '#8AC8F0' }}>{entity.mmsi}</span>} />
         <InfoRow label="Type" value={shipTypeLabel[entity.type]} />
         {entity.length !== undefined && (
           <InfoRow label="Length" value={`${entity.length} m`} />
@@ -648,7 +655,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     const ac = data as AircraftEntity;
     title = `${countryToFlag(ac.country)} ${ac.callsign || ac.icao24?.toUpperCase() || 'UNKNOWN'}`;
     if (ac.isMilitary) {
-      badges = [<Badge key="mil" label="Military" color="#ff4444" bg="rgba(255,68,68,0.15)" />];
+      badges = [<Badge key="mil" label="Military" color="#FF5A5A" bg="rgba(255,90,90,0.12)" />];
     }
     flyLat = ac.lat;
     flyLng = ac.lng;
@@ -659,8 +666,8 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
       <Badge
         key="type"
         label={shipTypeLabel[ship.type]}
-        color={ship.type === 'warship' || ship.type === 'military' ? '#ff4444' : '#00aaff'}
-        bg={ship.type === 'warship' || ship.type === 'military' ? 'rgba(255,68,68,0.15)' : 'rgba(0,170,255,0.12)'}
+        color={ship.type === 'warship' || ship.type === 'military' ? '#FF5A5A' : '#3CB8FF'}
+        bg={ship.type === 'warship' || ship.type === 'military' ? 'rgba(255,90,90,0.12)' : 'rgba(60,180,255,0.1)'}
       />,
     ];
     flyLat = ship.lat;
@@ -669,10 +676,10 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     const conflict = data as ConflictZone;
     title = conflict.name;
     const statusConfig: Record<ConflictZone['status'], { label: string; color: string; bg: string }> = {
-      active: { label: 'Active', color: '#ff4444', bg: 'rgba(255,68,68,0.15)' },
-      ceasefire: { label: 'Ceasefire', color: '#888888', bg: 'rgba(136,136,136,0.15)' },
-      escalating: { label: 'Escalating', color: '#ff4444', bg: 'rgba(255,68,68,0.15)' },
-      'de-escalating': { label: 'De-escalating', color: '#ffcc00', bg: 'rgba(255,204,0,0.12)' },
+      active: { label: 'Active', color: '#FF5A5A', bg: 'rgba(255,90,90,0.12)' },
+      ceasefire: { label: 'Ceasefire', color: '#7A8FA0', bg: 'rgba(122,143,160,0.12)' },
+      escalating: { label: 'Escalating', color: '#FF5A5A', bg: 'rgba(255,90,90,0.12)' },
+      'de-escalating': { label: 'De-escalating', color: '#ffcc00', bg: 'rgba(255,204,0,0.1)' },
     };
     const sc = statusConfig[conflict.status] ?? { label: conflict.status ?? 'Unknown', color: '#888888', bg: 'rgba(136,136,136,0.15)' };
     badges = [
@@ -718,7 +725,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     width: '100%',
     height: '70vh',
     borderRadius: '16px 16px 0 0',
-    borderTop: '2px solid rgba(0, 255, 136, 0.4)',
+    borderTop: '2px solid rgba(60, 180, 255, 0.3)',
     borderRight: 'none',
     transform: visible ? 'translateY(0)' : 'translateY(100%)',
     zIndex: 1400,
@@ -822,10 +829,10 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
           style={styles.flyBtn}
           onClick={() => onFlyTo(flyLat, flyLng)}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,255,136,0.22)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60,180,255,0.2)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,255,136,0.12)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60,180,255,0.1)';
           }}
         >
           ◎ Fly To Location

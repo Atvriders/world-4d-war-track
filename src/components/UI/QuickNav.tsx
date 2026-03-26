@@ -173,12 +173,12 @@ const QuickNav: React.FC<QuickNavProps> = ({ onFlyTo, conflictZones }) => {
 // ---------------------------------------------------------------------------
 
 const BASE_BTN: React.CSSProperties = {
-  background: 'rgba(0, 20, 40, 0.85)',
-  color: '#7ecfff',
-  border: '2px solid rgba(0, 180, 255, 0.35)',
-  borderRadius: '3px',
+  background: 'rgba(12, 20, 36, 0.5)',
+  color: '#8BA4BE',
+  border: '1px solid rgba(60, 180, 255, 0.08)',
+  borderRadius: '4px',
   fontSize: '9px',
-  fontFamily: 'monospace',
+  fontFamily: "'Rajdhani', sans-serif",
   fontWeight: 700,
   letterSpacing: '0.04em',
   padding: '4px 3px',
@@ -193,9 +193,9 @@ const BASE_BTN: React.CSSProperties = {
 
 const HOVER_BTN: React.CSSProperties = {
   ...BASE_BTN,
-  color: '#ffffff',
-  borderColor: 'rgba(0, 220, 255, 0.85)',
-  boxShadow: '0 0 8px rgba(0, 200, 255, 0.55)',
+  color: '#E4EEF8',
+  borderColor: 'rgba(60, 180, 255, 0.4)',
+  boxShadow: '0 0 8px rgba(60, 180, 255, 0.25)',
 };
 
 const styles: Record<string, React.CSSProperties> = {
@@ -204,12 +204,13 @@ const styles: Record<string, React.CSSProperties> = {
     top: '44px',
     right: '8px',
     width: '210px',
-    background: 'rgba(0, 8, 20, 0.90)',
-    border: '2px solid rgba(0, 180, 255, 0.40)',
-    borderRadius: '5px',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: '8px',
     boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
     zIndex: 900,
-    fontFamily: 'monospace',
+    fontFamily: "'Rajdhani', sans-serif",
     userSelect: 'none',
   },
 
@@ -219,16 +220,16 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     width: '100%',
     padding: '5px 8px',
-    background: 'rgba(0, 40, 80, 0.70)',
+    background: 'rgba(12, 20, 36, 0.5)',
     border: 'none',
-    borderBottom: '1px solid rgba(0, 180, 255, 0.25)',
-    borderRadius: '3px 3px 0 0',
-    color: '#00d4ff',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: '8px 8px 0 0',
+    color: '#3CB8FF',
     fontSize: '10px',
     fontWeight: 700,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.1em',
     cursor: 'pointer',
-    fontFamily: 'monospace',
+    fontFamily: "'Rajdhani', sans-serif",
     textAlign: 'left' as const,
     boxSizing: 'border-box' as const,
   },
@@ -253,15 +254,17 @@ const styles: Record<string, React.CSSProperties> = {
   navBtnHover: HOVER_BTN,
 
   divider: {
-    borderTop: '1px solid rgba(0, 180, 255, 0.20)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.08)',
     margin: '6px 0 4px',
   },
 
   sectionLabel: {
-    color: 'rgba(0, 200, 255, 0.55)',
-    fontSize: '8px',
-    letterSpacing: '0.15em',
-    fontWeight: 700,
+    color: '#4A6480',
+    fontSize: '10px',
+    letterSpacing: '0.1em',
+    fontWeight: 600,
+    fontFamily: "'Rajdhani', sans-serif",
+    textTransform: 'uppercase' as const,
     marginBottom: '3px',
     paddingLeft: '1px',
   },
@@ -278,8 +281,8 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left' as const,
     padding: '4px 6px',
     fontSize: '9px',
-    color: '#ffca7a',
-    borderColor: 'rgba(255, 160, 0, 0.35)',
+    color: '#8BA4BE',
+    borderColor: 'rgba(60, 180, 255, 0.12)',
   },
 
   zoneBtn: {
@@ -288,8 +291,8 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left' as const,
     padding: '4px 6px',
     fontSize: '9px',
-    color: '#ffca7a',
-    borderColor: 'rgba(255, 160, 0, 0.35)',
+    color: '#8BA4BE',
+    borderColor: 'rgba(60, 180, 255, 0.12)',
   },
 
   zoneBtnHover: {
@@ -298,18 +301,19 @@ const styles: Record<string, React.CSSProperties> = {
     textAlign: 'left' as const,
     padding: '4px 6px',
     fontSize: '9px',
-    color: '#ffe0a0',
-    borderColor: 'rgba(255, 190, 0, 0.85)',
-    boxShadow: '0 0 8px rgba(255, 180, 0, 0.50)',
+    color: '#E4EEF8',
+    borderColor: 'rgba(60, 180, 255, 0.4)',
+    boxShadow: '0 0 8px rgba(60, 180, 255, 0.25)',
   },
 
   hint: {
     marginTop: '6px',
-    color: 'rgba(0, 180, 255, 0.40)',
+    color: 'rgba(60, 184, 255, 0.40)',
     fontSize: '8px',
+    fontFamily: "'Rajdhani', sans-serif",
     letterSpacing: '0.04em',
     textAlign: 'center' as const,
-    borderTop: '1px solid rgba(0, 180, 255, 0.12)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.08)',
     paddingTop: '4px',
   },
 };

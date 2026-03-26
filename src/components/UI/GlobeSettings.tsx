@@ -23,7 +23,7 @@ function Switch({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
         width: 36,
         height: 18,
         borderRadius: 9,
-        background: value ? '#00ff88' : '#333',
+        background: value ? '#3CB8FF' : 'rgba(60, 180, 255, 0.15)',
         cursor: 'pointer',
         position: 'relative',
         transition: 'background 0.2s',
@@ -73,9 +73,10 @@ export default function GlobeSettings({
 
   const sectionLabel: React.CSSProperties = {
     fontSize: 10,
-    fontWeight: 700,
+    fontWeight: 600,
+    fontFamily: "'Rajdhani', sans-serif",
     letterSpacing: 2,
-    color: '#00ff88',
+    color: '#4A6480',
     textTransform: 'uppercase',
     marginBottom: 8,
     marginTop: 4,
@@ -90,13 +91,14 @@ export default function GlobeSettings({
 
   const labelStyle: React.CSSProperties = {
     fontSize: 12,
-    color: '#aaa',
+    fontFamily: "'Rajdhani', sans-serif",
+    color: '#8BA4BE',
     flex: 1,
     paddingRight: 8,
   };
 
   const divider: React.CSSProperties = {
-    borderTop: '1px solid #2a2a2a',
+    borderTop: '1px solid rgba(60, 180, 255, 0.08)',
     margin: '12px 0',
   };
 
@@ -114,9 +116,10 @@ export default function GlobeSettings({
           width: 30,
           height: 30,
           borderRadius: '50%',
-          background: visible ? '#1a2a1a' : 'rgba(0,0,0,0.7)',
-          border: `1px solid ${visible ? '#00ff88' : '#444'}`,
-          color: visible ? '#00ff88' : '#888',
+          background: visible ? 'rgba(8, 14, 28, 0.85)' : 'rgba(8, 14, 28, 0.7)',
+          backdropFilter: 'blur(14px)',
+          border: `1px solid ${visible ? 'rgba(60, 180, 255, 0.5)' : 'rgba(60, 180, 255, 0.15)'}`,
+          color: visible ? '#3CB8FF' : '#4A6480',
           fontSize: 16,
           cursor: 'pointer',
           display: 'flex',
@@ -138,12 +141,13 @@ export default function GlobeSettings({
             right: 16,
             zIndex: 1200,
             width: 240,
-            background: 'rgba(8, 12, 8, 0.95)',
-            border: '1px solid #1e3a1e',
-            borderRadius: 6,
+            background: 'rgba(8, 14, 28, 0.85)',
+            backdropFilter: 'blur(14px)',
+            border: '1px solid rgba(60, 180, 255, 0.15)',
+            borderRadius: 8,
             padding: '14px 16px',
             boxShadow: '0 4px 24px rgba(0,0,0,0.7)',
-            fontFamily: "'Courier New', monospace",
+            fontFamily: "'Rajdhani', sans-serif",
             color: '#ccc',
           }}
         >
@@ -152,8 +156,9 @@ export default function GlobeSettings({
             style={{
               fontSize: 11,
               fontWeight: 700,
-              letterSpacing: 3,
-              color: '#00ff88',
+              fontFamily: "'Rajdhani', sans-serif",
+              letterSpacing: '0.1em',
+              color: '#3CB8FF',
               textTransform: 'uppercase',
               marginBottom: 14,
               textAlign: 'center',
@@ -169,8 +174,9 @@ export default function GlobeSettings({
             <div style={{ display: 'flex', gap: 4 }}>
               {(['high', 'low'] as const).map((mode) => {
                 const isActive = performanceMode === mode;
-                const activeColor = mode === 'high' ? '#00ff88' : '#ffaa00';
-                const activeBg = mode === 'high' ? '#0d2a0d' : '#2a2200';
+                const activeColor = mode === 'high' ? '#00cc66' : '#E5A835';
+                const activeBg = mode === 'high' ? 'rgba(0, 204, 102, 0.1)' : 'rgba(229, 168, 53, 0.1)';
+                const activeBorder = mode === 'high' ? 'rgba(0, 204, 102, 0.4)' : 'rgba(229, 168, 53, 0.4)';
                 return (
                   <button
                     key={mode}
@@ -179,15 +185,15 @@ export default function GlobeSettings({
                       flex: 1,
                       padding: '4px 0',
                       fontSize: 10,
-                      fontFamily: "'Courier New', monospace",
+                      fontFamily: "'Rajdhani', sans-serif",
                       fontWeight: 600,
                       letterSpacing: 0.5,
                       textTransform: 'uppercase',
                       cursor: 'pointer',
                       borderRadius: 3,
-                      border: `1px solid ${isActive ? activeColor : '#333'}`,
-                      background: isActive ? activeBg : 'transparent',
-                      color: isActive ? activeColor : '#666',
+                      border: `1px solid ${isActive ? activeBorder : 'rgba(60, 180, 255, 0.1)'}`,
+                      background: isActive ? activeBg : 'rgba(60, 180, 255, 0.04)',
+                      color: isActive ? activeColor : '#4A6480',
                       transition: 'all 0.15s',
                     }}
                   >
@@ -198,8 +204,9 @@ export default function GlobeSettings({
             </div>
             <div
               style={{
-                fontSize: 9,
-                color: '#666',
+                fontSize: 10,
+                fontFamily: "'Rajdhani', sans-serif",
+                color: '#6AAED4',
                 marginTop: 6,
                 lineHeight: 1.4,
               }}
@@ -225,15 +232,15 @@ export default function GlobeSettings({
                     flex: 1,
                     padding: '4px 0',
                     fontSize: 10,
-                    fontFamily: "'Courier New', monospace",
+                    fontFamily: "'Rajdhani', sans-serif",
                     fontWeight: 600,
                     letterSpacing: 0.5,
                     textTransform: 'capitalize',
                     cursor: 'pointer',
                     borderRadius: 3,
-                    border: `1px solid ${settings.imageryStyle === style ? '#00ff88' : '#333'}`,
-                    background: settings.imageryStyle === style ? '#0d2a0d' : 'transparent',
-                    color: settings.imageryStyle === style ? '#00ff88' : '#666',
+                    border: `1px solid ${settings.imageryStyle === style ? 'rgba(60, 180, 255, 0.5)' : 'rgba(60, 180, 255, 0.1)'}`,
+                    background: settings.imageryStyle === style ? 'rgba(60, 180, 255, 0.1)' : 'rgba(60, 180, 255, 0.04)',
+                    color: settings.imageryStyle === style ? '#3CB8FF' : '#4A6480',
                     transition: 'all 0.15s',
                   }}
                 >
@@ -282,8 +289,9 @@ export default function GlobeSettings({
               <span
                 style={{
                   fontSize: 11,
-                  color: '#00ff88',
-                  fontFamily: "'Courier New', monospace",
+                  color: '#3CB8FF',
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 600,
                   minWidth: 32,
                   textAlign: 'right',
                 }}
@@ -301,7 +309,7 @@ export default function GlobeSettings({
               onChange={(e) => onUpdate({ autoRotateSpeed: parseFloat(e.target.value) })}
               style={{
                 width: '100%',
-                accentColor: '#00ff88',
+                accentColor: '#3CB8FF',
                 cursor: settings.autoRotate ? 'pointer' : 'not-allowed',
                 opacity: settings.autoRotate ? 1 : 0.4,
               }}
@@ -333,7 +341,7 @@ export default function GlobeSettings({
                     cursor: 'pointer',
                     padding: 0,
                     outline: settings.atmosphereColor === c.value
-                      ? `2px solid ${c.value}`
+                      ? `2px solid rgba(60, 180, 255, 0.5)`
                       : 'none',
                     outlineOffset: 1,
                     transition: 'border-color 0.15s',
@@ -353,14 +361,14 @@ export default function GlobeSettings({
               width: '100%',
               padding: '7px 0',
               fontSize: 11,
-              fontFamily: "'Courier New', monospace",
+              fontFamily: "'Rajdhani', sans-serif",
               fontWeight: 700,
               letterSpacing: 1.5,
               textTransform: 'uppercase',
               cursor: 'pointer',
               borderRadius: 4,
-              border: resetHover ? '1px solid #ff4444' : '1px solid #3a1a1a',
-              background: resetHover ? 'rgba(100, 20, 20, 0.7)' : 'rgba(60, 10, 10, 0.5)',
+              border: resetHover ? '1px solid rgba(255, 68, 68, 0.6)' : '1px solid rgba(255, 68, 68, 0.15)',
+              background: resetHover ? 'rgba(255, 68, 68, 0.12)' : 'rgba(255, 68, 68, 0.05)',
               color: '#ff6666',
               transition: 'background 0.2s, border-color 0.2s',
             }}

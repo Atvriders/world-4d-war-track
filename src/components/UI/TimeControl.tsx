@@ -48,10 +48,10 @@ const sliderStyles = `
     cursor: pointer;
     background: linear-gradient(
       to right,
-      #22c55e 0%,
-      #22c55e var(--fill-pct),
-      #374151 var(--fill-pct),
-      #374151 100%
+      #3CB8FF 0%,
+      #3CB8FF var(--fill-pct),
+      rgba(60, 180, 255, 0.15) var(--fill-pct),
+      rgba(60, 180, 255, 0.15) 100%
     );
   }
   .time-range-input::-webkit-slider-thumb {
@@ -60,19 +60,19 @@ const sliderStyles = `
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #22c55e;
+    background: #3CB8FF;
     cursor: pointer;
-    border: 2px solid #15803d;
-    box-shadow: 0 0 4px rgba(34, 197, 94, 0.6);
+    border: 2px solid #2a8abf;
+    box-shadow: 0 0 6px rgba(60, 184, 255, 0.5);
   }
   .time-range-input::-moz-range-thumb {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #22c55e;
+    background: #3CB8FF;
     cursor: pointer;
-    border: 2px solid #15803d;
-    box-shadow: 0 0 4px rgba(34, 197, 94, 0.6);
+    border: 2px solid #2a8abf;
+    box-shadow: 0 0 6px rgba(60, 184, 255, 0.5);
   }
   .time-range-input::-webkit-slider-runnable-track {
     border-radius: 2px;
@@ -112,17 +112,18 @@ const TimeControl: React.FC<TimeControlProps> = ({
     transform: 'translateX(-50%)',
     width: isMobile ? 'calc(100vw - 16px)' : '350px',
     maxWidth: isMobile ? '100%' : '350px',
-    backgroundColor: 'rgba(10, 15, 20, 0.55)',
-    border: '1px solid rgba(31, 41, 55, 0.5)',
-    borderRadius: '6px',
+    backgroundColor: 'rgba(8, 14, 28, 0.5)',
+    border: '1px solid rgba(60, 180, 255, 0.1)',
+    borderRadius: '16px',
     padding: isMobile ? '4px 8px 3px' : '6px 10px 4px',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
     zIndex: 1000,
-    boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
-    backdropFilter: 'blur(6px)',
-    fontFamily: "'Courier New', Courier, monospace",
+    boxShadow: '0 2px 12px rgba(0,0,0,0.3)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    fontFamily: "'Rajdhani', 'Courier New', sans-serif",
   };
 
   const rowStyle: React.CSSProperties = {
@@ -132,11 +133,12 @@ const TimeControl: React.FC<TimeControlProps> = ({
   };
 
   const btnBase: React.CSSProperties = {
-    background: 'rgba(31, 41, 55, 0.7)',
-    border: '1px solid rgba(55, 65, 81, 0.5)',
-    borderRadius: '3px',
-    color: '#d1d5db',
+    background: 'rgba(60, 180, 255, 0.08)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: '8px',
+    color: '#6AAED4',
     cursor: 'pointer',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: isMobile ? '14px' : '11px',
     padding: isMobile ? '4px 10px' : '2px 6px',
     height: isMobile ? '32px' : '20px',
@@ -150,19 +152,21 @@ const TimeControl: React.FC<TimeControlProps> = ({
     fontSize: isMobile ? '14px' : '12px',
     padding: isMobile ? '4px 12px' : '2px 8px',
     height: isMobile ? '32px' : '20px',
-    color: isPlaying ? '#22c55e' : '#6b7280',
-    borderColor: isPlaying ? '#15803d' : 'rgba(55, 65, 81, 0.5)',
-    background: isPlaying ? 'rgba(5, 46, 22, 0.7)' : 'rgba(31, 41, 55, 0.7)',
-    boxShadow: isPlaying ? '0 0 6px rgba(34, 197, 94, 0.4)' : 'none',
+    color: isPlaying ? '#3CB8FF' : '#4A6480',
+    borderColor: isPlaying ? 'rgba(60, 180, 255, 0.3)' : 'rgba(60, 180, 255, 0.15)',
+    background: isPlaying ? 'rgba(60, 180, 255, 0.15)' : 'rgba(60, 180, 255, 0.08)',
+    boxShadow: isPlaying ? '0 0 8px rgba(60, 184, 255, 0.3)' : 'none',
   };
 
   const timeDisplayStyle: React.CSSProperties = {
     marginLeft: 'auto',
+    fontFamily: "'Share Tech Mono', 'Courier New', monospace",
     fontSize: isMobile ? '10px' : '12px',
-    color: timeOffset === 0 ? '#22c55e' : timeOffset > 0 ? '#60a5fa' : '#f59e0b',
+    color: timeOffset === 0 ? '#3CB8FF' : timeOffset > 0 ? '#6AAED4' : '#FFB020',
     fontWeight: 'bold',
     letterSpacing: '0.03em',
     whiteSpace: 'nowrap',
+    textShadow: '0 0 4px rgba(60, 184, 255, 0.3)',
   };
 
   return (

@@ -85,11 +85,12 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
         position: 'fixed',
         inset: 0,
         zIndex: 9000,
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontFamily: '"Courier New", Courier, monospace',
+        fontFamily: "'Rajdhani', sans-serif",
       }}
     >
       <style>{`
@@ -97,20 +98,22 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
           width: 4px;
         }
         .kb-help-card::-webkit-scrollbar-track {
-          background: #0a0a0a;
+          background: rgba(8, 14, 28, 0.5);
         }
         .kb-help-card::-webkit-scrollbar-thumb {
-          background: rgba(0, 255, 136, 0.3);
+          background: rgba(60, 180, 255, 0.3);
           border-radius: 2px;
         }
         .kb-section-title {
+          font-family: 'Rajdhani', sans-serif;
+          font-weight: 600;
           font-variant: small-caps;
           letter-spacing: 2px;
           font-size: 11px;
-          color: #00ff88;
+          color: #3CB8FF;
           margin: 0 0 8px 0;
           padding-bottom: 4px;
-          border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+          border-bottom: 1px solid rgba(60, 180, 255, 0.12);
         }
       `}</style>
 
@@ -123,10 +126,11 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
           maxWidth: '95vw',
           maxHeight: '85vh',
           overflowY: 'auto',
-          backgroundColor: '#0d0d0d',
-          border: '1px solid rgba(0, 255, 136, 0.5)',
-          borderRadius: '6px',
-          boxShadow: '0 0 30px rgba(0, 255, 136, 0.15), 0 0 60px rgba(0, 0, 0, 0.8)',
+          backgroundColor: 'rgba(8, 14, 28, 0.9)',
+          backdropFilter: 'blur(14px)',
+          border: '1px solid rgba(60, 180, 255, 0.2)',
+          borderRadius: '8px',
+          boxShadow: '0 0 30px rgba(60, 180, 255, 0.08), 0 0 60px rgba(0, 0, 0, 0.8)',
           padding: '24px',
           boxSizing: 'border-box',
         }}
@@ -137,16 +141,17 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
             textAlign: 'center',
             marginBottom: '20px',
             paddingBottom: '16px',
-            borderBottom: '1px solid rgba(0, 255, 136, 0.3)',
+            borderBottom: '1px solid rgba(60, 180, 255, 0.15)',
           }}
         >
           <h2
             style={{
               margin: 0,
               fontSize: '16px',
-              color: '#00ff88',
+              fontFamily: "'Rajdhani', sans-serif",
+              color: '#3CB8FF',
               letterSpacing: '3px',
-              fontWeight: 'bold',
+              fontWeight: 700,
             }}
           >
             ⌨ KEYBOARD SHORTCUTS
@@ -184,13 +189,13 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
                       >
                         <kbd
                           style={{
-                            background: 'rgba(0, 255, 136, 0.15)',
-                            border: '1px solid rgba(0, 255, 136, 0.4)',
+                            background: 'rgba(60, 180, 255, 0.1)',
+                            border: '1px solid rgba(60, 180, 255, 0.25)',
                             padding: '1px 6px',
                             borderRadius: '3px',
                             fontSize: '11px',
-                            color: '#00ff88',
-                            fontFamily: '"Courier New", Courier, monospace',
+                            color: '#3CB8FF',
+                            fontFamily: "'Share Tech Mono', monospace",
                             display: 'inline-block',
                           }}
                         >
@@ -200,8 +205,9 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
                       <td
                         style={{
                           paddingBottom: '6px',
-                          color: '#aaa',
+                          color: '#8BA4BE',
                           fontSize: '12px',
+                          fontFamily: "'Rajdhani', sans-serif",
                           verticalAlign: 'middle',
                         }}
                       >
@@ -220,14 +226,15 @@ const KeyboardHelp: React.FC<KeyboardHelpProps> = ({ visible, onClose }) => {
           style={{
             marginTop: '20px',
             paddingTop: '12px',
-            borderTop: '1px solid rgba(0, 255, 136, 0.2)',
+            borderTop: '1px solid rgba(60, 180, 255, 0.12)',
             textAlign: 'center',
           }}
         >
           <span
             style={{
               fontSize: '11px',
-              color: '#555',
+              fontFamily: "'Rajdhani', sans-serif",
+              color: '#4A6480',
               letterSpacing: '1px',
             }}
           >

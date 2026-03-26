@@ -17,7 +17,7 @@ type SortMode = 'deaths' | 'intensity' | 'alpha';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const PANEL_WIDTH = 290;
+const PANEL_WIDTH = 280;
 
 const INTENSITY_ORDER: Record<ConflictZone['intensity'], number> = {
   critical: 4,
@@ -222,13 +222,15 @@ const styles: Record<string, React.CSSProperties> = {
     zIndex: 999,
     display: 'flex',
     flexDirection: 'row-reverse',
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
     pointerEvents: 'none',
   },
   panel: {
     height: '100%',
-    background: 'rgba(8, 12, 20, 0.97)',
-    borderLeft: '1px solid rgba(0, 255, 100, 0.18)',
+    background: 'rgba(8, 14, 28, 0.7)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    borderLeft: '1px solid rgba(60, 180, 255, 0.12)',
     display: 'flex',
     flexDirection: 'column',
     transition: 'width 0.25s ease',
@@ -241,17 +243,19 @@ const styles: Record<string, React.CSSProperties> = {
     top: '50%',
     transform: 'translateY(-50%)',
     right: 0,
-    width: 20,
+    width: 28,
     height: 52,
-    background: 'rgba(8, 12, 20, 0.97)',
-    border: '1px solid rgba(0, 255, 100, 0.28)',
+    background: 'rgba(8, 14, 28, 0.7)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(60, 180, 255, 0.18)',
     borderRight: 'none',
     borderRadius: '6px 0 0 6px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: 'rgba(0, 255, 100, 0.8)',
+    color: '#3CB8FF',
     fontSize: 11,
     pointerEvents: 'all',
     userSelect: 'none',
@@ -261,7 +265,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   header: {
     padding: '10px 10px 8px',
-    borderBottom: '1px solid rgba(0, 255, 100, 0.15)',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.06)',
     flexShrink: 0,
   },
   headerTop: {
@@ -271,10 +275,11 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 6,
   },
   headerTitle: {
-    color: 'rgba(0, 255, 100, 0.95)',
-    fontSize: 11,
+    color: '#3CB8FF',
+    fontFamily: "'Rajdhani', sans-serif",
+    fontSize: 14,
     fontWeight: 700,
-    letterSpacing: '0.16em',
+    letterSpacing: '0.15em',
     textTransform: 'uppercase' as const,
     flex: 1,
     whiteSpace: 'nowrap',
@@ -282,11 +287,12 @@ const styles: Record<string, React.CSSProperties> = {
   countBadge: {
     background: 'rgba(255, 60, 60, 0.15)',
     border: '1px solid rgba(255, 60, 60, 0.4)',
-    borderRadius: 3,
+    borderRadius: 9,
     color: '#ff6666',
+    fontFamily: "'Share Tech Mono', monospace",
     fontSize: 10,
     fontWeight: 700,
-    padding: '1px 6px',
+    padding: '1px 7px',
     letterSpacing: '0.05em',
     flexShrink: 0,
   },
@@ -298,10 +304,10 @@ const styles: Record<string, React.CSSProperties> = {
     flex: 1,
     padding: '3px 4px',
     background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(0, 255, 100, 0.15)',
+    border: '1px solid rgba(60, 180, 255, 0.1)',
     borderRadius: 2,
-    color: 'rgba(150, 190, 160, 0.7)',
-    fontFamily: "'Courier New', Courier, monospace",
+    color: 'rgba(150, 180, 210, 0.7)',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     fontWeight: 700,
     letterSpacing: '0.06em',
@@ -311,9 +317,9 @@ const styles: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap',
   },
   sortBtnActive: {
-    background: 'rgba(0, 255, 100, 0.12)',
-    border: '1px solid rgba(0, 255, 100, 0.45)',
-    color: 'rgba(0, 255, 100, 0.95)',
+    background: 'rgba(60, 184, 255, 0.12)',
+    border: '1px solid rgba(60, 184, 255, 0.45)',
+    color: '#3CB8FF',
   },
   scrollArea: {
     flex: 1,
@@ -323,22 +329,22 @@ const styles: Record<string, React.CSSProperties> = {
   },
   card: {
     margin: '6px 8px',
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(0, 255, 100, 0.1)',
-    borderRadius: 3,
+    background: 'rgba(12, 20, 36, 0.6)',
+    border: '1px solid rgba(60, 180, 255, 0.1)',
+    borderRadius: 6,
     cursor: 'pointer',
     transition: 'background 0.12s, border-color 0.12s',
     position: 'relative' as const,
     overflow: 'hidden',
   },
   cardHovered: {
-    background: 'rgba(0, 255, 100, 0.06)',
-    borderColor: 'rgba(0, 255, 100, 0.28)',
+    background: 'rgba(60, 180, 255, 0.06)',
+    borderColor: 'rgba(60, 180, 255, 0.25)',
   },
   cardSelected: {
-    background: 'rgba(0, 255, 100, 0.08)',
-    border: '1px solid rgba(0, 255, 100, 0.65)',
-    boxShadow: '0 0 8px rgba(0, 255, 100, 0.12)',
+    background: 'rgba(255, 40, 20, 0.08)',
+    border: '1px solid rgba(255, 80, 40, 0.5)',
+    boxShadow: '0 0 8px rgba(255, 80, 40, 0.1)',
   },
   intensityBar: {
     position: 'absolute' as const,
@@ -367,19 +373,21 @@ const styles: Record<string, React.CSSProperties> = {
   },
   cardName: {
     flex: 1,
-    color: '#d0dce8',
-    fontSize: 11,
-    fontWeight: 700,
+    color: '#E4EEF8',
+    fontFamily: "'Rajdhani', sans-serif",
+    fontSize: 13,
+    fontWeight: 600,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     letterSpacing: '0.02em',
   },
   statusBadge: {
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     fontWeight: 700,
-    padding: '1px 5px',
-    borderRadius: 2,
+    padding: '1px 7px',
+    borderRadius: 9,
     letterSpacing: '0.1em',
     textTransform: 'uppercase' as const,
     flexShrink: 0,
@@ -410,9 +418,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   casualtyCount: {
     color: '#ff7777',
+    fontFamily: "'Share Tech Mono', monospace",
     fontSize: 10,
     fontWeight: 700,
     letterSpacing: '0.02em',
+    fontVariantNumeric: 'tabular-nums',
   },
   activeSince: {
     color: 'rgba(140, 170, 155, 0.6)',
@@ -420,11 +430,11 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.04em',
   },
   flyBtn: {
-    background: 'rgba(0, 255, 100, 0.12)',
-    border: '1px solid rgba(0, 255, 100, 0.4)',
-    borderRadius: 2,
-    color: '#00ff88',
-    fontFamily: "'Courier New', Courier, monospace",
+    background: 'rgba(60, 184, 255, 0.12)',
+    border: '1px solid rgba(60, 184, 255, 0.4)',
+    borderRadius: 4,
+    color: '#3CB8FF',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     fontWeight: 700,
     letterSpacing: '0.08em',
@@ -435,12 +445,13 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   expandedSection: {
-    borderTop: '1px solid rgba(0, 255, 100, 0.1)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.06)',
     marginTop: 6,
     paddingTop: 6,
   },
   expandedLabel: {
-    color: 'rgba(0, 255, 100, 0.5)',
+    color: 'rgba(60, 184, 255, 0.5)',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     fontWeight: 700,
     letterSpacing: '0.14em',
@@ -457,7 +468,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#b0c0cc',
     fontSize: 10,
     paddingLeft: 6,
-    borderLeft: '2px solid rgba(0, 255, 100, 0.3)',
+    borderLeft: '2px solid rgba(60, 180, 255, 0.25)',
     lineHeight: 1.4,
   },
   descSnippet: {
@@ -468,7 +479,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footer: {
     padding: '6px 8px 8px',
-    borderTop: '1px solid rgba(0, 255, 100, 0.1)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.06)',
     flexShrink: 0,
   },
   footerText: {
@@ -510,10 +521,16 @@ if (typeof document !== 'undefined' && !document.getElementById(BLINK_STYLE_ID))
   const style = document.createElement('style');
   style.id = BLINK_STYLE_ID;
   style.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
     @keyframes conflictBlink {
       0%, 100% { opacity: 1; }
       50%       { opacity: 0.35; }
     }
+    .conflict-sidebar-scroll::-webkit-scrollbar { width: 4px; }
+    .conflict-sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+    .conflict-sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(60, 180, 255, 0.25); border-radius: 2px; }
+    .conflict-sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(60, 180, 255, 0.45); }
+    .conflict-sidebar-scroll { scrollbar-width: thin; scrollbar-color: rgba(60, 180, 255, 0.25) transparent; }
   `;
   document.head.appendChild(style);
 }
@@ -521,9 +538,9 @@ if (typeof document !== 'undefined' && !document.getElementById(BLINK_STYLE_ID))
 // ── Sparkline ─────────────────────────────────────────────────────────────────
 
 const TREND_COLORS: Record<'rising' | 'falling' | 'stable', string> = {
-  rising: '#ff4444',
-  falling: '#00ff88',
-  stable: '#ffcc00',
+  rising: '#3CB8FF',
+  falling: '#3CB8FF',
+  stable: '#3CB8FF',
 };
 
 function Sparkline({ counts, trend }: { counts: number[]; trend: 'rising' | 'falling' | 'stable' }) {
@@ -621,11 +638,11 @@ function CasualtyBar({ military, civilian, total, militarySource, civilianSource
         )}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 1 }}>
-        <span style={{ color: '#cc5555', fontSize: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
+        <span style={{ color: '#cc5555', fontFamily: "'Share Tech Mono', monospace", fontVariantNumeric: 'tabular-nums', fontSize: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
           MIL {formatCasualties(military)}
           <SourceIndicator tooltip={`Source: ${militarySource ?? 'ACLED / OSINT'}`} />
         </span>
-        <span style={{ color: '#888899', fontSize: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
+        <span style={{ color: '#888899', fontFamily: "'Share Tech Mono', monospace", fontVariantNumeric: 'tabular-nums', fontSize: 8, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
           CIV {formatCasualties(civilian)}
           <SourceIndicator tooltip={`Source: ${civilianSource ?? 'ACLED / OSINT'}`} />
         </span>
@@ -646,10 +663,11 @@ function GlobalTollBanner({ zones }: { zones: ConflictZone[] }) {
       padding: '8px 10px',
       background: 'rgba(255, 20, 20, 0.08)',
       border: '1px solid rgba(255, 50, 50, 0.35)',
-      borderRadius: 3,
+      borderRadius: 6,
     }}>
       <div style={{
         color: 'rgba(255, 80, 80, 0.6)',
+        fontFamily: "'Rajdhani', sans-serif",
         fontSize: 8,
         fontWeight: 700,
         letterSpacing: '0.18em',
@@ -661,6 +679,8 @@ function GlobalTollBanner({ zones }: { zones: ConflictZone[] }) {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
         <span style={{
           color: '#ff3333',
+          fontFamily: "'Share Tech Mono', monospace",
+          fontVariantNumeric: 'tabular-nums',
           fontSize: 16,
           fontWeight: 700,
           letterSpacing: '0.02em',
@@ -682,6 +702,8 @@ function GlobalTollBanner({ zones }: { zones: ConflictZone[] }) {
         }}>|</span>
         <span style={{
           color: '#cc8844',
+          fontFamily: "'Share Tech Mono', monospace",
+          fontVariantNumeric: 'tabular-nums',
           fontSize: 13,
           fontWeight: 700,
           letterSpacing: '0.02em',
@@ -778,6 +800,8 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
         }}>
           <span style={{
             color: '#ff2222',
+            fontFamily: "'Share Tech Mono', monospace",
+            fontVariantNumeric: 'tabular-nums',
             fontSize: 20,
             fontWeight: 700,
             letterSpacing: '-0.02em',
@@ -798,6 +822,8 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
           {deathsPerDay !== null && (
             <span style={{
               color: 'rgba(255, 100, 100, 0.45)',
+              fontFamily: "'Share Tech Mono', monospace",
+              fontVariantNumeric: 'tabular-nums',
               fontSize: 8,
               fontWeight: 700,
               letterSpacing: '0.04em',
@@ -831,6 +857,8 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
             </span>
             <span style={{
               color: '#cc8844',
+              fontFamily: "'Share Tech Mono', monospace",
+              fontVariantNumeric: 'tabular-nums',
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: '0.02em',
@@ -873,10 +901,10 @@ function ConflictCard({ zone, isSelected, onSelect, onFlyTo }: ConflictCardProps
                 onFlyTo();
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,255,100,0.22)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60,184,255,0.22)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,255,100,0.12)';
+                (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60,184,255,0.12)';
               }}
               title="Fly to conflict zone"
             >
@@ -966,12 +994,14 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
             right: 0,
             height: '60vh',
             zIndex: 1500,
-            background: 'rgba(8, 12, 20, 0.98)',
-            borderTop: '2px solid rgba(0, 255, 100, 0.4)',
+            background: 'rgba(8, 14, 28, 0.85)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            borderTop: '2px solid rgba(60, 180, 255, 0.25)',
             borderRadius: '16px 16px 0 0',
             display: 'flex',
             flexDirection: 'column',
-            fontFamily: "'Courier New', Courier, monospace",
+            fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
           }}
         >
           {/* Drag handle */}
@@ -994,11 +1024,11 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '4px 12px 8px',
-            borderBottom: '1px solid rgba(0, 255, 100, 0.15)',
+            borderBottom: '1px solid rgba(60, 180, 255, 0.06)',
             flexShrink: 0,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={styles.headerTitle}>{'\u2694'} Active Conflicts</span>
+              <span style={styles.headerTitle}>{'\u2694'} LIVE INTEL</span>
               <span style={styles.countBadge}>{conflictZones.length}</span>
             </div>
             <button
@@ -1007,9 +1037,9 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
                 width: 44,
                 height: 44,
                 background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(0, 255, 100, 0.3)',
+                border: '1px solid rgba(60, 180, 255, 0.2)',
                 borderRadius: 6,
-                color: '#00ff88',
+                color: '#3CB8FF',
                 fontSize: 20,
                 cursor: 'pointer',
                 display: 'flex',
@@ -1038,7 +1068,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
             ))}
           </div>
           {/* Conflict list */}
-          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
+          <div className="conflict-sidebar-scroll" style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
             <GlobalTollBanner zones={conflictZones} />
             {sorted.map((zone) => {
               const centroid = getConflictCentroid(zone);
@@ -1071,7 +1101,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
           right: 0,
           transform: 'translateY(-50%)',
           zIndex: 999,
-          fontFamily: "'Courier New', Courier, monospace",
+          fontFamily: "'Rajdhani', 'Segoe UI', sans-serif",
           pointerEvents: 'all',
         }}
       >
@@ -1083,20 +1113,23 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
             flexDirection: 'column',
             alignItems: 'center',
             gap: 6,
-            padding: '12px 6px',
-            background: 'rgba(8, 12, 20, 0.97)',
-            border: '1px solid rgba(0, 255, 100, 0.28)',
-            borderRight: '1px solid rgba(0, 255, 100, 0.28)',
+            width: 28,
+            padding: '12px 4px',
+            background: 'rgba(8, 14, 28, 0.7)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(60, 180, 255, 0.18)',
+            borderRight: 'none',
             borderRadius: '6px 0 0 6px',
             cursor: 'pointer',
             boxShadow: '-3px 0 14px rgba(0,0,0,0.5)',
             transition: 'background 0.15s',
           }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0, 255, 100, 0.08)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60, 184, 255, 0.08)';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(8, 12, 20, 0.97)';
+            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(8, 14, 28, 0.7)';
           }}
         >
           <span style={{ fontSize: 14, lineHeight: 1 }}>{'\u2694\uFE0F'}</span>
@@ -1105,6 +1138,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
               writingMode: 'vertical-rl',
               textOrientation: 'mixed',
               color: '#ff6666',
+              fontFamily: "'Rajdhani', sans-serif",
               fontSize: 11,
               fontWeight: 700,
               letterSpacing: '0.06em',
@@ -1116,7 +1150,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
           </span>
           <span
             style={{
-              color: 'rgba(0, 255, 100, 0.8)',
+              color: '#3CB8FF',
               fontSize: 11,
               lineHeight: 1,
             }}
@@ -1139,7 +1173,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.headerTop}>
-            <span style={styles.headerTitle}>{'\u2694'} Active Conflicts</span>
+            <span style={styles.headerTitle}>{'\u2694'} LIVE INTEL</span>
             <span style={styles.countBadge}>{conflictZones.length}</span>
           </div>
           <div style={styles.sortRow}>
@@ -1162,7 +1196,7 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
         <GlobalTollBanner zones={conflictZones} />
 
         {/* Conflict list */}
-        <div style={styles.scrollArea}>
+        <div className="conflict-sidebar-scroll" style={styles.scrollArea}>
           {sorted.map((zone) => {
             const centroid = getConflictCentroid(zone);
             return (

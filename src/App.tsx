@@ -61,20 +61,20 @@ class GlobeErrorBoundary extends React.Component<
         <div style={{
           width: '100%', height: '100%',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#000011', color: '#ff4444',
-          fontFamily: "'Courier New', monospace", textAlign: 'center', padding: 32,
+          background: '#000008', color: '#FF3838',
+          fontFamily: "'Rajdhani', sans-serif", textAlign: 'center', padding: 32,
         }}>
           <div>
-            <div style={{ fontSize: 18, marginBottom: 12 }}>GLOBE RENDER FAILURE</div>
-            <div style={{ fontSize: 12, color: '#ff8888', maxWidth: 480 }}>
+            <div style={{ fontSize: 18, marginBottom: 12, color: '#3CB8FF', fontFamily: "'Rajdhani', sans-serif" }}>GLOBE RENDER FAILURE</div>
+            <div style={{ fontSize: 12, color: '#FF3838', maxWidth: 480, fontFamily: "'Share Tech Mono', monospace" }}>
               {this.state.error || 'WebGL context lost or rendering error.'}
             </div>
             <button
               onClick={() => this.setState({ hasError: false, error: '' })}
               style={{
                 marginTop: 16, padding: '6px 16px', background: 'transparent',
-                border: '1px solid #ff4444', color: '#ff4444', cursor: 'pointer',
-                fontFamily: 'monospace', fontSize: 12,
+                border: '1px solid #3CB8FF', color: '#3CB8FF', cursor: 'pointer',
+                fontFamily: "'Share Tech Mono', monospace", fontSize: 12,
               }}
             >
               RETRY
@@ -371,10 +371,10 @@ export default function App() {
       style={{
         width: '100vw',
         height: '100vh',
-        background: '#000011',
+        background: '#000008',
         overflow: 'hidden',
         position: 'relative',
-        fontFamily: "'Courier New', monospace",
+        fontFamily: "'Rajdhani', sans-serif",
       }}
     >
       {/* Globe always renders (behind loading screen) so WebGL initializes immediately */}
@@ -660,12 +660,13 @@ export default function App() {
                 position: 'fixed',
                 bottom: 42,
                 right: 8,
-                background: 'rgba(5,15,30,0.7)',
-                border: '1px solid rgba(0,255,136,0.3)',
-                color: '#00ff88',
+                background: 'rgba(8,14,28,0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(60,180,255,0.2)',
+                color: '#3CB8FF',
                 padding: '2px 6px',
-                borderRadius: '3px',
-                fontFamily: 'monospace',
+                borderRadius: '4px',
+                fontFamily: "'Rajdhani', sans-serif",
                 fontSize: '9px',
                 cursor: 'pointer',
                 zIndex: 1250,
@@ -685,12 +686,13 @@ export default function App() {
                 position: 'fixed',
                 bottom: 62,
                 right: 8,
-                background: 'rgba(5,15,30,0.7)',
-                border: '1px solid rgba(0,255,136,0.3)',
-                color: '#00ff88',
+                background: 'rgba(8,14,28,0.6)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(60,180,255,0.2)',
+                color: '#3CB8FF',
                 padding: '2px 6px',
-                borderRadius: '3px',
-                fontFamily: 'monospace',
+                borderRadius: '4px',
+                fontFamily: "'Rajdhani', sans-serif",
                 fontSize: '9px',
                 cursor: 'pointer',
                 zIndex: 1250,
@@ -719,9 +721,10 @@ export default function App() {
                   width: 44,
                   height: 44,
                   borderRadius: 8,
-                  background: mobileFilterOpen ? 'rgba(0,255,136,0.2)' : 'rgba(5,15,30,0.85)',
-                  border: '1px solid rgba(0,255,136,0.4)',
-                  color: '#00ff88',
+                  background: mobileFilterOpen ? 'rgba(60,184,255,0.2)' : 'rgba(8,14,28,0.7)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(60,180,255,0.3)',
+                  color: '#3CB8FF',
                   fontSize: 18,
                   cursor: 'pointer',
                   display: 'flex',
@@ -738,9 +741,10 @@ export default function App() {
                   width: 44,
                   height: 44,
                   borderRadius: 8,
-                  background: mobileConflictOpen ? 'rgba(255,68,68,0.2)' : 'rgba(5,15,30,0.85)',
-                  border: '1px solid rgba(255,68,68,0.4)',
-                  color: '#ff6666',
+                  background: mobileConflictOpen ? 'rgba(255,56,56,0.2)' : 'rgba(8,14,28,0.7)',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,60,60,0.3)',
+                  color: '#FF3838',
                   fontSize: 18,
                   cursor: 'pointer',
                   display: 'flex',

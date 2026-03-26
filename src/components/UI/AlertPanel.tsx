@@ -98,7 +98,7 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, isNew, onDismiss, onFlyTo 
     borderLeft: `3px solid ${borderColor}`,
     background: isCritical
       ? undefined
-      : 'rgba(10, 22, 42, 0.85)',
+      : 'rgba(12, 20, 36, 0.5)',
     backgroundColor: isCritical ? undefined : undefined,
     animation: isNew
       ? `alertSlideIn 0.32s cubic-bezier(0.22,1,0.36,1) both${isCritical ? ', criticalPulse 1.8s ease-in-out infinite' : ''}`
@@ -169,7 +169,8 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, isNew, onDismiss, onFlyTo 
       <div
         style={{
           fontSize: '12px',
-          color: 'rgba(200, 220, 245, 0.92)',
+          color: '#8BA4BE',
+          fontFamily: "'Rajdhani', sans-serif",
           lineHeight: 1.45,
           wordBreak: 'break-word',
         }}
@@ -320,17 +321,18 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     display: 'flex',
     flexDirection: 'column',
     gap: 0,
-    fontFamily: '"Share Tech Mono", "Courier New", monospace',
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     transition: 'width 0.2s ease',
   };
 
   const criticalCount = activeAlerts.filter(a => a.severity === 'critical').length;
 
   const headerStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.97)',
-    border: '1px solid rgba(255, 100, 0, 0.4)',
-    borderBottom: collapsed ? undefined : '1px solid rgba(255, 100, 0, 0.22)',
-    borderRadius: collapsed ? '6px' : '6px 6px 0 0',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderBottom: collapsed ? undefined : '1px solid rgba(60, 180, 255, 0.08)',
+    borderRadius: collapsed ? '8px' : '8px 8px 0 0',
     padding: collapsed ? '6px 12px' : '8px 12px',
     display: 'flex',
     alignItems: 'center',
@@ -340,10 +342,11 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
   };
 
   const bodyStyle: React.CSSProperties = {
-    background: 'rgba(5, 15, 30, 0.93)',
-    border: '1px solid rgba(255, 100, 0, 0.4)',
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderTop: 'none',
-    borderRadius: '0 0 6px 6px',
+    borderRadius: '0 0 8px 8px',
     maxHeight: '240px',
     overflowY: 'auto',
     overflowX: 'hidden',
@@ -351,7 +354,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     display: 'flex',
     flexDirection: 'column',
     scrollbarWidth: 'thin',
-    scrollbarColor: 'rgba(255, 100, 0, 0.3) transparent',
+    scrollbarColor: 'rgba(60, 180, 255, 0.2) transparent',
   };
 
   return (
@@ -361,7 +364,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
         {collapsed ? (
           /* Compact badge when collapsed */
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: totalCount > 0 ? 'rgba(255, 160, 60, 0.95)' : 'rgba(120, 150, 190, 0.6)', letterSpacing: '0.06em' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: totalCount > 0 ? '#3CB8FF' : 'rgba(120, 150, 190, 0.6)', letterSpacing: '0.1em', fontFamily: "'Rajdhani', sans-serif", textTransform: 'uppercase' as const }}>
               ⚠ {totalCount} {totalCount === 1 ? 'alert' : 'alerts'}
             </span>
             {criticalCount > 0 && (
@@ -395,7 +398,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
           /* Full header when expanded */
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255, 160, 60, 0.95)', letterSpacing: '0.06em' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: '#3CB8FF', letterSpacing: '0.1em', fontFamily: "'Rajdhani', sans-serif", textTransform: 'uppercase' as const }}>
                 ⚠ ALERTS
               </span>
               <span

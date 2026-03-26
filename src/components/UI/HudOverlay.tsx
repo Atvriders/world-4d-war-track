@@ -30,7 +30,7 @@ function fmtUTC(d: Date): string {
 const BASE: React.CSSProperties = {
   position: 'fixed',
   pointerEvents: 'none',
-  fontFamily: "'Courier New', 'Lucida Console', monospace",
+  fontFamily: "'Share Tech Mono', 'Courier New', monospace",
   zIndex: 1100,
   letterSpacing: '0.06em',
   userSelect: 'none',
@@ -86,12 +86,11 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
           left: 52,
           fontSize: '9px',
           lineHeight: '1.4',
-          color: '#00ccaa',
-          opacity: 0.5,
-          textShadow: '0 0 4px rgba(0,204,170,0.2)',
+          color: 'rgba(60, 180, 255, 0.5)',
+          textShadow: '0 0 4px rgba(60, 180, 255, 0.15)',
         }}
       >
-        <div style={{ fontWeight: 700 }}>REAL-TIME INTELLIGENCE</div>
+        <div style={{ fontFamily: "'Rajdhani', 'Courier New', sans-serif", fontWeight: 700 }}>REAL-TIME INTELLIGENCE</div>
       </div>
 
       {/* ── Bottom-left: MGRS-style coordinates — moved above ticker/layerbar stack */}
@@ -102,9 +101,9 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
           left: 52,
           fontSize: '10px',
           lineHeight: '1.6',
-          color: '#00ff88',
-          opacity: 0.62,
-          textShadow: '0 0 5px rgba(0,255,136,0.3)',
+          color: '#3CB8FF',
+          opacity: 0.85,
+          textShadow: '0 0 6px rgba(60, 184, 255, 0.35)',
         }}
       >
         <div>LAT: {toDMS(lat, true)}</div>
@@ -117,9 +116,10 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
           ...BASE,
           top: 60,
           right: 52,
+          fontFamily: "'Share Tech Mono', 'Courier New', monospace",
           fontSize: '9px',
-          color: 'rgba(255,255,255,0.72)',
-          textShadow: '0 0 4px rgba(255,255,255,0.15)',
+          color: 'rgba(60, 180, 255, 0.6)',
+          textShadow: '0 0 4px rgba(60, 180, 255, 0.15)',
           display: 'flex',
           alignItems: 'center',
           gap: 6,

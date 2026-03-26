@@ -340,10 +340,11 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
       <div
         onClick={handleToggle}
         style={{
-          background: 'linear-gradient(90deg, #061a30 0%, #0a2540 100%)',
-          border: '1px solid rgba(0, 220, 100, 0.4)',
-          borderBottom: minimized ? '1px solid rgba(0, 220, 100, 0.4)' : 'none',
-          borderRadius: minimized ? 4 : '4px 4px 0 0',
+          background: 'rgba(8, 14, 28, 0.8)',
+          backdropFilter: 'blur(14px)',
+          border: '1px solid rgba(60, 180, 255, 0.15)',
+          borderBottom: minimized ? '1px solid rgba(60, 180, 255, 0.15)' : 'none',
+          borderRadius: minimized ? 8 : '8px 8px 0 0',
           padding: '3px 8px',
           cursor: 'pointer',
           display: 'flex',
@@ -353,11 +354,11 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
       >
         <span
           style={{
-            color: '#00dc64',
+            color: '#3CB8FF',
             fontSize: 9,
-            fontFamily: 'monospace',
+            fontFamily: "'Rajdhani', sans-serif",
             fontWeight: 700,
-            letterSpacing: '0.12em',
+            letterSpacing: '0.1em',
             textTransform: 'uppercase',
           }}
         >
@@ -365,9 +366,9 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
         </span>
         <span
           style={{
-            color: 'rgba(0, 220, 100, 0.7)',
+            color: 'rgba(60, 184, 255, 0.7)',
             fontSize: 9,
-            fontFamily: 'monospace',
+            fontFamily: "'Rajdhani', sans-serif",
             lineHeight: 1,
           }}
         >
@@ -381,10 +382,10 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
           style={{
             width: 160,
             height: 160,
-            background: '#010d1f',
-            border: '1px solid rgba(0, 220, 100, 0.4)',
+            background: 'rgba(8, 14, 28, 0.8)',
+            border: '1px solid rgba(60, 180, 255, 0.15)',
             borderTop: 'none',
-            borderRadius: '0 0 4px 4px',
+            borderRadius: '0 0 8px 8px',
             position: 'relative',
             overflow: 'hidden',
             display: 'flex',
@@ -445,10 +446,11 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
       {!minimized && (
         <div
           style={{
-            background: 'rgba(1, 13, 31, 0.95)',
-            border: '1px solid rgba(0, 220, 100, 0.25)',
+            background: 'rgba(8, 14, 28, 0.8)',
+            backdropFilter: 'blur(14px)',
+            border: '1px solid rgba(60, 180, 255, 0.15)',
             borderTop: 'none',
-            borderRadius: '0 0 4px 4px',
+            borderRadius: '0 0 8px 8px',
             padding: '4px 8px',
             display: 'flex',
             flexWrap: 'wrap',
@@ -478,9 +480,9 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
               />
               <span
                 style={{
-                  color: 'rgba(180, 220, 200, 0.65)',
+                  color: '#8BA4BE',
                   fontSize: 8,
-                  fontFamily: 'monospace',
+                  fontFamily: "'Rajdhani', sans-serif",
                 }}
               >
                 {label}

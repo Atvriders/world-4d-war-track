@@ -1154,6 +1154,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       controls.minPolarAngle = 0.2;
       controls.maxPolarAngle = Math.PI * 0.85;
 
+      const cameraAltDebounceRef = useRef<ReturnType<typeof setTimeout>>();
+
       // Auto-tilt camera upward as user zooms in so sky/satellites become visible
       const handleControlsChange = () => {
         const ctrl = globeRef.current?.controls();
@@ -1162,7 +1164,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         const distance = ctrl.object.position.length();
         // Track camera altitude for label filtering (distance ~200 = globe radius, normalize)
         const alt = (distance - 100) / 100; // rough altitude: ~0.2 at surface, ~1.2 default, ~9 far
-        setCameraAltitude(alt);
+        clearTimeout(cameraAltDebounceRef.current);
+        cameraAltDebounceRef.current = setTimeout(() => setCameraAltitude(alt), 150);
 
         // distance > 500 → polar ≈ PI/2 (equator-level, looking at globe)
         // distance < 200 → polar ≈ PI*0.65 (tilted up toward sky)
@@ -1658,7 +1661,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (!a.isMilitary && b.isMilitary) return 1;
       return b.altitude - a.altitude;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted;
+    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted.slice(0, 30);
     return limited.map(a => ({ ...a, _marker: 'aircraft' as const }));
   }, [layers.aircraft, aircraft, performanceMode]);
 
@@ -1670,7 +1673,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
       return bW - aW;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 10) : sorted;
+    const limited = performanceMode === 'low' ? sorted.slice(0, 10) : sorted.slice(0, 20);
     return limited.map(s => ({ ...s, _marker: 'ship' as const }));
   }, [layers.ships, ships, performanceMode]);
 
@@ -2339,7 +2342,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         pointAltitude={pointAltitudeAccessor}
         pointColor={pointColor}
         pointRadius={pointRadiusAccessor}
-        pointResolution={performanceMode === 'low' ? 2 : 4}
+        pointResolution={performanceMode === 'low' ? 2 : 3}
         pointLabel={pointLabel}
         onPointClick={handlePointClick}
 

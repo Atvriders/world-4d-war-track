@@ -52,9 +52,9 @@ function getFreshness(
 }
 
 const FRESHNESS_CONFIG = {
-  live:    { color: '#00ff88', label: 'LIVE',    bg: 'rgba(0, 255, 136, 0.15)', border: 'rgba(0, 255, 136, 0.5)' },
-  stale:   { color: '#ff3b3b', label: 'OFFLINE',  bg: 'rgba(255, 59, 59, 0.15)',  border: 'rgba(255, 59, 59, 0.5)' },
-  waiting: { color: '#ffd700', label: 'WAITING', bg: 'rgba(255, 215, 0, 0.15)',  border: 'rgba(255, 215, 0, 0.5)' },
+  live:    { color: '#00FF88', label: 'LIVE',    bg: 'rgba(0, 255, 136, 0.12)', border: 'rgba(0, 255, 136, 0.4)' },
+  stale:   { color: '#FF3838', label: 'OFFLINE',  bg: 'rgba(255, 56, 56, 0.12)',  border: 'rgba(255, 56, 56, 0.4)' },
+  waiting: { color: '#FFB020', label: 'WAITING', bg: 'rgba(255, 176, 32, 0.12)',  border: 'rgba(255, 176, 32, 0.4)' },
 };
 
 const StatusBar: React.FC<StatusBarProps> = ({
@@ -79,7 +79,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   const anySyncing = isLoading.satellites || isLoading.aircraft || isLoading.ships || isLoading.gpsJam;
   const hasData = activeConflicts > 0 || aircraft > 0 || ships > 0 || satellites > 0;
   const freshness = getFreshness(lastRefresh, hasData);
-  const conf = anySyncing ? { color: '#ffa500', label: 'SYNCING', bg: 'rgba(255, 165, 0, 0.15)', border: 'rgba(255, 165, 0, 0.5)' } : FRESHNESS_CONFIG[freshness];
+  const conf = anySyncing ? { color: '#FFB020', label: 'SYNCING', bg: 'rgba(255, 176, 32, 0.12)', border: 'rgba(255, 176, 32, 0.4)' } : FRESHNESS_CONFIG[freshness];
 
   return (
     <>
@@ -92,13 +92,15 @@ const StatusBar: React.FC<StatusBarProps> = ({
           right: 0,
           height: isMobile ? 28 : 32,
           zIndex: 1000,
-          background: 'rgba(2, 8, 20, 0.95)',
-          borderBottom: '1px solid rgba(0, 255, 136, 0.2)',
+          background: 'rgba(8, 14, 28, 0.7)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(60, 180, 255, 0.12)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: isMobile ? '0 8px 0 8px' : '0 14px 0 52px',
-          fontFamily: '"Courier New", Courier, monospace',
+          fontFamily: "'Rajdhani', sans-serif",
           boxSizing: 'border-box',
           userSelect: 'none',
         }}
@@ -106,11 +108,13 @@ const StatusBar: React.FC<StatusBarProps> = ({
         {/* LEFT -- Title */}
         <span
           style={{
-            color: '#00ff88',
+            color: '#00FF88',
             fontWeight: 700,
             fontSize: isMobile ? 9 : 12,
             letterSpacing: '0.08em',
             whiteSpace: 'nowrap',
+            fontFamily: "'Rajdhani', sans-serif",
+            textTransform: 'uppercase',
           }}
         >
           {isMobile ? 'W4D' : 'WORLD 4D WAR TRACK'}
@@ -123,41 +127,43 @@ const StatusBar: React.FC<StatusBarProps> = ({
             fontSize: isMobile ? 9 : 11,
             letterSpacing: '0.04em',
             whiteSpace: 'nowrap',
+            fontFamily: "'Share Tech Mono', monospace",
           }}
         >
-          <span style={{ color: '#4da8ff' }}>✈ {aircraft.toLocaleString()}</span>
-          <span style={{ color: '#3a5a6a', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
-          <span style={{ color: '#ff8c00' }}>🚢 {ships.toLocaleString()}</span>
+          <span style={{ color: '#3CB8FF' }}>✈ {aircraft.toLocaleString()}</span>
+          <span style={{ color: 'rgba(60, 184, 255, 0.25)', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
+          <span style={{ color: '#3CB8FF' }}>🚢 {ships.toLocaleString()}</span>
           {/* Satellite count hidden
           {!isMobile && (
             <>
-              <span style={{ color: '#3a5a6a', margin: '0 6px' }}>|</span>
-              <span style={{ color: '#00ff88' }}>🛰 {satellites.toLocaleString()}</span>
+              <span style={{ color: 'rgba(60, 184, 255, 0.25)', margin: '0 6px' }}>|</span>
+              <span style={{ color: '#3CB8FF' }}>🛰 {satellites.toLocaleString()}</span>
             </>
           )}
           */}
-          <span style={{ color: '#3a5a6a', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
-          <span style={{ color: '#ff3b3b' }}>⚔ {activeConflicts}</span>
+          <span style={{ color: 'rgba(60, 184, 255, 0.25)', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
+          <span style={{ color: '#FF3838' }}>⚔ {activeConflicts}</span>
         </span>
 
         {/* RIGHT -- Clock + Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, whiteSpace: 'nowrap' }}>
           {!isMobile && (
-            <span style={{ color: '#7a9ab0', fontSize: 10 }}>
+            <span style={{ color: 'rgba(160, 200, 230, 0.6)', fontSize: 10, fontFamily: "'Share Tech Mono', monospace" }}>
               {formatDate(clock)}
             </span>
           )}
-          <span style={{ color: '#e0f0ff', fontSize: isMobile ? 9 : 12, fontWeight: 700, letterSpacing: '0.06em' }}>
+          <span style={{ color: '#e0f0ff', fontSize: isMobile ? 9 : 12, fontWeight: 700, letterSpacing: '0.06em', fontFamily: "'Share Tech Mono', monospace" }}>
             {formatUTC(clock)}
           </span>
           {performanceMode === 'low' && (
             <span
               style={{
-                color: '#ffd700',
+                color: '#FFB020',
                 fontSize: isMobile ? 7 : 9,
                 fontWeight: 700,
                 letterSpacing: '0.05em',
                 whiteSpace: 'nowrap',
+                fontFamily: "'Rajdhani', sans-serif",
               }}
             >
               ⚡ LOW PERF
@@ -177,6 +183,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
               display: 'inline-flex',
               alignItems: 'center',
               gap: 4,
+              fontFamily: "'Rajdhani', sans-serif",
             }}
           >
             <span

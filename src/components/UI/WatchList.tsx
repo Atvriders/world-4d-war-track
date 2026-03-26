@@ -50,7 +50,7 @@ const styles: Record<string, React.CSSProperties> = {
     bottom: 126,
     right: 8,
     zIndex: 1000,
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-end',
@@ -59,11 +59,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   toggleBtn: {
     pointerEvents: 'all',
-    background: 'rgba(10, 14, 20, 0.96)',
-    border: '1px solid rgba(0, 255, 136, 0.4)',
-    borderRadius: 4,
-    color: '#00ff88',
-    fontFamily: "'Courier New', Courier, monospace",
+    background: 'rgba(8, 14, 28, 0.8)',
+    backdropFilter: 'blur(14px)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: 8,
+    color: '#3CB8FF',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 11,
     fontWeight: 700,
     letterSpacing: '0.1em',
@@ -77,19 +78,19 @@ const styles: Record<string, React.CSSProperties> = {
     pointerEvents: 'all',
     width: PANEL_WIDTH,
     maxHeight: 480,
-    background: 'rgba(5, 12, 22, 0.97)',
-    border: '1px solid rgba(0, 255, 136, 0.35)',
-    borderRadius: 4,
+    background: 'rgba(8, 14, 28, 0.8)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
+    borderRadius: 8,
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
     boxShadow: '0 4px 32px rgba(0, 0, 0, 0.7)',
-    backdropFilter: 'blur(10px)',
+    backdropFilter: 'blur(14px)',
     marginBottom: 6,
   },
   header: {
     padding: '10px 12px 8px',
-    borderBottom: '1px solid rgba(0, 255, 136, 0.2)',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -97,10 +98,10 @@ const styles: Record<string, React.CSSProperties> = {
     flexShrink: 0,
   },
   headerTitle: {
-    color: '#00ff88',
+    color: '#3CB8FF',
     fontSize: 12,
     fontWeight: 700,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.1em',
     textTransform: 'uppercase',
   },
   headerActions: {
@@ -109,11 +110,11 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
   },
   copyBtn: {
-    background: 'rgba(0, 255, 136, 0.08)',
-    border: '1px solid rgba(0, 255, 136, 0.3)',
+    background: 'rgba(60, 180, 255, 0.08)',
+    border: '1px solid rgba(60, 180, 255, 0.2)',
     borderRadius: 3,
-    color: 'rgba(0, 255, 136, 0.8)',
-    fontFamily: "'Courier New', Courier, monospace",
+    color: 'rgba(60, 184, 255, 0.8)',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 10,
     fontWeight: 700,
     padding: '3px 7px',
@@ -131,21 +132,21 @@ const styles: Record<string, React.CSSProperties> = {
   },
   emptyState: {
     padding: '20px 16px',
-    color: 'rgba(160, 180, 170, 0.5)',
+    color: '#8BA4BE',
     fontSize: 11,
     textAlign: 'center',
     lineHeight: 1.6,
   },
   emptyHint: {
     marginTop: 8,
-    color: 'rgba(0, 255, 136, 0.35)',
+    color: 'rgba(60, 184, 255, 0.35)',
     fontSize: 10,
     letterSpacing: '0.05em',
   },
   entityCard: {
     margin: '4px 8px',
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(0, 255, 136, 0.15)',
+    background: 'rgba(12, 20, 36, 0.5)',
+    border: '1px solid rgba(60, 180, 255, 0.08)',
     borderRadius: 3,
     overflow: 'hidden',
     transition: 'border-color 0.15s',
@@ -155,7 +156,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     padding: '7px 9px 5px',
     gap: 6,
-    borderBottom: '1px solid rgba(0, 255, 136, 0.08)',
+    borderBottom: '1px solid rgba(60, 180, 255, 0.08)',
   },
   typeIcon: {
     fontSize: 14,
@@ -164,9 +165,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   callsign: {
     flex: 1,
-    color: '#d0e8f0',
+    color: '#E4EEF8',
     fontSize: 12,
     fontWeight: 700,
+    fontFamily: "'Share Tech Mono', monospace",
     letterSpacing: '0.06em',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -205,19 +207,24 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
   },
   dataLabel: {
-    color: 'rgba(160, 200, 180, 0.5)',
+    color: '#4A6480',
     fontSize: 10,
+    fontFamily: "'Rajdhani', sans-serif",
+    fontWeight: 600,
+    textTransform: 'uppercase' as const,
     flexShrink: 0,
   },
   dataValue: {
-    color: '#b0ccda',
+    color: '#E4EEF8',
     fontSize: 10,
+    fontFamily: "'Share Tech Mono', monospace",
     textAlign: 'right',
     fontVariantNumeric: 'tabular-nums',
   },
   liveValue: {
-    color: '#00ff88',
+    color: '#E4EEF8',
     fontSize: 10,
+    fontFamily: "'Share Tech Mono', monospace",
     textAlign: 'right',
     fontVariantNumeric: 'tabular-nums',
     fontWeight: 700,
@@ -229,11 +236,11 @@ const styles: Record<string, React.CSSProperties> = {
   },
   actionBtn: {
     flex: 1,
-    background: 'rgba(0, 255, 136, 0.06)',
-    border: '1px solid rgba(0, 255, 136, 0.2)',
+    background: 'rgba(60, 180, 255, 0.06)',
+    border: '1px solid rgba(60, 180, 255, 0.15)',
     borderRadius: 3,
-    color: 'rgba(0, 255, 136, 0.8)',
-    fontFamily: "'Courier New', Courier, monospace",
+    color: 'rgba(60, 184, 255, 0.8)',
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 9,
     fontWeight: 700,
     letterSpacing: '0.06em',
@@ -248,7 +255,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid rgba(255, 60, 60, 0.2)',
     borderRadius: 3,
     color: 'rgba(255, 80, 80, 0.7)',
-    fontFamily: "'Courier New', Courier, monospace",
+    fontFamily: "'Rajdhani', sans-serif",
     fontSize: 11,
     fontWeight: 700,
     width: 24,
@@ -260,7 +267,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1,
   },
   addedAt: {
-    color: 'rgba(0, 255, 136, 0.3)',
+    color: 'rgba(60, 184, 255, 0.3)',
     fontSize: 9,
     textAlign: 'right',
     paddingRight: 9,
@@ -269,7 +276,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footer: {
     padding: '7px 10px',
-    borderTop: '1px solid rgba(0, 255, 136, 0.1)',
+    borderTop: '1px solid rgba(60, 180, 255, 0.08)',
     display: 'flex',
     alignItems: 'center',
     gap: 8,
@@ -277,13 +284,13 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footerHint: {
     flex: 1,
-    color: 'rgba(0, 255, 136, 0.35)',
+    color: 'rgba(60, 184, 255, 0.35)',
     fontSize: 9,
     letterSpacing: '0.05em',
     lineHeight: 1.4,
   },
   copiedBadge: {
-    color: '#00ff88',
+    color: '#3CB8FF',
     fontSize: 9,
     fontWeight: 700,
     letterSpacing: '0.08em',
@@ -700,21 +707,21 @@ export const WatchList: React.FC<WatchListProps> = ({
         style={{
           ...styles.toggleBtn,
           background: visible
-            ? 'rgba(0, 255, 136, 0.15)'
-            : 'rgba(10, 14, 20, 0.96)',
+            ? 'rgba(60, 180, 255, 0.15)'
+            : 'rgba(8, 14, 28, 0.8)',
           borderColor: visible
-            ? 'rgba(0, 255, 136, 0.7)'
-            : 'rgba(0, 255, 136, 0.4)',
+            ? 'rgba(60, 180, 255, 0.4)'
+            : 'rgba(60, 180, 255, 0.15)',
         }}
         onClick={onToggle}
         title={visible ? 'Hide Watch List' : 'Show Watch List'}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,255,136,0.18)';
+          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(60,180,255,0.18)';
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.background = visible
-            ? 'rgba(0,255,136,0.15)'
-            : 'rgba(10,14,20,0.96)';
+            ? 'rgba(60,180,255,0.15)'
+            : 'rgba(8,14,28,0.8)';
         }}
       >
         📌 Watch List {count > 0 ? `[${count}]` : ''}
