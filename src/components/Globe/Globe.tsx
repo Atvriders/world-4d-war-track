@@ -881,13 +881,23 @@ function heatmapPointLatAccessor(d: object) { return (d as { lat: number }).lat;
 function heatmapPointLngAccessor(d: object) { return (d as { lng: number }).lng; }
 function heatmapPointWeightAccessor(d: object) { return (d as { weight: number }).weight; }
 
-function satPointLatAccessor(d: object) { return (d as SatelliteEntity).lat; }
-function satPointLngAccessor(d: object) { return (d as SatelliteEntity).lng; }
-function satPointAltitudeAccessor(d: object) {
+function pointLatAccessor(d: object) { return (d as { lat: number }).lat; }
+function pointLngAccessor(d: object) { return (d as { lng: number }).lng; }
+function pointAltitudeAccessor(d: object) {
+  const p = d as { _type?: string; alt?: number; altitude?: number };
+  if (p._type === 'aircraft') {
+    return (p.altitude && !isNaN(p.altitude)) ? p.altitude / 6_371_000 : 0.005;
+  }
+  if (p._type === 'ship') return 0.001;
+  // satellite
   const s = d as SatelliteEntity;
   return s.alt / 6371;
 }
-function satPointRadiusAccessor(d: object) {
+function pointRadiusAccessor(d: object) {
+  const p = d as { _type?: string; category?: string };
+  if (p._type === 'aircraft') return 0.2;
+  if (p._type === 'ship') return 0.25;
+  // satellite
   const cat = (d as SatelliteEntity).category;
   if (cat === 'iss') return 0.8;
   if (cat === 'military' || cat === 'spy' || cat === 'reconnaissance') return 0.5;
@@ -1197,8 +1207,47 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [layers.droneActivity, conflictZones]);
 
 
-  // Satellite points
-  const satellitePoints = layers.satellites ? satellites : [];
+  // ── Merged points: satellites + aircraft + ships ──────────────────────────
+  const allPoints = useMemo(() => {
+    const pts: any[] = [];
+
+    // Satellites
+    if (layers.satellites) {
+      for (const s of satellites) {
+        pts.push({ ...s, _type: 'satellite' });
+      }
+    }
+
+    // Aircraft (not on ground)
+    if (layers.aircraft) {
+      for (const a of aircraft) {
+        if (a.onGround) continue;
+        pts.push({
+          lat: a.lat,
+          lng: a.lng,
+          altitude: (a.altitude && !isNaN(a.altitude)) ? a.altitude : 0,
+          name: a.callsign || a.icao24 || 'N/A',
+          _type: 'aircraft',
+          ...a,
+        });
+      }
+    }
+
+    // Ships
+    if (layers.ships) {
+      for (const s of ships) {
+        pts.push({
+          lat: s.lat,
+          lng: s.lng,
+          name: s.name || s.mmsi || 'Unknown',
+          _type: 'ship',
+          ...s,
+        });
+      }
+    }
+
+    return pts;
+  }, [satellites, aircraft, ships, layers.satellites, layers.aircraft, layers.ships]);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   const allLabels = useMemo(() => {
@@ -1267,6 +1316,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
             size: a.isMilitary ? 1.2 : 0.8,
             _type: 'aircraft',
+            _data: a,
             dotRadius: a.isMilitary ? 0.4 : 0.2,
           };
         });
@@ -1293,6 +1343,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             color: isWarship ? 'rgba(255,60,60,1.0)' : 'rgba(60,120,255,0.9)',
             size: isWarship ? 0.9 : 0.6,
             _type: 'ship',
+            _data: s,
             dotRadius: 0.3,
           };
         });
@@ -1386,12 +1437,6 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
       layers.nuclearSites, layers.militaryBases, layers.energyInfra, layers.chokepoints, layers.piracyZones,
       layers.warZones, conflictZones, cameraAltitude]);
-
-  // Aircraft points (exclude on-ground)
-  const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];
-
-  // Ship points
-  const shipPoints = layers.ships ? ships : [];
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
   const satelliteTrackPaths: PathEntry[] = useMemo(
@@ -1726,19 +1771,6 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
   // No custom THREE objects — use built-in points layer instead to avoid duplicate Three.js instances
 
-  // ── Memoized objectsData ──────────────────────────────────────────────────
-  const objectsData = useMemo(
-    () => [
-      ...(layers.aircraft
-        ? aircraftPoints.map((a) => ({ ...a, _type: 'aircraft' as const }))
-        : []),
-      ...(layers.ships
-        ? shipPoints.map((s) => ({ ...s, _type: 'ship' as const }))
-        : []),
-    ],
-    [layers.aircraft, layers.ships, aircraftPoints, shipPoints]
-  );
-
   // ── Globe ready handler ─────────────────────────────────────────────────────
   const handleGlobeReady = useCallback(() => {
     globeRef.current?.pointOfView({ lat: 38, lng: 35, altitude: 1.2 });
@@ -1746,18 +1778,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // ── Click handlers ──────────────────────────────────────────────────────────
 
-  const handleSatelliteClick = useCallback(
-    (sat: object) => onEntityClick('satellite', sat),
-    [onEntityClick]
-  );
-
-  const handleAircraftClick = useCallback(
-    (ac: object) => onEntityClick('aircraft', ac),
-    [onEntityClick]
-  );
-
-  const handleShipClick = useCallback(
-    (ship: object) => onEntityClick('ship', ship),
+  const handlePointClick = useCallback(
+    (pt: object) => {
+      const p = pt as { _type?: string };
+      if (p._type === 'aircraft') return onEntityClick('aircraft', pt);
+      if (p._type === 'ship') return onEntityClick('ship', pt);
+      if (p._type === 'satellite') return onEntityClick('satellite', pt);
+      // fallback — treat as satellite if no _type (legacy data)
+      return onEntityClick('satellite', pt);
+    },
     [onEntityClick]
   );
 
@@ -1769,13 +1798,25 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // ── Memoized label / color callbacks ──────────────────────────────────────
 
   const pointColor = useCallback(
-    (d: object) => satelliteColor((d as SatelliteEntity).category),
+    (d: object) => {
+      const p = d as { _type?: string; isMilitary?: boolean; type?: string; category?: SatelliteEntity['category'] };
+      if (p._type === 'aircraft') {
+        return p.isMilitary ? '#ff3333' : '#00aaff';
+      }
+      if (p._type === 'ship') {
+        return (p.type === 'military' || p.type === 'warship') ? '#ff6600' : '#00ff88';
+      }
+      // satellite
+      return satelliteColor(p.category!);
+    },
     []
   );
 
   const pointLabel = useCallback((d: object) => {
-    const s = d as SatelliteEntity;
-    return formatSatelliteLabel(s);
+    const p = d as { _type?: string };
+    if (p._type === 'aircraft') return formatAircraftLabel(d as AircraftEntity);
+    if (p._type === 'ship') return formatShipLabel(d as ShipEntity);
+    return formatSatelliteLabel(d as SatelliteEntity);
   }, []);
 
   // polygonLabel removed — polygon layer replaced by path borders
@@ -2254,20 +2295,16 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         heatmapTopAltitude={0.04}
 
 
-        // ── Satellite points ───────────────────────────────────
-        pointsData={satellitePoints}
-        pointLat={satPointLatAccessor}
-        pointLng={satPointLngAccessor}
-        pointAltitude={satPointAltitudeAccessor}
+        // ── Points: satellites + aircraft + ships (merged) ──────
+        pointsData={allPoints}
+        pointLat={pointLatAccessor}
+        pointLng={pointLngAccessor}
+        pointAltitude={pointAltitudeAccessor}
         pointColor={pointColor}
-        pointRadius={satPointRadiusAccessor}
+        pointRadius={pointRadiusAccessor}
         pointResolution={4}
         pointLabel={pointLabel}
-        onPointClick={handleSatelliteClick}
-
-        // ── Aircraft points ────────────────────────────────────
-        // react-globe.gl only supports one pointsData, so we merge points
-        // via custom objects layer for aircraft + ships below
+        onPointClick={handlePointClick}
 
         // ── Satellite ground tracks + aircraft trails (merged) ──
         pathsData={allPaths}
@@ -2318,10 +2355,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           const d = label as { _type?: string; _data?: unknown };
           if (d._type === 'conflict' && d._data) {
             onEntityClick('conflict', d._data);
-          } else if (d._type === 'aircraft') {
-            onEntityClick('aircraft', d);
-          } else if (d._type === 'ship') {
-            onEntityClick('ship', d);
+          } else if (d._type === 'aircraft' && d._data) {
+            onEntityClick('aircraft', d._data);
+          } else if (d._type === 'ship' && d._data) {
+            onEntityClick('ship', d._data);
           } else if (d._type === 'nuclear') {
             onEntityClick('nuclear', d);
           } else if (d._type === 'base') {

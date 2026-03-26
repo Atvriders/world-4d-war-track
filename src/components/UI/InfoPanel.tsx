@@ -369,22 +369,22 @@ function SatelliteInfo({ entity, onFlyTo }: { entity: SatelliteEntity; onFlyTo: 
 
       <div style={styles.section}>
         <SectionHead>Position</SectionHead>
-        <InfoRow label="Latitude" value={`${entity.lat.toFixed(2)}°`} />
-        <InfoRow label="Longitude" value={`${entity.lng.toFixed(2)}°`} />
-        <InfoRow label="Altitude" value={`${entity.alt.toLocaleString()} km · ${getOrbitClass(entity.alt)}`} />
+        <InfoRow label="Latitude" value={`${(entity.lat ?? 0).toFixed(2)}°`} />
+        <InfoRow label="Longitude" value={`${(entity.lng ?? 0).toFixed(2)}°`} />
+        <InfoRow label="Altitude" value={`${(entity.alt ?? 0).toLocaleString()} km · ${getOrbitClass(entity.alt ?? 0)}`} />
       </div>
 
       <div style={styles.section}>
         <SectionHead>Dynamics</SectionHead>
-        <InfoRow label="Velocity" value={`${entity.velocity.toFixed(2)} km/s`} />
-        <InfoRow label="Heading" value={`${Math.round(entity.heading)}° ${headingToCompass(entity.heading)}`} />
+        <InfoRow label="Velocity" value={`${(entity.velocity ?? 0).toFixed(2)} km/s`} />
+        <InfoRow label="Heading" value={`${Math.round(entity.heading ?? 0)}° ${headingToCompass(entity.heading ?? 0)}`} />
       </div>
 
       <div style={styles.section}>
         <SectionHead>Identification</SectionHead>
         <InfoRow label="Country" value={entity.country} />
         <InfoRow label="NORAD ID" value={entity.id} />
-        <InfoRow label="Footprint" value={`${entity.footprintRadius.toLocaleString()} km radius`} />
+        <InfoRow label="Footprint" value={`${(entity.footprintRadius ?? 0).toLocaleString()} km radius`} />
       </div>
 
       <div style={styles.groundTrackNote}>
@@ -400,8 +400,8 @@ function SatelliteInfo({ entity, onFlyTo }: { entity: SatelliteEntity; onFlyTo: 
 
 function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (lat: number, lng: number) => void }) {
   const vertRateLabel = () => {
-    if (entity.verticalRate > 1) return `↑ Climbing (${entity.verticalRate.toFixed(1)} m/s)`;
-    if (entity.verticalRate < -1) return `↓ Descending (${Math.abs(entity.verticalRate).toFixed(1)} m/s)`;
+    if ((entity.verticalRate ?? 0) > 1) return `↑ Climbing (${(entity.verticalRate ?? 0).toFixed(1)} m/s)`;
+    if ((entity.verticalRate ?? 0) < -1) return `↓ Descending (${Math.abs(entity.verticalRate ?? 0).toFixed(1)} m/s)`;
     return '→ Level';
   };
 
@@ -426,11 +426,11 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
 
       <div style={styles.section}>
         <SectionHead>Position &amp; Altitude</SectionHead>
-        <InfoRow label="Latitude" value={`${entity.lat.toFixed(2)}°`} />
-        <InfoRow label="Longitude" value={`${entity.lng.toFixed(2)}°`} />
+        <InfoRow label="Latitude" value={`${(entity.lat ?? 0).toFixed(2)}°`} />
+        <InfoRow label="Longitude" value={`${(entity.lng ?? 0).toFixed(2)}°`} />
         <InfoRow
           label="Altitude"
-          value={`${entity.altitude.toLocaleString()} m · ${metersToFeet(entity.altitude).toLocaleString()} ft`}
+          value={`${(entity.altitude ?? 0).toLocaleString()} m · ${metersToFeet(entity.altitude ?? 0).toLocaleString()} ft`}
         />
       </div>
 
@@ -438,9 +438,9 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
         <SectionHead>Dynamics</SectionHead>
         <InfoRow
           label="Speed"
-          value={`${entity.velocity.toFixed(1)} m/s · ${msToKnots(entity.velocity)} kts`}
+          value={`${(entity.velocity ?? 0).toFixed(1)} m/s · ${msToKnots(entity.velocity ?? 0)} kts`}
         />
-        <InfoRow label="Heading" value={`${Math.round(entity.heading)}° ${headingToCompass(entity.heading)}`} />
+        <InfoRow label="Heading" value={`${Math.round(entity.heading ?? 0)}° ${headingToCompass(entity.heading ?? 0)}`} />
         <InfoRow label="Vert. Rate" value={vertRateLabel()} />
       </div>
 
@@ -474,10 +474,10 @@ function ShipInfo({ entity, onFlyTo }: { entity: ShipEntity; onFlyTo: (lat: numb
 
       <div style={styles.section}>
         <SectionHead>Navigation</SectionHead>
-        <InfoRow label="Latitude" value={`${entity.lat.toFixed(2)}°`} />
-        <InfoRow label="Longitude" value={`${entity.lng.toFixed(2)}°`} />
-        <InfoRow label="Speed" value={`${entity.speed.toFixed(1)} kts`} />
-        <InfoRow label="Heading" value={`${Math.round(entity.heading)}° ${headingToCompass(entity.heading)}`} />
+        <InfoRow label="Latitude" value={`${(entity.lat ?? 0).toFixed(2)}°`} />
+        <InfoRow label="Longitude" value={`${(entity.lng ?? 0).toFixed(2)}°`} />
+        <InfoRow label="Speed" value={`${(entity.speed ?? 0).toFixed(1)} kts`} />
+        <InfoRow label="Heading" value={`${Math.round(entity.heading ?? 0)}° ${headingToCompass(entity.heading ?? 0)}`} />
         {entity.destination && (
           <InfoRow label="Destination" value={entity.destination} />
         )}

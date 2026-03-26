@@ -91,7 +91,7 @@ export function formatShipLabel(ship: {
   const nameColor = isWarship ? '#ff4444' : '#ffaa00';
   const typeIcon = isWarship ? '&#9876;' : '&#9875;';
 
-  const speedKts = ship.speed.toFixed(1);
+  const speedKts = (ship.speed ?? 0).toFixed(1);
   const headingPadded = String(Math.round(ship.heading)).padStart(3, '0');
   const compass = headingToCompass(ship.heading);
 
@@ -130,7 +130,7 @@ export function formatSatelliteLabel(sat: {
 
   const altKm = Math.round(sat.alt);
   const orbit = getOrbitClass(altKm);
-  const velKms = sat.velocity.toFixed(2);
+  const velKms = (sat.velocity ?? 0).toFixed(2);
   const footprintKm = Math.round(sat.footprintRadius);
 
   const categoryBadge = `<span style="background:${borderColor}22;border:1px solid ${borderColor};border-radius:2px;padding:0 4px;font-size:10px;color:${borderColor}">${esc(sat.category).toUpperCase()}</span>`;

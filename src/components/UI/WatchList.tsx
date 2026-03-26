@@ -433,7 +433,7 @@ function ShipCard({
         <div style={styles.cardBody}>
           <div style={styles.dataRow}>
             <span style={styles.dataLabel}>Speed</span>
-            <span style={styles.liveValue}>{liveData.speed.toFixed(1)} kts</span>
+            <span style={styles.liveValue}>{(liveData.speed ?? 0).toFixed(1)} kts</span>
           </div>
           <div style={styles.dataRow}>
             <span style={styles.dataLabel}>Position</span>
