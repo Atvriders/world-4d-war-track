@@ -40,7 +40,7 @@ function countryFlags(codes: string[]): string {
 function codeToFlag(code: string): string {
   if (code.length !== 2) return code;
   return String.fromCodePoint(
-    ...code.toUpperCase().split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
+    ...(code || '').toUpperCase().split('').map(c => 0x1F1E6 + c.charCodeAt(0) - 65)
   );
 }
 

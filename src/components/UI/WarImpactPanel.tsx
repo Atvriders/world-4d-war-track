@@ -85,7 +85,7 @@ function getZoneCentroid(geoJSON: { geometry: { coordinates: unknown; type: stri
 
 /** Country code to flag emoji */
 function countryFlag(code: string): string {
-  const c = code.toUpperCase();
+  const c = (code || '').toUpperCase();
   if (c.length !== 2) return '';
   return String.fromCodePoint(...[...c].map(ch => 0x1f1e6 + ch.charCodeAt(0) - 65));
 }

@@ -323,7 +323,7 @@ function AircraftCard({
   onRemove: (id: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const displayName = liveData ? (liveData.callsign || liveData.icao24.toUpperCase()) : watched.label;
+  const displayName = liveData ? (liveData.callsign || (liveData.icao24 || '').toUpperCase()) : watched.label;
 
   return (
     <div
@@ -354,7 +354,7 @@ function AircraftCard({
           <div style={styles.dataRow}>
             <span style={styles.dataLabel}>Altitude</span>
             <span style={styles.liveValue}>
-              {liveData.altitude.toLocaleString()} m · {metersToFeet(liveData.altitude).toLocaleString()} ft
+              {(liveData.altitude ?? 0).toLocaleString()} m · {metersToFeet(liveData.altitude).toLocaleString()} ft
             </span>
           </div>
           <div style={styles.dataRow}>
@@ -364,7 +364,7 @@ function AircraftCard({
           <div style={styles.dataRow}>
             <span style={styles.dataLabel}>ICAO24</span>
             <span style={{ ...styles.dataValue, color: '#88bbdd', fontFamily: 'monospace' }}>
-              {liveData.icao24.toUpperCase()}
+              {(liveData.icao24 || '').toUpperCase()}
             </span>
           </div>
         </div>
@@ -506,7 +506,7 @@ function SatelliteCard({
               border: `1px solid ${catColor}44`,
             }}
           >
-            {liveData.category.toUpperCase()}
+            {(liveData.category || '').toUpperCase()}
           </span>
         )}
         <button
@@ -524,7 +524,7 @@ function SatelliteCard({
         <div style={styles.cardBody}>
           <div style={styles.dataRow}>
             <span style={styles.dataLabel}>Altitude</span>
-            <span style={styles.liveValue}>{liveData.alt.toLocaleString()} km</span>
+            <span style={styles.liveValue}>{(liveData.alt ?? 0).toLocaleString()} km</span>
           </div>
           <div style={styles.dataRow}>
             <span style={styles.dataLabel}>Position</span>

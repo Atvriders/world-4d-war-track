@@ -447,7 +447,7 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
 
       <div style={styles.section}>
         <SectionHead>Identification</SectionHead>
-        <InfoRow label="ICAO24" value={<span style={{ color: '#aaddff', fontFamily: 'monospace' }}>{entity.icao24.toUpperCase()}</span>} />
+        <InfoRow label="ICAO24" value={<span style={{ color: '#aaddff', fontFamily: 'monospace' }}>{entity.icao24?.toUpperCase()}</span>} />
         {entity.squawk && (
           <InfoRow label="Squawk" value={entity.squawk} />
         )}
@@ -494,7 +494,7 @@ function ShipInfo({ entity, onFlyTo }: { entity: ShipEntity; onFlyTo: (lat: numb
 function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat: number, lng: number) => void }) {
   const intensityFill = getIntensityFill(entity.intensity);
   const intensityColor = getIntensityColor(entity.intensity);
-  const recentEvents = [...entity.events]
+  const recentEvents = [...(entity.events || [])]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 3);
 
@@ -521,13 +521,13 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
           label="Duration"
           value={`Since ${entity.startDate} (${getDuration(entity.startDate)})`}
         />
-        <InfoRow label="Countries" value={entity.countries.join(', ')} />
+        <InfoRow label="Countries" value={(entity.countries || []).join(', ')} />
       </div>
 
       <div style={styles.section}>
         <SectionHead>Parties Involved</SectionHead>
         <div style={styles.partiesList}>
-          {entity.parties.map((party) => (
+          {(entity.parties || []).map((party) => (
             <div key={`party-${party}`} style={styles.partyItem}>{party}</div>
           ))}
         </div>
@@ -538,14 +538,14 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
         {entity.casualties?.total != null && (
           <InfoRow label="Total" value={<span style={{ color: '#ff6666', fontWeight: 700 }}>{formatNumber(entity.casualties.total)}</span>} />
         )}
-        {entity.casualties.military !== undefined && (
-          <InfoRow label="Military" value={formatNumber(entity.casualties.military)} />
+        {entity.casualties?.military !== undefined && (
+          <InfoRow label="Military" value={formatNumber(entity.casualties?.military)} />
         )}
-        {entity.casualties.civilian !== undefined && (
-          <InfoRow label="Civilian" value={formatNumber(entity.casualties.civilian)} />
+        {entity.casualties?.civilian !== undefined && (
+          <InfoRow label="Civilian" value={formatNumber(entity.casualties?.civilian)} />
         )}
-        {entity.casualties.displaced !== undefined && (
-          <InfoRow label="Displaced" value={formatNumber(entity.casualties.displaced)} />
+        {entity.casualties?.displaced !== undefined && (
+          <InfoRow label="Displaced" value={formatNumber(entity.casualties?.displaced)} />
         )}
         {entity.casualtySources?.total && (
           <div style={{
@@ -674,7 +674,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
       escalating: { label: 'Escalating', color: '#ff4444', bg: 'rgba(255,68,68,0.15)' },
       'de-escalating': { label: 'De-escalating', color: '#ffcc00', bg: 'rgba(255,204,0,0.12)' },
     };
-    const sc = statusConfig[conflict.status];
+    const sc = statusConfig[conflict.status] ?? { label: conflict.status ?? 'Unknown', color: '#888888', bg: 'rgba(136,136,136,0.15)' };
     badges = [
       <Badge key="status" label={sc.label} color={sc.color} bg={sc.bg} />,
     ];

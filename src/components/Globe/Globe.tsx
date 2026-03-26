@@ -247,7 +247,7 @@ function navyGlow(country: string): string {
 
 /** Classify warship role by name */
 function classifyShipRole(name: string): string {
-  const n = name.toUpperCase();
+  const n = (name || '').toUpperCase();
   if (n.includes('CARRIER') || n.includes('FORD') || n.includes('EISENHOWER') ||
       n.includes('REAGAN') || n.includes('QUEEN ELIZABETH') || n.includes('PRINCE OF WALES') ||
       n.includes('VIKRAMADITYA') || n.includes('BATAAN')) return 'carrier';
@@ -462,7 +462,7 @@ function nuclearPulseSpeed(risk: NuclearSite['risk']): string {
 }
 
 function militaryBaseColor(operator: string): string {
-  const op = operator.toUpperCase();
+  const op = (operator || '').toUpperCase();
   if (op.includes('RUSSIA')) return '#ff3333';
   if (op.includes('CHINA')) return '#ffdd00';
   if (op.includes('UK') && !op.includes('US')) return '#00cccc';
@@ -592,7 +592,7 @@ const CONSTELLATION_COLORS: Record<ConstellationName, string> = {
 
 /** Identify which navigation constellation a satellite belongs to (or null) */
 function getConstellation(sat: SatelliteEntity): ConstellationName | null {
-  const upper = sat.name.toUpperCase();
+  const upper = (sat.name || '').toUpperCase();
   if (upper.includes('NAVSTAR') || upper.includes('GPS')) return 'GPS';
   if (upper.includes('GLONASS') || upper.includes('COSMOS')) return 'GLONASS';
   if (upper.includes('GALILEO') || upper.includes('GSAT')) return 'Galileo';
@@ -997,7 +997,7 @@ function pathLabelAccessor(d: object) {
     return `<div style="background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:4px;border:1px solid ${rc};font-family:monospace;font-size:11px;color:#eee;line-height:1.4">
               <b style="color:${rc}">${c.name}</b><br/>
               Capacity: ${c.capacity}<br/>
-              Risk: <span style="color:${rc};font-weight:bold">${c.risk.toUpperCase()}</span>${c.nearConflict ? `<br/>Near: ${c.nearConflict}` : ''}
+              Risk: <span style="color:${rc};font-weight:bold">${(c.risk || '').toUpperCase()}</span>${c.nearConflict ? `<br/>Near: ${c.nearConflict}` : ''}
             </div>`;
   }
   return '';
@@ -1929,9 +1929,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       label.style.transition = 'opacity 0.15s';
       label.style.zIndex = '10';
 
-      const typeLabel = fac.type.replace(/_/g, ' ').toUpperCase();
+      const typeLabel = (fac.type || '').replace(/_/g, ' ').toUpperCase();
       const conflictLine = fac.nearConflict ? `Near conflict: ${fac.nearConflict}` : '';
-      label.innerHTML = `<b>${escHtml(fac.name)}</b><br/>${escHtml(typeLabel)} | ${escHtml(fac.country)}<br/>Capacity: ${escHtml(fac.capacity)}<br/>Risk: ${escHtml(fac.risk.toUpperCase())}${conflictLine ? '<br/>' + escHtml(conflictLine) : ''}`;
+      label.innerHTML = `<b>${escHtml(fac.name)}</b><br/>${escHtml(typeLabel)} | ${escHtml(fac.country)}<br/>Capacity: ${escHtml(fac.capacity)}<br/>Risk: ${escHtml((fac.risk || '').toUpperCase())}${conflictLine ? '<br/>' + escHtml(conflictLine) : ''}`;
       wrapper.appendChild(label);
 
       wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
@@ -2009,7 +2009,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
       wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; });
 
-      wrapper.title = `${nuc.name}\n${nuc.country} | ${nuc.type.replace('_', ' ')} | ${nuc.status}\nRisk: ${nuc.risk.toUpperCase()}`;
+      wrapper.title = `${nuc.name}\n${nuc.country} | ${(nuc.type || '').replace('_', ' ')} | ${nuc.status}\nRisk: ${(nuc.risk || '').toUpperCase()}`;
 
       return wrapper;
     }
@@ -2084,7 +2084,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         hoverIcon.style.opacity = '0';
       });
 
-      wrapper.title = `\u2620 ${pz.name}\nRisk: ${pz.risk.toUpperCase()}\nType: ${pz.type.replace(/_/g, ' ')}\nIncidents (2024): ${pz.incidents2024}\n${pz.description}`;
+      wrapper.title = `\u2620 ${pz.name}\nRisk: ${(pz.risk || '').toUpperCase()}\nType: ${(pz.type || '').replace(/_/g, ' ')}\nIncidents (2024): ${pz.incidents2024}\n${pz.description}`;
       return wrapper;
     }
 
