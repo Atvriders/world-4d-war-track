@@ -1222,27 +1222,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     if (layers.aircraft) {
       for (const a of aircraft) {
         if (a.onGround) continue;
-        pts.push({
-          lat: a.lat,
-          lng: a.lng,
-          altitude: (a.altitude && !isNaN(a.altitude)) ? a.altitude : 0,
-          name: a.callsign || a.icao24 || 'N/A',
-          _type: 'aircraft',
-          ...a,
-        });
+        pts.push({ ...a, _type: 'aircraft' });
       }
     }
 
     // Ships
     if (layers.ships) {
       for (const s of ships) {
-        pts.push({
-          lat: s.lat,
-          lng: s.lng,
-          name: s.name || s.mmsi || 'Unknown',
-          _type: 'ship',
-          ...s,
-        });
+        pts.push({ ...s, _type: 'ship' });
       }
     }
 
