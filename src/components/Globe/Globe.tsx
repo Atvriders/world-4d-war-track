@@ -4,6 +4,7 @@ import GlobeGLBase from 'react-globe.gl';
 const GlobeGL = GlobeGLBase as any;
 import { useRef, useEffect, useCallback, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import { formatSatelliteLabel, formatAircraftLabel, formatShipLabel, formatConflictLabel } from '../../utils/labels';
+import { countryToFlag } from '../../utils/flags';
 import {
   getMilitarySatelliteConnections,
   getGpsJamConnections,
@@ -1755,6 +1756,31 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     [layers.carrierGroups, ships]
   );
 
+  // ── Aircraft HTML markers (plane icons) ──────────────────────────────────
+  const aircraftHtmlMarkers = useMemo(() => {
+    if (!layers.aircraft) return [];
+    const airborne = aircraft.filter(a => !a.onGround);
+    const sorted = [...airborne].sort((a, b) => {
+      if (a.isMilitary && !b.isMilitary) return -1;
+      if (!a.isMilitary && b.isMilitary) return 1;
+      return b.altitude - a.altitude;
+    });
+    const max = cameraAltitude < 0.5 ? 40 : cameraAltitude < 1.0 ? 20 : cameraAltitude < 2.0 ? 12 : 6;
+    return sorted.slice(0, max).map(a => ({ ...a, _marker: 'aircraft' as const }));
+  }, [layers.aircraft, aircraft, cameraAltitude]);
+
+  // ── Ship HTML markers (ship icons) ──────────────────────────────────────
+  const shipHtmlMarkers = useMemo(() => {
+    if (!layers.ships) return [];
+    const sorted = [...ships].sort((a, b) => {
+      const aW = a.type === 'warship' || a.type === 'military' ? 1 : 0;
+      const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
+      return bW - aW;
+    });
+    const max = cameraAltitude < 0.5 ? 30 : cameraAltitude < 1.0 ? 15 : cameraAltitude < 2.0 ? 8 : 4;
+    return sorted.slice(0, max).map(s => ({ ...s, _marker: 'ship' as const }));
+  }, [layers.ships, ships, cameraAltitude]);
+
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
   // No custom THREE objects — use built-in points layer instead to avoid duplicate Three.js instances
 
@@ -2223,10 +2249,135 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return container;
   }, [onEntityClick]);
 
-  // ── Merged HTML markers (military bases + carrier strike groups) ──────────
+  // ── Aircraft HTML element factory ────────────────────────────────────────
+  const aircraftHtmlElement = useCallback((d: object) => {
+    const ac = d as AircraftEntity & { _marker: string };
+    const isMil = ac.isMilitary;
+    const color = isMil ? '#ff3333' : '#00aaff';
+    const flag = countryToFlag(ac.country);
+    const cs = ac.callsign?.trim() || ac.icao24?.toUpperCase() || '?';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '0';
+    wrapper.style.height = '0';
+    wrapper.style.cursor = 'pointer';
+    wrapper.style.pointerEvents = 'auto';
+
+    const icon = document.createElement('div');
+    icon.style.position = 'absolute';
+    icon.style.left = '-10px';
+    icon.style.top = '-10px';
+    icon.style.width = '20px';
+    icon.style.height = '20px';
+    icon.style.display = 'flex';
+    icon.style.alignItems = 'center';
+    icon.style.justifyContent = 'center';
+    icon.style.fontSize = isMil ? '16px' : '13px';
+    icon.style.transform = `rotate(${(ac.heading ?? 0) - 90}deg)`;
+    icon.style.filter = `drop-shadow(0 0 4px ${color})`;
+    icon.style.color = color;
+    icon.style.lineHeight = '1';
+    icon.textContent = '\u2708';
+    wrapper.appendChild(icon);
+
+    const label = document.createElement('div');
+    label.style.position = 'absolute';
+    label.style.left = '14px';
+    label.style.top = '-10px';
+    label.style.whiteSpace = 'nowrap';
+    label.style.background = 'rgba(0,0,0,0.9)';
+    label.style.color = color;
+    label.style.fontSize = '10px';
+    label.style.fontFamily = "'Courier New', monospace";
+    label.style.padding = '3px 7px';
+    label.style.borderRadius = '3px';
+    label.style.border = `1px solid ${color}55`;
+    label.style.pointerEvents = 'none';
+    label.style.opacity = '0';
+    label.style.transition = 'opacity 0.15s';
+    label.style.zIndex = '10';
+    label.textContent = `${flag} ${cs}${isMil ? ' [MIL]' : ''}`;
+    wrapper.appendChild(label);
+
+    wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
+    wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; });
+    wrapper.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onEntityClick('aircraft', ac);
+    });
+
+    wrapper.title = `${flag} ${cs}\n${ac.country}${isMil ? ' [MILITARY]' : ''}\nAlt: ${Math.round(ac.altitude ?? 0).toLocaleString()} m`;
+
+    return wrapper;
+  }, [onEntityClick]);
+
+  // ── Ship HTML element factory ──────────────────────────────────────────
+  const shipHtmlElement = useCallback((d: object) => {
+    const ship = d as ShipEntity & { _marker: string };
+    const isWar = ship.type === 'warship' || ship.type === 'military';
+    const color = isWar ? '#ff6600' : '#00ff88';
+    const flag = countryToFlag(ship.flag);
+    const name = ship.name || ship.mmsi || '?';
+
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '0';
+    wrapper.style.height = '0';
+    wrapper.style.cursor = 'pointer';
+    wrapper.style.pointerEvents = 'auto';
+
+    const icon = document.createElement('div');
+    icon.style.position = 'absolute';
+    icon.style.left = '-10px';
+    icon.style.top = '-10px';
+    icon.style.width = '20px';
+    icon.style.height = '20px';
+    icon.style.display = 'flex';
+    icon.style.alignItems = 'center';
+    icon.style.justifyContent = 'center';
+    icon.style.fontSize = isWar ? '15px' : '12px';
+    icon.style.filter = `drop-shadow(0 0 4px ${color})`;
+    icon.style.color = color;
+    icon.style.lineHeight = '1';
+    icon.textContent = isWar ? '\u2693' : '\uD83D\uDEA2';
+    wrapper.appendChild(icon);
+
+    const label = document.createElement('div');
+    label.style.position = 'absolute';
+    label.style.left = '14px';
+    label.style.top = '-10px';
+    label.style.whiteSpace = 'nowrap';
+    label.style.background = 'rgba(0,0,0,0.9)';
+    label.style.color = color;
+    label.style.fontSize = '10px';
+    label.style.fontFamily = "'Courier New', monospace";
+    label.style.padding = '3px 7px';
+    label.style.borderRadius = '3px';
+    label.style.border = `1px solid ${color}55`;
+    label.style.pointerEvents = 'none';
+    label.style.opacity = '0';
+    label.style.transition = 'opacity 0.15s';
+    label.style.zIndex = '10';
+    label.textContent = `${flag} ${escHtml(name)}${isWar ? ' [WARSHIP]' : ''}`;
+    wrapper.appendChild(label);
+
+    wrapper.addEventListener('mouseenter', () => { label.style.opacity = '1'; });
+    wrapper.addEventListener('mouseleave', () => { label.style.opacity = '0'; });
+    wrapper.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onEntityClick('ship', ship);
+    });
+
+    wrapper.title = `${flag} ${name}\n${ship.country}\n${(ship.speed ?? 0).toFixed(1)} kts`;
+
+    return wrapper;
+  }, [onEntityClick]);
+
+  // ── Merged HTML markers (all types) ───────────────────────────────────
   const mergedHtmlMarkers = useMemo(
-    () => [...htmlMarkers, ...carrierGroups],
-    [htmlMarkers, carrierGroups]
+    () => [...htmlMarkers, ...carrierGroups, ...aircraftHtmlMarkers, ...shipHtmlMarkers],
+    [htmlMarkers, carrierGroups, aircraftHtmlMarkers, shipHtmlMarkers]
   );
 
   // Unified HTML element factory dispatching by _marker tag
@@ -2235,8 +2386,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     if (marker._marker === 'csg') {
       return csgMarkerElement(d as CarrierStrikeGroup);
     }
+    if (marker._marker === 'aircraft') {
+      return aircraftHtmlElement(d);
+    }
+    if (marker._marker === 'ship') {
+      return shipHtmlElement(d);
+    }
     return htmlMarkerElement(d);
-  }, [csgMarkerElement, htmlMarkerElement]);
+  }, [csgMarkerElement, aircraftHtmlElement, shipHtmlElement, htmlMarkerElement]);
 
   // Arc callbacks now use module-level functions (arcStartLatAccessor, arcColorAccessor, etc.)
 
@@ -2359,12 +2516,16 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements disabled — isBehindGlobe crash in three-render-objects
-        // htmlElementsData={mergedHtmlMarkers}
-        // htmlLat={(d: object) => (d as { lat: number }).lat}
-        // htmlLng={(d: object) => (d as { lng: number }).lng}
-        // htmlAltitude={0.008}
-        // htmlElement={mergedHtmlElement}
+        // HTML elements — re-enabled with custom visibility modifier to avoid isBehindGlobe crash
+        htmlElementsData={mergedHtmlMarkers}
+        htmlLat={(d: object) => (d as { lat: number }).lat}
+        htmlLng={(d: object) => (d as { lng: number }).lng}
+        htmlAltitude={0.008}
+        htmlElement={mergedHtmlElement}
+        htmlElementVisibilityModifier={(el: HTMLElement, isVisible: boolean) => {
+          el.style.opacity = isVisible ? '1' : '0';
+          el.style.pointerEvents = isVisible ? 'auto' : 'none';
+        }}
 
 
       />
