@@ -161,7 +161,9 @@ export function useDataRefresh(): { refresh: () => void } {
     setError('satellites', null);
     try {
       const data = await fetchSatellitePositions();
-      if (data.length > 0) { setSatellites(data); setLastRefresh('satellites'); }
+      // Skip overwriting satellites when user is time-scrubbing (viewing historical positions)
+      const currentTimeOffset = useStore.getState().timeOffset;
+      if (data.length > 0 && currentTimeOffset === 0) { setSatellites(data); setLastRefresh('satellites'); }
       retryCounts.current.satellites = 0;
       // Dismiss offline alert if it was active
       const store = useStore.getState();

@@ -15,6 +15,7 @@ interface StatusBarProps {
   alerts?: unknown[];
   gpsJamCells?: unknown[];
   onRetry?: () => void;
+  isMobile?: boolean;
 }
 
 const STYLES = `
@@ -64,6 +65,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   errors,
   lastRefresh,
   currentTime,
+  isMobile,
 }) => {
   const [clock, setClock] = useState<Date>(currentTime);
 
@@ -86,14 +88,14 @@ const StatusBar: React.FC<StatusBarProps> = ({
           top: 24,
           left: 0,
           right: 0,
-          height: 32,
+          height: isMobile ? 28 : 32,
           zIndex: 1000,
           background: 'rgba(2, 8, 20, 0.95)',
           borderBottom: '1px solid rgba(0, 255, 136, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 14px 0 52px',
+          padding: isMobile ? '0 8px 0 8px' : '0 14px 0 52px',
           fontFamily: '"Courier New", Courier, monospace',
           boxSizing: 'border-box',
           userSelect: 'none',
@@ -104,39 +106,45 @@ const StatusBar: React.FC<StatusBarProps> = ({
           style={{
             color: '#00ff88',
             fontWeight: 700,
-            fontSize: 12,
+            fontSize: isMobile ? 9 : 12,
             letterSpacing: '0.08em',
             whiteSpace: 'nowrap',
           }}
         >
-          WORLD 4D WAR TRACK
+          {isMobile ? 'W4D' : 'WORLD 4D WAR TRACK'}
         </span>
 
         {/* CENTER -- Compact entity counts */}
         <span
           style={{
             color: '#7a9ab0',
-            fontSize: 11,
+            fontSize: isMobile ? 9 : 11,
             letterSpacing: '0.04em',
             whiteSpace: 'nowrap',
           }}
         >
           <span style={{ color: '#4da8ff' }}>✈ {aircraft.toLocaleString()}</span>
-          <span style={{ color: '#3a5a6a', margin: '0 6px' }}>|</span>
+          <span style={{ color: '#3a5a6a', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
           <span style={{ color: '#ff8c00' }}>🚢 {ships.toLocaleString()}</span>
-          <span style={{ color: '#3a5a6a', margin: '0 6px' }}>|</span>
-          <span style={{ color: '#00ff88' }}>🛰 {satellites.toLocaleString()}</span>
-          <span style={{ color: '#3a5a6a', margin: '0 6px' }}>|</span>
+          {!isMobile && (
+            <>
+              <span style={{ color: '#3a5a6a', margin: '0 6px' }}>|</span>
+              <span style={{ color: '#00ff88' }}>🛰 {satellites.toLocaleString()}</span>
+            </>
+          )}
+          <span style={{ color: '#3a5a6a', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
           <span style={{ color: '#ff3b3b' }}>⚔ {activeConflicts}</span>
         </span>
 
         {/* RIGHT -- Clock + Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-          <span style={{ color: '#7a9ab0', fontSize: 10 }}>
-            {formatDate(clock)}
-          </span>
-          <span style={{ color: '#e0f0ff', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em' }}>
-            {formatUTC(clock)} UTC
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 4 : 8, whiteSpace: 'nowrap' }}>
+          {!isMobile && (
+            <span style={{ color: '#7a9ab0', fontSize: 10 }}>
+              {formatDate(clock)}
+            </span>
+          )}
+          <span style={{ color: '#e0f0ff', fontSize: isMobile ? 9 : 12, fontWeight: 700, letterSpacing: '0.06em' }}>
+            {formatUTC(clock)}
           </span>
           {/* Status badge */}
           <span
@@ -144,7 +152,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
               background: conf.bg,
               border: `1px solid ${conf.border}`,
               color: '#fff',
-              fontSize: 9,
+              fontSize: isMobile ? 8 : 9,
               fontWeight: 700,
               letterSpacing: '0.1em',
               padding: '1px 5px',

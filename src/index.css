@@ -159,3 +159,39 @@ body::after {
   animation: twinkle 8s ease-in-out infinite alternate;
 }
 
+/* ── Mobile responsive support ─────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  /* Prevent horizontal overflow */
+  html, body, #root {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Minimum touch target sizes */
+  button, [role="button"], a {
+    min-height: 32px;
+    min-width: 32px;
+  }
+
+  /* Larger touch targets for range inputs */
+  input[type="range"]::-webkit-slider-thumb {
+    width: 24px;
+    height: 24px;
+  }
+
+  input[type="range"] {
+    height: 8px;
+  }
+
+  /* Disable scanline effect on mobile for performance */
+  body::after {
+    display: none;
+  }
+
+  /* Disable hover effects that cause sticky states on touch */
+  *:hover {
+    transition-duration: 0s !important;
+  }
+}
+

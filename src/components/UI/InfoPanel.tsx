@@ -20,6 +20,7 @@ interface InfoPanelProps {
   selectedEntity: SelectedEntity | null;
   onClose: () => void;
   onFlyTo: (lat: number, lng: number) => void;
+  isMobile?: boolean;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -603,7 +604,7 @@ function ConflictInfo({ entity, onFlyTo }: { entity: ConflictZone; onFlyTo: (lat
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, onFlyTo }) => {
+export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, onFlyTo, isMobile }) => {
   const [visible, setVisible] = useState(false);
 
   // Drive CSS transition: mount -> slide in, entity cleared -> slide out then cleanup handled by parent
@@ -707,28 +708,69 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const mobilePanelStyle: React.CSSProperties = isMobile ? {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 'auto',
+    width: '100%',
+    height: '70vh',
+    borderRadius: '16px 16px 0 0',
+    borderTop: '2px solid rgba(0, 255, 136, 0.4)',
+    borderRight: 'none',
+    transform: visible ? 'translateY(0)' : 'translateY(100%)',
+    zIndex: 1400,
+  } : {};
+
+  const mobileCloseBtnStyle: React.CSSProperties = isMobile ? {
+    width: 44,
+    height: 44,
+    fontSize: 18,
+  } : {};
+
   return (
-    <div
-      style={{
-        ...styles.panel,
-        ...(visible ? styles.panelVisible : styles.panelHidden),
-      }}
-    >
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerLeft}>
-          <div style={styles.title} title={title}>{title}</div>
-          {badges.length > 0 && <div style={styles.badgeRow}>{badges}</div>}
-        </div>
-        <button
-          style={styles.closeBtn}
+    <>
+      {/* Backdrop on mobile */}
+      {isMobile && visible && (
+        <div
           onClick={onClose}
-          title="Close"
-          aria-label="Close info panel"
-        >
-          ✕
-        </button>
-      </div>
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 1399,
+          }}
+        />
+      )}
+      <div
+        style={{
+          ...styles.panel,
+          ...(visible ? styles.panelVisible : styles.panelHidden),
+          ...mobilePanelStyle,
+        }}
+      >
+        {/* Drag handle on mobile */}
+        {isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0 4px', flexShrink: 0 }}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.25)' }} />
+          </div>
+        )}
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.headerLeft}>
+            <div style={styles.title} title={title}>{title}</div>
+            {badges.length > 0 && <div style={styles.badgeRow}>{badges}</div>}
+          </div>
+          <button
+            style={{ ...styles.closeBtn, ...mobileCloseBtnStyle }}
+            onClick={onClose}
+            title="Close"
+            aria-label="Close info panel"
+          >
+            ✕
+          </button>
+        </div>
 
       {/* Body */}
       <div style={styles.body}>
@@ -789,6 +831,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
         </button>
       </div>
     </div>
+    </>
   );
 };
 

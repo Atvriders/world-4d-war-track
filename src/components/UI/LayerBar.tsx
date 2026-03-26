@@ -4,6 +4,7 @@ interface LayerBarProps {
   layers: LayerVisibility;
   onToggleLayer: (key: keyof LayerVisibility) => void;
   counts?: Partial<Record<keyof LayerVisibility, number>>;
+  isMobile?: boolean;
 }
 
 const LAYER_BUTTONS: {
@@ -23,25 +24,30 @@ const LAYER_BUTTONS: {
   { label: 'Cables',     icon: '🌊', key: 'seaCables',     color: '#26a69a' },
 ];
 
-export default function LayerBar({ layers, onToggleLayer, counts }: LayerBarProps) {
+export default function LayerBar({ layers, onToggleLayer, counts, isMobile }: LayerBarProps) {
   return (
     <div
       style={{
         position: 'fixed',
-        bottom: 42,
-        left: '50%',
-        transform: 'translateX(-50%)',
+        bottom: isMobile ? 0 : 86,
+        left: isMobile ? 0 : '50%',
+        right: isMobile ? 0 : undefined,
+        transform: isMobile ? 'none' : 'translateX(-50%)',
         display: 'flex',
-        gap: 6,
-        padding: '5px 10px',
+        gap: isMobile ? 4 : 6,
+        padding: isMobile ? '6px 8px' : '5px 10px',
         background: 'rgba(5, 10, 20, 0.75)',
         backdropFilter: 'blur(6px)',
-        borderRadius: 16,
-        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: isMobile ? 0 : 16,
+        border: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)',
+        borderTop: isMobile ? '1px solid rgba(255,255,255,0.08)' : undefined,
         zIndex: 1300,
         alignItems: 'center',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
+        flexWrap: isMobile ? 'nowrap' : 'wrap',
+        justifyContent: isMobile ? 'flex-start' : 'center',
+        overflowX: isMobile ? 'auto' : undefined,
+        overflowY: isMobile ? 'hidden' : undefined,
+        WebkitOverflowScrolling: 'touch' as any,
       }}
     >
       {LAYER_BUTTONS.map(({ label, icon, key, color }) => {
@@ -65,8 +71,9 @@ export default function LayerBar({ layers, onToggleLayer, counts }: LayerBarProp
               display: 'flex',
               alignItems: 'center',
               gap: 3,
-              height: 28,
-              padding: '0 8px',
+              height: isMobile ? 36 : 28,
+              minHeight: isMobile ? 36 : 28,
+              padding: isMobile ? '0 10px' : '0 8px',
               border: `1px solid ${active ? (dimmed ? `${color}66` : color) : 'rgba(255,255,255,0.25)'}`,
               borderRadius: 14,
               background: active
@@ -74,7 +81,7 @@ export default function LayerBar({ layers, onToggleLayer, counts }: LayerBarProp
                 : 'rgba(255,255,255,0.08)',
               color: active ? (dimmed ? `${color}88` : color) : 'rgba(255,255,255,0.6)',
               fontFamily: "'Courier New', monospace",
-              fontSize: 12,
+              fontSize: isMobile ? 11 : 12,
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -84,11 +91,12 @@ export default function LayerBar({ layers, onToggleLayer, counts }: LayerBarProp
               filter: 'brightness(1)',
               opacity: dimmed ? 0.7 : 1,
               boxShadow: active && !dimmed ? `0 0 6px ${color}44` : 'none',
+              flexShrink: 0,
             }}
           >
             <span style={{ fontSize: 13 }}>{icon}</span>
-            {label}
-            {hasCount && (
+            {isMobile ? '' : label}
+            {!isMobile && hasCount && (
               <span style={{
                 fontSize: 9,
                 opacity: count > 0 ? 0.9 : 0.4,

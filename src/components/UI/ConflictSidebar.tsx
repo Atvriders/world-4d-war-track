@@ -8,6 +8,9 @@ interface ConflictSidebarProps {
   selectedConflictId: string | null;
   onSelect: (zone: ConflictZone) => void;
   onFlyTo: (lat: number, lng: number) => void;
+  isMobile?: boolean;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 type SortMode = 'deaths' | 'intensity' | 'alpha';
@@ -915,6 +918,9 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
   selectedConflictId,
   onSelect,
   onFlyTo,
+  isMobile,
+  mobileOpen,
+  onMobileClose,
 }) => {
   const [open, setOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('deaths');
@@ -936,6 +942,124 @@ const ConflictSidebar: React.FC<ConflictSidebarProps> = ({
     { key: 'intensity', label: 'Intensity' },
     { key: 'alpha', label: 'A-Z' },
   ];
+
+  // Mobile: slide-up bottom sheet
+  if (isMobile) {
+    if (!mobileOpen) return null;
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          onClick={onMobileClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1499,
+          }}
+        />
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '60vh',
+            zIndex: 1500,
+            background: 'rgba(8, 12, 20, 0.98)',
+            borderTop: '2px solid rgba(0, 255, 100, 0.4)',
+            borderRadius: '16px 16px 0 0',
+            display: 'flex',
+            flexDirection: 'column',
+            fontFamily: "'Courier New', Courier, monospace",
+          }}
+        >
+          {/* Drag handle */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            padding: '8px 0 4px',
+            flexShrink: 0,
+          }}>
+            <div style={{
+              width: 40,
+              height: 4,
+              borderRadius: 2,
+              background: 'rgba(255,255,255,0.25)',
+            }} />
+          </div>
+          {/* Header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '4px 12px 8px',
+            borderBottom: '1px solid rgba(0, 255, 100, 0.15)',
+            flexShrink: 0,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={styles.headerTitle}>{'\u2694'} Active Conflicts</span>
+              <span style={styles.countBadge}>{conflictZones.length}</span>
+            </div>
+            <button
+              onClick={onMobileClose}
+              style={{
+                width: 44,
+                height: 44,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(0, 255, 100, 0.3)',
+                borderRadius: 6,
+                color: '#00ff88',
+                fontSize: 20,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          {/* Sort row */}
+          <div style={{ ...styles.sortRow, padding: '6px 12px' }}>
+            {sortButtons.map(({ key, label }) => (
+              <button
+                key={key}
+                style={{
+                  ...styles.sortBtn,
+                  ...(sortMode === key ? styles.sortBtnActive : {}),
+                  minHeight: 44,
+                }}
+                onClick={() => setSortMode(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {/* Conflict list */}
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 16 }}>
+            <GlobalTollBanner zones={conflictZones} />
+            {sorted.map((zone) => {
+              const centroid = getConflictCentroid(zone);
+              return (
+                <ConflictCard
+                  key={zone.id}
+                  zone={zone}
+                  isSelected={zone.id === selectedConflictId}
+                  onSelect={() => onSelect(zone)}
+                  onFlyTo={() => {
+                    if (centroid) onFlyTo(centroid.lat, centroid.lng);
+                    onMobileClose?.();
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // Collapsed tab strip
   if (!open) {

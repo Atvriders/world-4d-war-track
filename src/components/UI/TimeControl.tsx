@@ -8,6 +8,7 @@ interface TimeControlProps {
   onPlayPause: () => void;
   onSpeedChange: (speed: number) => void;
   onReset: () => void;
+  isMobile?: boolean;
 }
 
 const MIN_OFFSET = -180;
@@ -91,6 +92,7 @@ const TimeControl: React.FC<TimeControlProps> = ({
   onPlayPause,
   onSpeedChange,
   onReset,
+  isMobile,
 }) => {
   useEffect(() => {
     if (!isPlaying) return;
@@ -105,14 +107,15 @@ const TimeControl: React.FC<TimeControlProps> = ({
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: '82px',
+    bottom: isMobile ? '62px' : '82px',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: '350px',
+    width: isMobile ? 'calc(100vw - 16px)' : '350px',
+    maxWidth: isMobile ? '100%' : '350px',
     backgroundColor: 'rgba(10, 15, 20, 0.55)',
     border: '1px solid rgba(31, 41, 55, 0.5)',
     borderRadius: '6px',
-    padding: '6px 10px 4px',
+    padding: isMobile ? '4px 8px 3px' : '6px 10px 4px',
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
@@ -134,18 +137,19 @@ const TimeControl: React.FC<TimeControlProps> = ({
     borderRadius: '3px',
     color: '#d1d5db',
     cursor: 'pointer',
-    fontSize: '11px',
-    padding: '2px 6px',
-    height: '20px',
+    fontSize: isMobile ? '14px' : '11px',
+    padding: isMobile ? '4px 10px' : '2px 6px',
+    height: isMobile ? '32px' : '20px',
+    minWidth: isMobile ? '32px' : undefined,
     lineHeight: 1,
     transition: 'background 0.15s, color 0.15s',
   };
 
   const playBtnStyle: React.CSSProperties = {
     ...btnBase,
-    fontSize: '12px',
-    padding: '2px 8px',
-    height: '20px',
+    fontSize: isMobile ? '14px' : '12px',
+    padding: isMobile ? '4px 12px' : '2px 8px',
+    height: isMobile ? '32px' : '20px',
     color: isPlaying ? '#22c55e' : '#6b7280',
     borderColor: isPlaying ? '#15803d' : 'rgba(55, 65, 81, 0.5)',
     background: isPlaying ? 'rgba(5, 46, 22, 0.7)' : 'rgba(31, 41, 55, 0.7)',
@@ -154,7 +158,7 @@ const TimeControl: React.FC<TimeControlProps> = ({
 
   const timeDisplayStyle: React.CSSProperties = {
     marginLeft: 'auto',
-    fontSize: '12px',
+    fontSize: isMobile ? '10px' : '12px',
     color: timeOffset === 0 ? '#22c55e' : timeOffset > 0 ? '#60a5fa' : '#f59e0b',
     fontWeight: 'bold',
     letterSpacing: '0.03em',

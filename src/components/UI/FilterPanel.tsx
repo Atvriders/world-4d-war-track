@@ -45,6 +45,9 @@ interface FilterPanelProps {
     conflicts: number;
     gpsJamCells: number;
   };
+  isMobile?: boolean;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 const PANEL_WIDTH = 280;
@@ -297,8 +300,119 @@ const COLLAPSED_ICONS = [
   { icon: '🌍', title: 'Atmosphere', layerKey: 'atmosphere' },
 ];
 
-const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts }) => {
+const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts, isMobile, mobileOpen, onMobileClose }) => {
   const [open, setOpen] = useState(false);
+
+  // On mobile, use mobileOpen prop instead of local open state
+  if (isMobile) {
+    if (!mobileOpen) return null;
+    return (
+      <>
+        {/* Backdrop */}
+        <div
+          onClick={onMobileClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 1499,
+          }}
+        />
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 1500,
+            background: 'rgba(10, 14, 20, 0.97)',
+            display: 'flex',
+            flexDirection: 'column',
+            fontFamily: "'Courier New', Courier, monospace",
+            overflowY: 'auto',
+          }}
+        >
+          {/* Mobile close header */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 14px',
+            borderBottom: '1px solid rgba(0, 255, 100, 0.2)',
+            flexShrink: 0,
+          }}>
+            <div>
+              <div style={styles.headerTitle}>Layers &amp; Filters</div>
+              <div style={styles.headerSubtitle}>Toggle visibility</div>
+            </div>
+            <button
+              onClick={onMobileClose}
+              style={{
+                width: 44,
+                height: 44,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(0, 255, 100, 0.3)',
+                borderRadius: 6,
+                color: '#00ff88',
+                fontSize: 20,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          {/* Scrollable content — reuse same sections */}
+          <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 24 }}>
+            {/* SATELLITES */}
+            <div style={styles.section}>
+              <div style={styles.sectionLabel}>Satellites</div>
+              <LayerRow icon="🛰️" label="Satellites" layerKey="satellites" on={layers.satellites} onToggle={onToggleLayer} countBadge={formatCount(counts.satellites)} subLabel={counts.militarySatellites > 0 ? `⚠ ${formatCount(counts.militarySatellites)} MIL` : undefined} />
+              <LayerRow icon="〰️" label="Orbital Paths" layerKey="satelliteOrbits" on={layers.satelliteOrbits} onToggle={onToggleLayer} indent />
+              <LayerRow icon="⭕" label="Coverage Footprints" layerKey="satelliteFootprints" on={layers.satelliteFootprints} onToggle={onToggleLayer} indent />
+              <LayerRow icon="🔗" label="Connection Lines" layerKey="satelliteConnections" on={layers.satelliteConnections} onToggle={onToggleLayer} indent />
+            </div>
+            <div style={styles.section}>
+              <div style={styles.sectionLabel}>Air Traffic</div>
+              <LayerRow icon="✈️" label="Aircraft" layerKey="aircraft" on={layers.aircraft} onToggle={onToggleLayer} countBadge={formatCount(counts.aircraft)} subLabel={counts.militaryAircraft > 0 ? `⚠ ${formatCount(counts.militaryAircraft)} MIL` : undefined} />
+              <LayerRow icon="💨" label="Flight Trails" layerKey="aircraftTrails" on={layers.aircraftTrails} onToggle={onToggleLayer} indent />
+            </div>
+            <div style={styles.section}>
+              <div style={styles.sectionLabel}>Maritime</div>
+              <LayerRow icon="🚢" label="Ships" layerKey="ships" on={layers.ships} onToggle={onToggleLayer} countBadge={formatCount(counts.ships)} subLabel={counts.warships > 0 ? `⚠ ${formatCount(counts.warships)} WARSHIPS` : undefined} />
+              <LayerRow icon="〰️" label="Ship Trails" layerKey="shipTrails" on={layers.shipTrails} onToggle={onToggleLayer} indent />
+              <LayerRow icon="⚓" label="Carrier Groups" layerKey="carrierGroups" on={layers.carrierGroups} onToggle={onToggleLayer} indent />
+              <LayerRow icon="⚓" label="Chokepoints" layerKey="chokepoints" on={layers.chokepoints} onToggle={onToggleLayer} />
+              <LayerRow icon="☠️" label="Piracy Zones" layerKey="piracyZones" on={layers.piracyZones} onToggle={onToggleLayer} />
+            </div>
+            <div style={styles.section}>
+              <div style={styles.sectionLabel}>Conflict Zones</div>
+              <LayerRow icon="⚔️" label="War Zone Areas" layerKey="warZones" on={layers.warZones} onToggle={onToggleLayer} />
+              <LayerRow icon="💥" label="Conflict Events" layerKey="conflictEvents" on={layers.conflictEvents} onToggle={onToggleLayer} />
+              <LayerRow icon="📍" label="Front Lines" layerKey="frontLines" on={layers.frontLines} onToggle={onToggleLayer} />
+              <LayerRow icon="☢️" label="Nuclear Facilities" layerKey="nuclearSites" on={layers.nuclearSites} onToggle={onToggleLayer} />
+              <LayerRow icon="🏛️" label="Military Bases" layerKey="militaryBases" on={layers.militaryBases} onToggle={onToggleLayer} />
+              <LayerRow icon="🚶" label="Refugee Flows" layerKey="refugeeFlows" on={layers.refugeeFlows} onToggle={onToggleLayer} />
+            </div>
+            <div style={styles.section}>
+              <div style={styles.sectionLabel}>Interference</div>
+              <LayerRow icon="📡" label="GPS Jamming" layerKey="gpsJam" on={layers.gpsJam} onToggle={onToggleLayer} />
+              <LayerRow icon="🤖" label="Drone Activity" layerKey="droneActivity" on={layers.droneActivity} onToggle={onToggleLayer} />
+              <LayerRow icon="💻" label="Cyber Threats" layerKey="cyberThreats" on={layers.cyberThreats} onToggle={onToggleLayer} />
+            </div>
+            <div style={{ ...styles.section, borderBottom: 'none' }}>
+              <div style={styles.sectionLabel}>Display</div>
+              <LayerRow icon="🌍" label="Atmosphere" layerKey="atmosphere" on={layers.atmosphere} onToggle={onToggleLayer} />
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div style={styles.container}>

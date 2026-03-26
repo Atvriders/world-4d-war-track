@@ -1104,16 +1104,19 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (rect.width > 0 && rect.height > 0) {
         setDimensions({ width: rect.width, height: rect.height });
       }
+      let resizeTimer: ReturnType<typeof setTimeout>;
       const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { width, height } = entry.contentRect;
-          if (width > 0 && height > 0) {
-            setDimensions({ width, height });
-          }
-        }
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          const { width, height } = entries[0].contentRect;
+          if (width > 0 && height > 0) setDimensions({ width, height });
+        }, 200);
       });
       observer.observe(el);
-      return () => observer.disconnect();
+      return () => {
+        clearTimeout(resizeTimer);
+        observer.disconnect();
+      };
     }
     // Fallback to window resize if container not available
     const onResize = () =>
@@ -1249,7 +1252,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           name: `✈ ${a.callsign || a.icao24}`,
           lat: a.lat,
           lng: a.lng,
-          alt: a.altitude / 6_371_000,
+          alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
           color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
           size: a.isMilitary ? 1.2 : 0.8,
           _type: 'aircraft',

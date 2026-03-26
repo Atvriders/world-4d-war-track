@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useStore } from './store';
-import { useDataRefresh, useAlertGenerator, useSatelliteTimePropagation, useGlobeTime } from './hooks';
+import { useDataRefresh, useAlertGenerator, useSatelliteTimePropagation, useGlobeTime, useIsMobile } from './hooks';
 
 import Globe from './components/Globe/Globe';
 import StatusBar from './components/UI/StatusBar';
@@ -38,6 +38,54 @@ import { getStaticGpsJamHotspots, getActiveJammingAlerts } from './services/gpsJ
 import { CONFLICT_ZONES } from './data/conflicts';
 
 import type { SatelliteEntity, ConflictZone } from './store';
+
+// ── Error boundary for WebGL / Globe crashes ────────────────────────────────
+
+class GlobeErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: '' };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[GlobeErrorBoundary]', error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          width: '100%', height: '100%',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#000011', color: '#ff4444',
+          fontFamily: "'Courier New', monospace", textAlign: 'center', padding: 32,
+        }}>
+          <div>
+            <div style={{ fontSize: 18, marginBottom: 12 }}>GLOBE RENDER FAILURE</div>
+            <div style={{ fontSize: 12, color: '#ff8888', maxWidth: 480 }}>
+              {this.state.error || 'WebGL context lost or rendering error.'}
+            </div>
+            <button
+              onClick={() => this.setState({ hasError: false, error: '' })}
+              style={{
+                marginTop: 16, padding: '6px 16px', background: 'transparent',
+                border: '1px solid #ff4444', color: '#ff4444', cursor: 'pointer',
+                fontFamily: 'monospace', fontSize: 12,
+              }}
+            >
+              RETRY
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ── Default globe settings (local) ───────────────────────────────────────────
 
@@ -97,6 +145,8 @@ export default function App() {
   const [showEconomy, setShowEconomy] = useState(false);
   const [showStatsOverlay, setShowStatsOverlay] = useState(false);
   const [showConflictSidebar, setShowConflictSidebar] = useState(false);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [mobileConflictOpen, setMobileConflictOpen] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
   const [showQuickNav, setShowQuickNav] = useState(false);
   const [showTimeControl, setShowTimeControl] = useState(false);
@@ -105,11 +155,21 @@ export default function App() {
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [globeSettings, setGlobeSettings] = useState<LocalGlobeSettings>(DEFAULT_GLOBE_SETTINGS);
 
+  // ── Mutual-exclusivity helpers for right-side specialty panels ────────────
+  // Only one of: satellite, gpsJam, hotspots, eventFeed open at a time
+  const toggleSpecialtyPanel = useCallback((panel: 'satellite' | 'gpsJam' | 'hotspots' | 'eventFeed') => {
+    setShowSatellitePanel(prev => panel === 'satellite' ? !prev : false);
+    setShowGpsJamPanel(prev => panel === 'gpsJam' ? !prev : false);
+    setShowHotspots(prev => panel === 'hotspots' ? !prev : false);
+    setShowEventFeed(prev => panel === 'eventFeed' ? !prev : false);
+  }, []);
+
   // ── Custom hooks for data refresh, alert generation, and globe time ───────
   const { refresh } = useDataRefresh();
   useAlertGenerator();
   useSatelliteTimePropagation();
   const { currentTime } = useGlobeTime();
+  const isMobile = useIsMobile();
 
   // ── Globe ref ───────────────────────────────────────────────────────────────
   const globeRef = useRef<any>(null);
@@ -269,13 +329,13 @@ export default function App() {
           setShowMiniRadar(v => !v);
           break;
         case '6':
-          setShowEventFeed(v => !v);
+          toggleSpecialtyPanel('eventFeed');
           break;
         case '7':
           setShowWatchList(v => !v);
           break;
         case '8':
-          setShowHotspots(v => !v);
+          toggleSpecialtyPanel('hotspots');
           break;
         case '9':
           setShowGlobeSettings(v => !v);
@@ -318,18 +378,20 @@ export default function App() {
     >
       {/* Globe always renders (behind loading screen) so WebGL initializes immediately */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
-        <Globe
-          ref={globeRef}
-          satellites={satellites}
-          aircraft={aircraft}
-          ships={ships}
-          conflictZones={conflictZones}
-          gpsJamCells={gpsJamCells}
-          layers={layers}
-          onEntityClick={handleEntityClick}
-          timeOffset={timeOffset}
-          globeSettings={globeSettings}
-        />
+        <GlobeErrorBoundary>
+          <Globe
+            ref={globeRef}
+            satellites={satellites}
+            aircraft={aircraft}
+            ships={ships}
+            conflictZones={conflictZones}
+            gpsJamCells={gpsJamCells}
+            layers={layers}
+            onEntityClick={handleEntityClick}
+            timeOffset={timeOffset}
+            globeSettings={globeSettings}
+          />
+        </GlobeErrorBoundary>
       </div>
 
       <LoadingScreen
@@ -366,35 +428,46 @@ export default function App() {
             alerts={alerts}
             gpsJamCells={gpsJamCells}
             onRetry={refresh}
+            isMobile={isMobile}
           />
 
           {/* Server connectivity banner */}
           <ServerStatus errors={errors} lastRefresh={lastRefresh} />
 
-          {/* Search bar */}
-          <SearchBar
-            aircraft={aircraft}
-            ships={ships}
-            satellites={satellites}
-            conflictZones={conflictZones}
-            onSelect={handleEntitySelect}
-            onFlyTo={handleFlyTo}
-          />
+          {/* Search bar — hide on mobile */}
+          {!isMobile && (
+            <SearchBar
+              aircraft={aircraft}
+              ships={ships}
+              satellites={satellites}
+              conflictZones={conflictZones}
+              onSelect={handleEntitySelect}
+              onFlyTo={handleFlyTo}
+            />
+          )}
 
           {/* Left panel */}
           <FilterPanel
             layers={layers}
             onToggleLayer={(k) => store.toggleLayer(k as any)}
             counts={counts}
+            isMobile={isMobile}
+            mobileOpen={mobileFilterOpen}
+            onMobileClose={() => setMobileFilterOpen(false)}
           />
 
-          {/* Right panel — conflict sidebar (starts collapsed) */}
-          <ConflictSidebar
-            conflictZones={conflictZones}
-            selectedConflictId={selectedConflictId}
-            onSelect={handleConflictSelect}
-            onFlyTo={handleFlyTo}
-          />
+          {/* Right panel — conflict sidebar (hidden when InfoPanel is open) */}
+          {!selectedEntity && (
+            <ConflictSidebar
+              conflictZones={conflictZones}
+              selectedConflictId={selectedConflictId}
+              onSelect={handleConflictSelect}
+              onFlyTo={handleFlyTo}
+              isMobile={isMobile}
+              mobileOpen={mobileConflictOpen}
+              onMobileClose={() => setMobileConflictOpen(false)}
+            />
+          )}
 
           {/* Selected entity info panel */}
           {selectedEntity && (
@@ -402,15 +475,18 @@ export default function App() {
               selectedEntity={selectedEntity}
               onClose={() => store.setSelectedEntity(null)}
               onFlyTo={handleFlyTo}
+              isMobile={isMobile}
             />
           )}
 
-          {/* Bottom — conflict ticker */}
-          <ConflictTicker
-            conflictZones={conflictZones}
-            alerts={alerts}
-            onEventClick={handleFlyTo}
-          />
+          {/* Bottom — conflict ticker (hidden on mobile) */}
+          {!isMobile && (
+            <ConflictTicker
+              conflictZones={conflictZones}
+              alerts={alerts}
+              onEventClick={handleFlyTo}
+            />
+          )}
 
           {/* Time control — always visible */}
           <TimeControl
@@ -424,6 +500,7 @@ export default function App() {
               store.setTimeOffset(0);
               store.setIsPlaying(false);
             }}
+            isMobile={isMobile}
           />
 
           {/* Alert panel — starts collapsed */}
@@ -465,24 +542,24 @@ export default function App() {
             />
           )}
 
-          {/* Satellite panel */}
+          {/* Satellite panel (mutually exclusive with other specialty panels) */}
           <SatellitePanel
             satellites={satellites}
             onSelect={handleSatSelect}
             onFlyTo={handleFlyTo}
             visible={showSatellitePanel}
-            onToggle={() => setShowSatellitePanel(v => !v)}
+            onToggle={() => toggleSpecialtyPanel('satellite')}
           />
 
-          {/* GPS jam panel */}
+          {/* GPS jam panel (mutually exclusive with other specialty panels) */}
           <GpsJamPanel
             gpsJamCells={gpsJamCells}
             onFlyTo={handleFlyTo}
             visible={showGpsJamPanel}
-            onToggle={() => setShowGpsJamPanel(v => !v)}
+            onToggle={() => toggleSpecialtyPanel('gpsJam')}
           />
 
-          {/* Hotspots panel */}
+          {/* Hotspots panel (mutually exclusive with other specialty panels) */}
           <HotspotsPanel
             aircraft={aircraft}
             ships={ships}
@@ -490,7 +567,7 @@ export default function App() {
             conflictZones={conflictZones}
             onFlyTo={handleFlyTo}
             visible={showHotspots}
-            onToggle={() => setShowHotspots(v => !v)}
+            onToggle={() => toggleSpecialtyPanel('hotspots')}
           />
 
           {/* Globe settings */}
@@ -524,12 +601,12 @@ export default function App() {
             onToggle={() => setShowWatchList(v => !v)}
           />
 
-          {/* Event feed */}
+          {/* Event feed (mutually exclusive with other specialty panels) */}
           <EventFeed
             conflictZones={conflictZones}
             onFlyTo={handleFlyTo}
             visible={showEventFeed}
-            onToggle={() => setShowEventFeed(v => !v)}
+            onToggle={() => toggleSpecialtyPanel('eventFeed')}
           />
 
           {/* War impact panel */}
@@ -571,51 +648,110 @@ export default function App() {
               warZones: conflictZones.length,
               gpsJam: gpsJamCells.length,
             }}
+            isMobile={isMobile}
           />
 
-          {/* Sources button */}
-          <button
-            onClick={() => setShowSources(v => !v)}
-            style={{
-              position: 'fixed',
-              bottom: 86,
-              right: 8,
-              background: 'rgba(5,15,30,0.7)',
-              border: '1px solid rgba(0,255,136,0.3)',
-              color: '#00ff88',
-              padding: '2px 6px',
-              borderRadius: '3px',
-              fontFamily: 'monospace',
-              fontSize: '9px',
-              cursor: 'pointer',
-              zIndex: 1250,
-              letterSpacing: '0.05em',
-            }}
-            title="View data sources (U)"
-          >
-            Sources
-          </button>
+          {/* Sources button — hide on mobile */}
+          {!isMobile && (
+            <button
+              onClick={() => setShowSources(v => !v)}
+              style={{
+                position: 'fixed',
+                bottom: 86,
+                right: 8,
+                background: 'rgba(5,15,30,0.7)',
+                border: '1px solid rgba(0,255,136,0.3)',
+                color: '#00ff88',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontFamily: 'monospace',
+                fontSize: '9px',
+                cursor: 'pointer',
+                zIndex: 1250,
+                letterSpacing: '0.05em',
+              }}
+              title="View data sources (U)"
+            >
+              Sources
+            </button>
+          )}
 
-          {/* Help button */}
-          <button
-            onClick={() => setShowKeyboardHelp(v => !v)}
-            style={{
-              position: 'fixed',
-              bottom: 106,
-              right: 8,
-              background: 'rgba(5,15,30,0.7)',
-              border: '1px solid rgba(0,255,136,0.3)',
-              color: '#00ff88',
-              padding: '2px 6px',
-              borderRadius: '3px',
-              fontFamily: 'monospace',
-              fontSize: '9px',
-              cursor: 'pointer',
-              zIndex: 1250,
-            }}
-          >
-            ⌨ ?
-          </button>
+          {/* Help button — hide on mobile */}
+          {!isMobile && (
+            <button
+              onClick={() => setShowKeyboardHelp(v => !v)}
+              style={{
+                position: 'fixed',
+                bottom: 106,
+                right: 8,
+                background: 'rgba(5,15,30,0.7)',
+                border: '1px solid rgba(0,255,136,0.3)',
+                color: '#00ff88',
+                padding: '2px 6px',
+                borderRadius: '3px',
+                fontFamily: 'monospace',
+                fontSize: '9px',
+                cursor: 'pointer',
+                zIndex: 1250,
+              }}
+            >
+              ⌨ ?
+            </button>
+          )}
+
+          {/* Mobile menu buttons */}
+          {isMobile && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 60,
+                right: 8,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                zIndex: 1300,
+              }}
+            >
+              <button
+                onClick={() => { setMobileFilterOpen(v => !v); setMobileConflictOpen(false); }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 8,
+                  background: mobileFilterOpen ? 'rgba(0,255,136,0.2)' : 'rgba(5,15,30,0.85)',
+                  border: '1px solid rgba(0,255,136,0.4)',
+                  color: '#00ff88',
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="Layers & Filters"
+              >
+                ☰
+              </button>
+              <button
+                onClick={() => { setMobileConflictOpen(v => !v); setMobileFilterOpen(false); }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 8,
+                  background: mobileConflictOpen ? 'rgba(255,68,68,0.2)' : 'rgba(5,15,30,0.85)',
+                  border: '1px solid rgba(255,68,68,0.4)',
+                  color: '#ff6666',
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="Conflicts"
+              >
+                ⚔
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
