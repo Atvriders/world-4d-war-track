@@ -897,8 +897,8 @@ function pointAltitudeAccessor(d: object) {
 }
 function pointRadiusAccessor(d: object) {
   const p = d as { _type?: string; category?: string; isMilitary?: boolean; type?: string };
-  if (p._type === 'aircraft') return p.isMilitary ? 0.35 : 0.2;
-  if (p._type === 'ship') return (p.type === 'warship' || p.type === 'military') ? 0.35 : 0.25;
+  if (p._type === 'aircraft') return p.isMilitary ? 0.5 : 0.3;
+  if (p._type === 'ship') return (p.type === 'warship' || p.type === 'military') ? 0.5 : 0.3;
   // satellite
   const cat = (d as SatelliteEntity).category;
   if (cat === 'iss') return 0.8;
@@ -1214,18 +1214,29 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [layers.droneActivity, conflictZones, performanceMode]);
 
 
-  // ── Merged points: satellites + aircraft + ships ──────────────────────────
+  // ── Merged points: aircraft + ships ─────────────────────────────────────
   const allPoints = useMemo(() => {
     const pts: any[] = [];
 
     // Satellites disabled
 
-    // Aircraft rendered as HTML plane icons instead of points
+    // Aircraft (not on ground)
+    if (layers.aircraft) {
+      for (const a of aircraft) {
+        if (a.onGround) continue;
+        pts.push({ ...a, _type: 'aircraft' });
+      }
+    }
 
-    // Ships rendered as HTML ship icons instead of points
+    // Ships
+    if (layers.ships) {
+      for (const s of ships) {
+        pts.push({ ...s, _type: 'ship' });
+      }
+    }
 
     return pts;
-  }, [satellites, layers.satellites, performanceMode]);
+  }, [aircraft, ships, layers.aircraft, layers.ships, performanceMode]);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
@@ -2414,13 +2425,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements — aircraft/ship/base/nuclear/chokepoint/piracy/csg markers
-        htmlElementsData={mergedHtmlMarkers}
-        htmlLat={(d: object) => (d as { lat: number }).lat}
-        htmlLng={(d: object) => (d as { lng: number }).lng}
-        htmlAltitude={0.008}
-        htmlElement={mergedHtmlElement}
-        htmlTransitionDuration={0}
+        // HTML elements disabled — causes React error #321 in production build
+        // htmlElementsData={mergedHtmlMarkers}
+        // htmlLat={(d: object) => (d as { lat: number }).lat}
+        // htmlLng={(d: object) => (d as { lng: number }).lng}
+        // htmlAltitude={0.008}
+        // htmlElement={mergedHtmlElement}
+        // htmlTransitionDuration={0}
 
 
       />
