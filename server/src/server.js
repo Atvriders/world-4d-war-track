@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import * as satellite from 'satellite.js';
+import WebSocket from 'ws';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -49,6 +50,12 @@ const SAT_GROUPS = [
 ];
 
 const UA = 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)';
+
+// ── AISStream.io WebSocket ───────────────────────────────────────────────────
+const AISSTREAM_API_KEY = process.env.AISSTREAM_API_KEY || '';
+let aisStreamWs = null;
+let aisStreamVessels = new Map(); // mmsi -> vessel data
+let aisStreamConnected = false;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // STATIC FALLBACK NAVAL VESSEL DATA
@@ -265,6 +272,7 @@ async function refreshAdsb() {
     if (openSkyUser && openSkyPass) {
       headers['Authorization'] = 'Basic ' + Buffer.from(`${openSkyUser}:${openSkyPass}`).toString('base64');
     }
+    console.log(`[bg] ADS-B fetching from OpenSky (auth: ${openSkyUser ? 'yes' : 'anonymous'})`);
     const res = await fetch('https://opensky-network.org/api/states/all', {
       signal: controller.signal,
       headers,
@@ -273,7 +281,7 @@ async function refreshAdsb() {
       adsbRateLimitedUntil = Date.now() + 5 * 60_000; // back off 5 minutes
       console.warn('[bg] ADS-B rate limited (429), backing off 5 minutes');
     } else if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
+      throw new Error(`HTTP ${res.status} ${res.statusText}`);
     } else {
       const data = await res.json();
       // Only replace if we got actual data
@@ -311,10 +319,99 @@ async function refreshAdsb() {
   }
 }
 
-/** Fetch AIS vessel data — tries AISHub first, falls back to static naval data */
+/** Connect to AISStream.io WebSocket for real-time vessel data */
+function connectAisStream() {
+  if (!AISSTREAM_API_KEY) return;
+
+  try {
+    if (aisStreamWs) {
+      try { aisStreamWs.close(); } catch {}
+    }
+
+    console.log('[bg] AISStream: connecting...');
+    aisStreamWs = new WebSocket('wss://stream.aisstream.io/v0/stream');
+
+    aisStreamWs.on('open', () => {
+      console.log('[bg] AISStream: connected');
+      aisStreamConnected = true;
+
+      // Subscribe to all vessel positions globally
+      const subscribeMsg = JSON.stringify({
+        APIKey: AISSTREAM_API_KEY,
+        BoundingBoxes: [[[-90, -180], [90, 180]]], // Global
+        FilterMessageTypes: ['PositionReport']
+      });
+      aisStreamWs.send(subscribeMsg);
+    });
+
+    aisStreamWs.on('message', (data) => {
+      try {
+        const msg = JSON.parse(data.toString());
+        if (msg.MessageType === 'PositionReport') {
+          const meta = msg.MetaData;
+          const pos = msg.Message?.PositionReport;
+          if (!meta || !pos) return;
+
+          const mmsi = String(meta.MMSI);
+          const lat = pos.Latitude;
+          const lng = pos.Longitude;
+
+          // Skip invalid positions
+          if (!lat || !lng || lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+          aisStreamVessels.set(mmsi, {
+            mmsi,
+            name: (meta.ShipName || '').trim() || 'UNKNOWN',
+            shipname: (meta.ShipName || '').trim() || 'UNKNOWN',
+            country: meta.country || '',
+            flag: meta.flag_code || meta.country_iso || 'XX',
+            lat,
+            lon: lng,
+            speed: pos.Sog || 0,
+            heading: pos.TrueHeading === 511 ? (pos.Cog || 0) : (pos.TrueHeading || 0),
+            cog: pos.Cog || 0,
+            type_code: meta.ShipType || 0,
+            length: meta.length || undefined,
+            destination: meta.Destination || undefined,
+          });
+        }
+      } catch {}
+    });
+
+    aisStreamWs.on('close', () => {
+      console.log('[bg] AISStream: disconnected, reconnecting in 10s...');
+      aisStreamConnected = false;
+      setTimeout(connectAisStream, 10_000);
+    });
+
+    aisStreamWs.on('error', (err) => {
+      console.warn('[bg] AISStream error:', err.message);
+      aisStreamConnected = false;
+    });
+
+  } catch (err) {
+    console.warn('[bg] AISStream setup failed:', err.message);
+  }
+}
+
+/** Fetch AIS vessel data — tries AISStream first, then AISHub, falls back to static naval data */
 async function refreshAis() {
   if (Date.now() < aisRateLimitedUntil) {
     console.log(`[bg] AIS rate limited, skipping (${Math.round((aisRateLimitedUntil - Date.now()) / 60000)}min remaining)`);
+    return;
+  }
+
+  // Prefer AISStream data if available
+  if (aisStreamVessels.size > 10) {
+    const vessels = Array.from(aisStreamVessels.values());
+    latestAis = vessels;
+    latestAisUpdated = Date.now();
+    console.log(`[bg] AIS using AISStream: ${vessels.length} vessels`);
+    // Cap the map size to prevent memory growth
+    if (aisStreamVessels.size > 2000) {
+      const entries = Array.from(aisStreamVessels.entries());
+      aisStreamVessels = new Map(entries.slice(-1000));
+    }
     return;
   }
 
@@ -580,6 +677,7 @@ app.get('/api/health', (req, res) => {
       adsb: latestAdsbUpdated ? `${Math.round((Date.now() - latestAdsbUpdated) / 1000)}s ago` : 'never',
       ais: latestAisUpdated ? `${Math.round((Date.now() - latestAisUpdated) / 1000)}s ago` : 'never',
       satellites: latestSatPositionsUpdated ? `${Math.round((Date.now() - latestSatPositionsUpdated) / 1000)}s ago` : 'never',
+      aisStream: aisStreamConnected ? 'connected' : 'disconnected',
     },
   });
 });
@@ -662,6 +760,9 @@ app.listen(PORT, () => {
   console.log(`  API: http://localhost:${PORT}/api/health`);
   console.log(`  Frontend: http://localhost:${PORT}/`);
   console.log('  Starting background data fetching...');
+
+  // Start AISStream WebSocket (if API key is configured)
+  connectAisStream();
 
   // Kick off initial fetches with retry logic
   initialFetch();
