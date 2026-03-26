@@ -1765,9 +1765,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (!a.isMilitary && b.isMilitary) return 1;
       return b.altitude - a.altitude;
     });
-    const max = cameraAltitude < 0.5 ? 40 : cameraAltitude < 1.0 ? 20 : cameraAltitude < 2.0 ? 12 : 6;
-    return sorted.slice(0, max).map(a => ({ ...a, _marker: 'aircraft' as const }));
-  }, [layers.aircraft, aircraft, cameraAltitude]);
+    return sorted.map(a => ({ ...a, _marker: 'aircraft' as const }));
+  }, [layers.aircraft, aircraft]);
 
   // ── Ship HTML markers (ship icons) ──────────────────────────────────────
   const shipHtmlMarkers = useMemo(() => {
@@ -1777,9 +1776,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
       return bW - aW;
     });
-    const max = cameraAltitude < 0.5 ? 30 : cameraAltitude < 1.0 ? 15 : cameraAltitude < 2.0 ? 8 : 4;
-    return sorted.slice(0, max).map(s => ({ ...s, _marker: 'ship' as const }));
-  }, [layers.ships, ships, cameraAltitude]);
+    return sorted.map(s => ({ ...s, _marker: 'ship' as const }));
+  }, [layers.ships, ships]);
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
   // No custom THREE objects — use built-in points layer instead to avoid duplicate Three.js instances

@@ -175,7 +175,7 @@ export default function App() {
   const globeRef = useRef<any>(null);
   const loadTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const handleFlyTo = useCallback((lat: number, lng: number, altitude = 1.0) => {
+  const handleFlyTo = useCallback((lat: number, lng: number, altitude = 0.4) => {
     globeRef.current?.pointOfView({ lat, lng, altitude }, 1500);
   }, []);
 
