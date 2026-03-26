@@ -94,7 +94,7 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
     if (!el || isPaused) return;
     let raf: number;
     let pos = 0;
-    const speed = 0.4; // px per frame
+    const speed = 0.25; // px per frame (slowed to reduce perceived repetition)
 
     function tick() {
       pos += speed;
@@ -133,6 +133,9 @@ export default function DeathTollBar({ conflictZones, onFlyTo, onOpenSources }: 
       title={`${zone.name} — ${(zone.casualties.total ?? 0).toLocaleString()} deaths (click to fly)`}
     >
       <span style={{ fontSize: 10 }}>{countryFlags(zone.countries)}</span>
+      <span style={{ color: '#aab', fontSize: 9, fontFamily: "'Courier New', monospace" }}>
+        {zone.name}
+      </span>
       <span style={{ color: '#ff4444', fontWeight: 700, fontSize: 10, fontFamily: "'Courier New', monospace" }}>
         {formatDeaths(zone.casualties.total ?? 0)}
       </span>

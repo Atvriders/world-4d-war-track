@@ -106,8 +106,8 @@ const AlertCard: React.FC<AlertCardProps> = ({ alert, isNew, onDismiss, onFlyTo 
       ? 'criticalPulse 1.8s ease-in-out infinite'
       : undefined,
     borderRadius: '4px',
-    padding: '9px 10px 8px 12px',
-    marginBottom: '6px',
+    padding: '6px 8px 5px 10px',
+    marginBottom: '4px',
     boxSizing: 'border-box',
     display: 'flex',
     flexDirection: 'column',
@@ -270,23 +270,25 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     }
   }, [alerts]);
 
-  // Auto-dismiss info alerts after 30s
+  // Auto-dismiss info alerts after 30s, warning after 60s
   useEffect(() => {
-    const infoAlerts = alerts.filter(a => !a.dismissed && a.severity === 'info');
+    const autoDismissAlerts = alerts.filter(a => !a.dismissed && (a.severity === 'info' || a.severity === 'warning'));
+    const DISMISS_DELAYS: Record<string, number> = { info: 30000, warning: 60000 };
 
-    infoAlerts.forEach(alert => {
+    autoDismissAlerts.forEach(alert => {
       if (!dismissTimersRef.current.has(alert.id)) {
+        const delay = DISMISS_DELAYS[alert.severity] ?? 60000;
         const timer = setTimeout(() => {
           onDismiss(alert.id);
           dismissTimersRef.current.delete(alert.id);
-        }, 30000);
+        }, delay);
         dismissTimersRef.current.set(alert.id, timer);
       }
     });
 
     // Clear timers for dismissed or removed alerts
     dismissTimersRef.current.forEach((timer, id) => {
-      const still = alerts.find(a => a.id === id && !a.dismissed && a.severity === 'info');
+      const still = alerts.find(a => a.id === id && !a.dismissed && (a.severity === 'info' || a.severity === 'warning'));
       if (!still) {
         clearTimeout(timer);
         dismissTimersRef.current.delete(id);
@@ -301,7 +303,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     };
   }, []);
 
-  const activeAlerts = alerts.filter(a => !a.dismissed).slice(0, 8);
+  const activeAlerts = alerts.filter(a => !a.dismissed).slice(0, 3);
   const totalCount = activeAlerts.length;
 
   const handleDismissAll = useCallback(() => {
@@ -342,7 +344,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
     border: '1px solid rgba(255, 100, 0, 0.4)',
     borderTop: 'none',
     borderRadius: '0 0 6px 6px',
-    maxHeight: '400px',
+    maxHeight: '240px',
     overflowY: 'auto',
     overflowX: 'hidden',
     padding: '8px 8px 4px 8px',

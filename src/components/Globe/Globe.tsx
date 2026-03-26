@@ -1084,6 +1084,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   const globeRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [cameraAltitude, setCameraAltitude] = useState(1.2);
 
   // Expose pointOfView to parent via ref (getter when called with no args, setter otherwise)
   useImperativeHandle(ref, () => ({
@@ -1146,6 +1147,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         if (!ctrl || !ctrl.object) return;
 
         const distance = ctrl.object.position.length();
+        // Track camera altitude for label filtering (distance ~200 = globe radius, normalize)
+        const alt = (distance - 100) / 100; // rough altitude: ~0.2 at surface, ~1.2 default, ~9 far
+        setCameraAltitude(alt);
+
         // distance > 500 → polar ≈ PI/2 (equator-level, looking at globe)
         // distance < 200 → polar ≈ PI*0.65 (tilted up toward sky)
         const t = Math.max(0, Math.min(1, (500 - distance) / 300));
@@ -1237,8 +1242,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }));
     labels.push(...countryLabels);
 
-    // Aircraft labels (all airborne, military first, limit 50)
-    if (layers.aircraft) {
+    // Aircraft labels — only show when zoomed in (cameraAltitude < 1.5)
+    // Military always shown when zoomed in; civilian only when very close
+    if (layers.aircraft && cameraAltitude < 1.5) {
       const airborne = aircraft.filter(a => !a.onGround);
       // Sort military first, then by altitude descending
       const sorted = [...airborne].sort((a, b) => {
@@ -1246,34 +1252,41 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         if (!a.isMilitary && b.isMilitary) return 1;
         return b.altitude - a.altitude;
       });
+      // Limit: show more labels when zoomed in closer
+      const maxLabels = cameraAltitude < 0.5 ? 30 : cameraAltitude < 1.0 ? 15 : 8;
       const acLabels = sorted
-        .slice(0, 50)
-        .map(a => ({
-          name: `✈ ${a.callsign || a.icao24}`,
-          lat: a.lat,
-          lng: a.lng,
-          alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
-          color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
-          size: a.isMilitary ? 1.2 : 0.8,
-          _type: 'aircraft',
-          dotRadius: a.isMilitary ? 0.4 : 0.2,
-        }));
+        .slice(0, maxLabels)
+        .map(a => {
+          const cs = a.callsign?.trim();
+          const displayName = cs || a.icao24 || 'N/A';
+          return {
+            name: displayName,
+            lat: a.lat,
+            lng: a.lng,
+            alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
+            color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
+            size: a.isMilitary ? 1.2 : 0.8,
+            _type: 'aircraft',
+            dotRadius: a.isMilitary ? 0.4 : 0.2,
+          };
+        });
       labels.push(...acLabels);
     }
 
-    // Ship labels (warships first, limit 30)
-    if (layers.ships) {
+    // Ship labels (warships first) — only show when zoomed in
+    if (layers.ships && cameraAltitude < 1.5) {
       const sorted = [...ships].sort((a, b) => {
         const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
         const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
         return bWar - aWar;
       });
+      const maxShipLabels = cameraAltitude < 0.5 ? 20 : cameraAltitude < 1.0 ? 10 : 5;
       const shipLabels = sorted
-        .slice(0, 30)
+        .slice(0, maxShipLabels)
         .map(s => {
           const isWarship = s.type === 'warship' || s.type === 'military';
           return {
-            name: `🚢 ${s.name || s.mmsi}`,
+            name: s.name || s.mmsi || 'N/A',
             lat: s.lat,
             lng: s.lng,
             alt: 0.001,
@@ -1290,7 +1303,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     if (layers.nuclearSites) {
       NUCLEAR_SITES.forEach(site => {
         labels.push({
-          name: `☢ ${site.name}`,
+          name: site.name,
           lat: site.lat, lng: site.lng, alt: 0.003,
           color: site.risk === 'critical' ? 'rgba(255,50,50,1)' : 'rgba(255,200,0,0.9)',
           size: 0.8, dotRadius: 0.3, _type: 'nuclear',
@@ -1315,7 +1328,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     if (layers.energyInfra) {
       ENERGY_FACILITIES.forEach(fac => {
         labels.push({
-          name: `⚡ ${fac.name}`,
+          name: fac.name,
           lat: fac.lat, lng: fac.lng, alt: 0.002,
           color: fac.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,170,0,0.8)',
           size: 0.6, dotRadius: 0.2, _type: 'energy',
@@ -1327,7 +1340,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     if (layers.chokepoints) {
       CHOKEPOINTS.forEach(cp => {
         labels.push({
-          name: `⚓ ${cp.name}`,
+          name: cp.name,
           lat: cp.lat, lng: cp.lng, alt: 0.002,
           color: cp.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,200,0,0.8)',
           size: 0.7, dotRadius: 0.3, _type: 'chokepoint',
@@ -1339,7 +1352,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     if (layers.piracyZones) {
       PIRACY_ZONES.forEach(pz => {
         labels.push({
-          name: `☠ ${pz.name}`,
+          name: pz.name,
           lat: pz.lat, lng: pz.lng, alt: 0.002,
           color: 'rgba(255,80,80,0.9)',
           size: 0.7, dotRadius: 0.3, _type: 'piracy',
@@ -1372,7 +1385,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     return labels.slice(0, 100);
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
       layers.nuclearSites, layers.militaryBases, layers.energyInfra, layers.chokepoints, layers.piracyZones,
-      layers.warZones, conflictZones]);
+      layers.warZones, conflictZones, cameraAltitude]);
 
   // Aircraft points (exclude on-ground)
   const aircraftPoints = layers.aircraft ? aircraft.filter((a) => !a.onGround) : [];

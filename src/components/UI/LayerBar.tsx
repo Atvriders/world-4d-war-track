@@ -13,16 +13,22 @@ const LAYER_BUTTONS: {
   key: keyof LayerVisibility;
   color: string;
 }[] = [
-  { label: 'Flights',    icon: '✈',  key: 'aircraft',      color: '#00e5ff' },
-  { label: 'Satellites',  icon: '🛰', key: 'satellites',    color: '#4caf50' },
-  { label: 'Maritime',   icon: '🚢', key: 'ships',         color: '#2196f3' },
-  { label: 'War Zones',  icon: '⚔',  key: 'warZones',      color: '#f44336' },
-  { label: 'GPS Jam',    icon: '📡', key: 'gpsJam',        color: '#ff9800' },
-  { label: 'Nuclear',    icon: '☢',  key: 'nuclearSites',  color: '#ffeb3b' },
-  { label: 'Bases',      icon: '🎯', key: 'militaryBases', color: '#e0e0e0' },
-  { label: 'Energy',     icon: '⚡', key: 'energyInfra',   color: '#ffab40' },
-  { label: 'Cables',     icon: '🌊', key: 'seaCables',     color: '#26a69a' },
+  { label: 'FLT',  icon: '✈',  key: 'aircraft',      color: '#00e5ff' },
+  { label: 'SAT',  icon: '🛰', key: 'satellites',    color: '#4caf50' },
+  { label: 'MAR',  icon: '🚢', key: 'ships',         color: '#2196f3' },
+  { label: 'WAR',  icon: '⚔',  key: 'warZones',      color: '#f44336' },
+  { label: 'GPS',  icon: '📡', key: 'gpsJam',        color: '#ff9800' },
+  { label: 'NUC',  icon: '☢',  key: 'nuclearSites',  color: '#ffeb3b' },
+  { label: 'BASE', icon: '🎯', key: 'militaryBases', color: '#e0e0e0' },
+  { label: 'NRG',  icon: '⚡', key: 'energyInfra',   color: '#ffab40' },
+  { label: 'CBL',  icon: '🌊', key: 'seaCables',     color: '#26a69a' },
 ];
+
+const FULL_NAMES: Record<string, string> = {
+  aircraft: 'Flights', satellites: 'Satellites', ships: 'Maritime',
+  warZones: 'War Zones', gpsJam: 'GPS Jamming', nuclearSites: 'Nuclear',
+  militaryBases: 'Bases', energyInfra: 'Energy', seaCables: 'Cables',
+};
 
 export default function LayerBar({ layers, onToggleLayer, counts, isMobile }: LayerBarProps) {
   return (
@@ -43,10 +49,10 @@ export default function LayerBar({ layers, onToggleLayer, counts, isMobile }: La
         borderTop: isMobile ? '1px solid rgba(255,255,255,0.08)' : undefined,
         zIndex: 1300,
         alignItems: 'center',
-        flexWrap: isMobile ? 'nowrap' : 'wrap',
+        flexWrap: 'nowrap',
         justifyContent: isMobile ? 'flex-start' : 'center',
-        overflowX: isMobile ? 'auto' : undefined,
-        overflowY: isMobile ? 'hidden' : undefined,
+        overflowX: 'auto',
+        overflowY: 'hidden',
         WebkitOverflowScrolling: 'touch' as any,
       }}
     >
@@ -66,14 +72,14 @@ export default function LayerBar({ layers, onToggleLayer, counts, isMobile }: La
             onMouseLeave={(e) => {
               e.currentTarget.style.filter = 'brightness(1)';
             }}
-            title={`${label} (${active ? 'ON' : 'OFF'})${hasCount ? ` — ${count} loaded` : ''}`}
+            title={`${FULL_NAMES[key] || label} (${active ? 'ON' : 'OFF'})${hasCount ? ` — ${count} loaded` : ''}`}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: 3,
               height: isMobile ? 36 : 28,
               minHeight: isMobile ? 36 : 28,
-              padding: isMobile ? '0 10px' : '0 8px',
+              padding: isMobile ? '0 10px' : '0 6px',
               border: `1px solid ${active ? (dimmed ? `${color}66` : color) : 'rgba(255,255,255,0.25)'}`,
               borderRadius: 14,
               background: active
