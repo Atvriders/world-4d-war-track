@@ -107,7 +107,7 @@ const TimeControl: React.FC<TimeControlProps> = ({
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: isMobile ? '62px' : '82px',
+    bottom: isMobile ? '62px' : '8px',
     left: '50%',
     transform: 'translateX(-50%)',
     width: isMobile ? 'calc(100vw - 16px)' : '350px',

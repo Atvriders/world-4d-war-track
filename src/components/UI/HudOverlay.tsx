@@ -94,11 +94,11 @@ export default function HudOverlay({ globeRef }: HudOverlayProps) {
         <div style={{ fontWeight: 700 }}>REAL-TIME INTELLIGENCE</div>
       </div>
 
-      {/* ── Bottom-left: MGRS-style coordinates ────────────────────────── */}
+      {/* ── Bottom-left: MGRS-style coordinates — moved above ticker/layerbar stack */}
       <div
         style={{
           ...BASE,
-          bottom: 48,
+          bottom: 114,
           left: 52,
           fontSize: '10px',
           lineHeight: '1.6',
