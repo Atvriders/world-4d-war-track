@@ -1220,27 +1220,25 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Satellites disabled
 
-    // Aircraft (not on ground)
-    if (layers.aircraft) {
-      for (const a of aircraft) {
-        if (a.onGround) continue;
-        pts.push({ ...a, _type: 'aircraft' });
-      }
-    }
+    // Aircraft rendered as HTML plane icons instead of points
 
-    // Ships
-    if (layers.ships) {
-      for (const s of ships) {
-        pts.push({ ...s, _type: 'ship' });
-      }
-    }
+    // Ships rendered as HTML ship icons instead of points
 
     return pts;
-  }, [satellites, aircraft, ships, layers.satellites, layers.aircraft, layers.ships, performanceMode]);
+  }, [satellites, layers.satellites, performanceMode]);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
+  // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
+  // doesn't recompute on every tiny altitude change during drag/zoom.
+  const zoomTier = useMemo(() => {
+    if (cameraAltitude < 0.5) return 0;
+    if (cameraAltitude < 1.0) return 1;
+    if (cameraAltitude < 1.5) return 2;
+    return 3;
+  }, [cameraAltitude]);
+
   const allLabels = useMemo(() => {
-    const labels: Array<{
+    type LabelEntry = {
       name: string;
       lat: number;
       lng: number;
@@ -1251,7 +1249,31 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       _zone?: unknown;
       _data?: unknown;
       dotRadius?: number;
-    }> = [];
+    };
+
+    // ── Conflict zones FIRST — these are essential for the war tracker ──
+    const conflictLabels: LabelEntry[] = [];
+    if (layers.warZones) {
+      conflictZones.forEach(zone => {
+        const geom = zone.geoJSON?.geometry;
+        const coords = geom?.type === 'MultiPolygon'
+          ? (geom.coordinates as number[][][][])?.[0]?.[0]
+          : (geom?.coordinates as number[][][])?.[0];
+        if (!coords || coords.length === 0) return;
+        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
+        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
+
+        conflictLabels.push({
+          name: zone.name,
+          lat: avgLat, lng: avgLng, alt: 0.005,
+          color: zone.intensity === 'critical' ? 'rgba(255,50,50,1)' :
+                 zone.intensity === 'high' ? 'rgba(255,140,0,1)' : 'rgba(255,200,0,1)',
+          size: 1.0, dotRadius: 0.4, _type: 'conflict', _data: zone,
+        });
+      });
+    }
+
+    const otherLabels: LabelEntry[] = [];
 
     // Satellite labels disabled
 
@@ -1264,11 +1286,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       color: 'rgba(200,220,255,0.6)',
       size: 0.7,
     }));
-    labels.push(...countryLabels);
+    otherLabels.push(...countryLabels);
 
-    // Aircraft labels — only show when zoomed in (cameraAltitude < 1.5)
+    // Aircraft labels — only show when zoomed in (zoomTier <= 2, i.e. altitude < 1.5)
     // Military always shown when zoomed in; civilian only when very close
-    if (layers.aircraft && cameraAltitude < 1.5) {
+    if (layers.aircraft && zoomTier <= 2) {
       const airborne = aircraft.filter(a => !a.onGround);
       // Sort military first, then by altitude descending
       const sorted = [...airborne].sort((a, b) => {
@@ -1277,7 +1299,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         return b.altitude - a.altitude;
       });
       // Limit: show more labels when zoomed in closer
-      const maxLabels = cameraAltitude < 0.5 ? 30 : cameraAltitude < 1.0 ? 15 : 8;
+      const maxLabels = zoomTier === 0 ? 30 : zoomTier === 1 ? 15 : 8;
       const acLabels = sorted
         .slice(0, maxLabels)
         .map(a => {
@@ -1295,17 +1317,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             dotRadius: a.isMilitary ? 0.5 : 0.3,
           };
         });
-      labels.push(...acLabels);
+      otherLabels.push(...acLabels);
     }
 
     // Ship labels (warships first) — only show when zoomed in
-    if (layers.ships && cameraAltitude < 1.5) {
+    if (layers.ships && zoomTier <= 2) {
       const sorted = [...ships].sort((a, b) => {
         const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
         const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
         return bWar - aWar;
       });
-      const maxShipLabels = cameraAltitude < 0.5 ? 20 : cameraAltitude < 1.0 ? 10 : 5;
+      const maxShipLabels = zoomTier === 0 ? 20 : zoomTier === 1 ? 10 : 5;
       const shipLabels = sorted
         .slice(0, maxShipLabels)
         .map(s => {
@@ -1322,13 +1344,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             dotRadius: isWarship ? 0.4 : 0.3,
           };
         });
-      labels.push(...shipLabels);
+      otherLabels.push(...shipLabels);
     }
 
     // Nuclear sites
     if (layers.nuclearSites) {
       NUCLEAR_SITES.forEach(site => {
-        labels.push({
+        otherLabels.push({
           name: site.name,
           lat: site.lat, lng: site.lng, alt: 0.003,
           color: site.risk === 'critical' ? 'rgba(255,50,50,1)' : 'rgba(255,200,0,0.9)',
@@ -1340,7 +1362,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     // Military bases
     if (layers.militaryBases) {
       MILITARY_BASES.forEach(base => {
-        labels.push({
+        otherLabels.push({
           name: `◆ ${base.name}`,
           lat: base.lat, lng: base.lng, alt: 0.002,
           color: base.operator.includes('US') ? 'rgba(68,136,255,0.9)' :
@@ -1353,7 +1375,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     // Energy infrastructure
     if (layers.energyInfra) {
       ENERGY_FACILITIES.forEach(fac => {
-        labels.push({
+        otherLabels.push({
           name: fac.name,
           lat: fac.lat, lng: fac.lng, alt: 0.002,
           color: fac.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,170,0,0.8)',
@@ -1365,7 +1387,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     // Chokepoints
     if (layers.chokepoints) {
       CHOKEPOINTS.forEach(cp => {
-        labels.push({
+        otherLabels.push({
           name: cp.name,
           lat: cp.lat, lng: cp.lng, alt: 0.002,
           color: cp.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,200,0,0.8)',
@@ -1377,7 +1399,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     // Piracy zones
     if (layers.piracyZones) {
       PIRACY_ZONES.forEach(pz => {
-        labels.push({
+        otherLabels.push({
           name: pz.name,
           lat: pz.lat, lng: pz.lng, alt: 0.002,
           color: 'rgba(255,80,80,0.9)',
@@ -1386,33 +1408,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       });
     }
 
-    // Conflict zones (war zones)
-    if (layers.warZones) {
-      conflictZones.forEach(zone => {
-        const geom = zone.geoJSON?.geometry;
-        const coords = geom?.type === 'MultiPolygon'
-          ? (geom.coordinates as number[][][][])?.[0]?.[0]
-          : (geom?.coordinates as number[][][])?.[0];
-        if (!coords || coords.length === 0) return;
-        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
-        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
-
-        labels.push({
-          name: zone.name,
-          lat: avgLat, lng: avgLng, alt: 0.005,
-          color: zone.intensity === 'critical' ? 'rgba(255,50,50,1)' :
-                 zone.intensity === 'high' ? 'rgba(255,140,0,1)' : 'rgba(255,200,0,1)',
-          size: 1.0, dotRadius: 0.4, _type: 'conflict', _data: zone,
-        });
-      });
-    }
-
-    // Cap total labels for performance
-    const cap = performanceMode === 'low' ? 30 : 100;
-    return labels.slice(0, cap);
+    // Cap other labels for performance, but always keep ALL conflict labels
+    const totalCap = performanceMode === 'low' ? 30 : 100;
+    const otherCap = Math.max(0, totalCap - conflictLabels.length);
+    return [...conflictLabels, ...otherLabels.slice(0, otherCap)];
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
       layers.nuclearSites, layers.militaryBases, layers.energyInfra, layers.chokepoints, layers.piracyZones,
-      layers.warZones, conflictZones, cameraAltitude, performanceMode]);
+      layers.warZones, conflictZones, zoomTier, performanceMode]);
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
   const satelliteTrackPaths: PathEntry[] = useMemo(
@@ -1661,7 +1663,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (!a.isMilitary && b.isMilitary) return 1;
       return b.altitude - a.altitude;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted.slice(0, 30);
+    const limited = performanceMode === 'low' ? sorted.slice(0, 25) : sorted.slice(0, 80);
     return limited.map(a => ({ ...a, _marker: 'aircraft' as const }));
   }, [layers.aircraft, aircraft, performanceMode]);
 
@@ -1673,7 +1675,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
       return bW - aW;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 10) : sorted.slice(0, 20);
+    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted.slice(0, 50);
     return limited.map(s => ({ ...s, _marker: 'ship' as const }));
   }, [layers.ships, ships, performanceMode]);
 
