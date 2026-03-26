@@ -1213,22 +1213,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [layers.droneActivity, conflictZones, performanceMode]);
 
 
-  // ── Merged points: aircraft + ships ─────────────────────────────────────
-  const allPoints = useMemo(() => {
-    const pts: any[] = [];
-    if (layers.aircraft) {
-      for (const a of aircraft) {
-        if (a.onGround) continue;
-        pts.push({ ...a, _type: 'aircraft' });
-      }
-    }
-    if (layers.ships) {
-      for (const s of ships) {
-        pts.push({ ...s, _type: 'ship' });
-      }
-    }
-    return pts;
-  }, [aircraft, ships, layers.aircraft, layers.ships]);
+  // ── Merged points (empty — aircraft/ships rendered as HTML icons) ────────
+  const allPoints = useMemo(() => [] as any[], []);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
@@ -2416,11 +2402,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements set imperatively via useEffect to avoid React #321
-        // (react-kapsule propagates props synchronously during render,
-        //  causing CSS2DRenderer DOM mutations that React doesn't expect)
-
-
+        // HTML elements — aircraft/ship/base/nuclear/chokepoint/piracy/csg markers
+        htmlElementsData={mergedHtmlMarkers}
+        htmlLat={(d: object) => (d as { lat: number }).lat}
+        htmlLng={(d: object) => (d as { lng: number }).lng}
+        htmlAltitude={0.008}
+        htmlElement={mergedHtmlElement}
+        htmlTransitionDuration={0}
       />
 
     </div>
