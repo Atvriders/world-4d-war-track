@@ -1257,7 +1257,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           lat: avgLat, lng: avgLng, alt: 0.005,
           color: zone.intensity === 'critical' ? 'rgba(255,50,50,1)' :
                  zone.intensity === 'high' ? 'rgba(255,140,0,1)' : 'rgba(255,200,0,1)',
-          size: 1.0, dotRadius: 0.4, _type: 'conflict', _data: zone,
+          size: 0.8, dotRadius: 0.3, _type: 'conflict', _data: zone,
         });
       });
     }
@@ -1266,41 +1266,43 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Satellite labels disabled
 
-    // Country name labels (subtle background text, no dot)
-    const countryLabels = COUNTRY_LABELS.map(c => ({
-      name: c.name,
-      lat: c.lat,
-      lng: c.lng,
-      alt: 0.001,
-      color: 'rgba(200,220,255,0.6)',
-      size: 0.7,
-    }));
-    otherLabels.push(...countryLabels);
+    // Country name labels (subtle background text, no dot) — only when zoomed in
+    if (zoomTier <= 2) {
+      const countryLabels = COUNTRY_LABELS.map(c => ({
+        name: c.name,
+        lat: c.lat,
+        lng: c.lng,
+        alt: 0.001,
+        color: 'rgba(200,220,255,0.6)',
+        size: 0.5,
+      }));
+      otherLabels.push(...countryLabels);
+    }
 
     // Aircraft labels — show at all zoom levels with ✈ icon
     if (layers.aircraft) {
-      const airborne = aircraft.filter(a => !a.onGround);
+      const airborne = aircraft.filter(a => !a.onGround && a.isMilitary);
       const sorted = [...airborne].sort((a, b) => {
         if (a.isMilitary && !b.isMilitary) return -1;
         if (!a.isMilitary && b.isMilitary) return 1;
         return b.altitude - a.altitude;
       });
-      const maxLabels = performanceMode === 'low' ? 20 : 60;
+      const maxLabels = performanceMode === 'low' ? 8 : 20;
       const acLabels = sorted
         .slice(0, maxLabels)
         .map(a => {
           const cs = a.callsign?.trim();
-          const displayName = cs || a.icao24 || 'N/A';
+          const displayName = (cs || a.icao24 || 'N/A').replace(/^\?\s*/, '');
           return {
             name: `✈ ${displayName}`,
             lat: a.lat,
             lng: a.lng,
             alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
             color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
-            size: a.isMilitary ? 1.4 : 1.0,
+            size: 0.7,
             _type: 'aircraft',
             _data: a,
-            dotRadius: a.isMilitary ? 0.5 : 0.3,
+            dotRadius: 0.25,
           };
         });
       otherLabels.push(...acLabels);
@@ -1308,26 +1310,28 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Ship labels (warships first) — show at all zoom levels with 🚢 icon
     if (layers.ships) {
-      const sorted = [...ships].sort((a, b) => {
-        const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
-        const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
-        return bWar - aWar;
-      });
-      const maxShipLabels = performanceMode === 'low' ? 10 : 40;
+      const sorted = [...ships]
+        .filter(s => s.type === 'warship' || s.type === 'military')
+        .sort((a, b) => {
+          const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
+          const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
+          return bWar - aWar;
+        });
+      const maxShipLabels = performanceMode === 'low' ? 5 : 12;
       const shipLabels = sorted
         .slice(0, maxShipLabels)
         .map(s => {
-          const isWarship = s.type === 'warship' || s.type === 'military';
+          const shipName = (s.name || s.mmsi || 'N/A').replace(/^\?\s*/, '');
           return {
-            name: `🚢 ${s.name || s.mmsi || 'N/A'}`,
+            name: `🚢 ${shipName}`,
             lat: s.lat,
             lng: s.lng,
             alt: 0.001,
-            color: isWarship ? 'rgba(255,60,60,1.0)' : 'rgba(60,120,255,0.9)',
-            size: isWarship ? 1.1 : 0.8,
+            color: 'rgba(255,60,60,1.0)',
+            size: 0.6,
             _type: 'ship',
             _data: s,
-            dotRadius: isWarship ? 0.4 : 0.3,
+            dotRadius: 0.2,
           };
         });
       otherLabels.push(...shipLabels);
@@ -1395,7 +1399,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }
 
     // Cap other labels for performance, but always keep ALL conflict labels
-    const totalCap = performanceMode === 'low' ? 50 : 150;
+    const totalCap = performanceMode === 'low' ? 25 : 60;
     const otherCap = Math.max(0, totalCap - conflictLabels.length);
     return [...conflictLabels, ...otherLabels.slice(0, otherCap)];
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
