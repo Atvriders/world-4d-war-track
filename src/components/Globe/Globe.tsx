@@ -2414,16 +2414,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements — uses htmlElementVisibilityModifier to bypass isBehindGlobe crash
+        // HTML elements — aircraft/ship/base/nuclear/chokepoint/piracy/csg markers
         htmlElementsData={mergedHtmlMarkers}
         htmlLat={(d: object) => (d as { lat: number }).lat}
         htmlLng={(d: object) => (d as { lng: number }).lng}
         htmlAltitude={0.008}
         htmlElement={mergedHtmlElement}
-        htmlElementVisibilityModifier={(el: HTMLElement, isVisible: boolean) => {
-          el.style.opacity = isVisible ? '1' : '0';
-          el.style.pointerEvents = isVisible ? 'auto' : 'none';
-        }}
+        htmlTransitionDuration={0}
 
 
       />
