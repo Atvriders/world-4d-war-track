@@ -1214,29 +1214,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [layers.droneActivity, conflictZones, performanceMode]);
 
 
-  // ── Merged points: aircraft + ships ─────────────────────────────────────
+  // ── Merged points (satellites disabled, aircraft/ships use HTML icons) ───
   const allPoints = useMemo(() => {
-    const pts: any[] = [];
-
-    // Satellites disabled
-
-    // Aircraft (not on ground)
-    if (layers.aircraft) {
-      for (const a of aircraft) {
-        if (a.onGround) continue;
-        pts.push({ ...a, _type: 'aircraft' });
-      }
-    }
-
-    // Ships
-    if (layers.ships) {
-      for (const s of ships) {
-        pts.push({ ...s, _type: 'ship' });
-      }
-    }
-
-    return pts;
-  }, [aircraft, ships, layers.aircraft, layers.ships, performanceMode]);
+    return [] as any[];
+  }, []);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
@@ -2306,6 +2287,21 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Arc callbacks now use module-level functions (arcStartLatAccessor, arcColorAccessor, etc.)
 
+  // ── Imperative HTML elements (bypasses react-kapsule sync render) ──────────
+  // react-kapsule propagates props during React's render phase, causing DOM
+  // mutations from CSS2DRenderer that trigger React error #321. By setting
+  // htmlElement props imperatively in useEffect (after render), we avoid this.
+  useEffect(() => {
+    const globe = globeRef.current;
+    if (!globe) return;
+    globe
+      .htmlElementsData(mergedHtmlMarkers)
+      .htmlLat((d: object) => (d as { lat: number }).lat)
+      .htmlLng((d: object) => (d as { lng: number }).lng)
+      .htmlAltitude(0.008)
+      .htmlElement(mergedHtmlElement)
+      .htmlTransitionDuration(0);
+  }, [mergedHtmlMarkers, mergedHtmlElement]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -2425,13 +2421,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements disabled — causes React error #321 in production build
-        // htmlElementsData={mergedHtmlMarkers}
-        // htmlLat={(d: object) => (d as { lat: number }).lat}
-        // htmlLng={(d: object) => (d as { lng: number }).lng}
-        // htmlAltitude={0.008}
-        // htmlElement={mergedHtmlElement}
-        // htmlTransitionDuration={0}
+        // HTML elements set imperatively via useEffect to avoid React #321
+        // (react-kapsule propagates props synchronously during render,
+        //  causing CSS2DRenderer DOM mutations that React doesn't expect)
 
 
       />
