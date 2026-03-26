@@ -2,6 +2,7 @@
 // All labels use inline styles only (no CSS classes)
 
 import { headingToCompass, getOrbitClass } from './geoMath';
+import { countryToFlag } from './flags';
 
 // Escape user-supplied strings to prevent XSS in label HTML
 function esc(s: string | undefined | null): string {
@@ -60,8 +61,8 @@ export function formatAircraftLabel(aircraft: {
 
   const content = `
 ${militaryBadge}
-<div style="color:#00ff88;font-weight:bold">&#9992; ${callsignDisplay}</div>
-<div style="color:#7a9ab0">Country: ${esc(aircraft.country) || 'Unknown'}</div>
+<div style="color:#00ff88;font-weight:bold">✈ ${callsignDisplay}</div>
+<div style="color:#7a9ab0">${countryToFlag(aircraft.country)} ${esc(aircraft.country) || 'Unknown'}</div>
 ${aircraft.onGround
     ? `<div>Altitude: Ground</div>`
     : `<div>Alt: ${altFt.toLocaleString()} ft (${altM.toLocaleString()} m)</div>`
@@ -100,8 +101,8 @@ export function formatShipLabel(ship: {
     : '';
 
   const content = `
-<div style="color:${nameColor};font-weight:bold">${typeIcon} ${esc(ship.name) || 'UNKNOWN'}</div>
-<div style="color:#7a9ab0">Flag: ${esc(ship.flag) || 'Unknown'}</div>
+<div style="color:${nameColor};font-weight:bold">🚢 ${esc(ship.name) || 'UNKNOWN'}</div>
+<div style="color:#7a9ab0">${countryToFlag(ship.flag)} ${esc(ship.flag) || 'Unknown'}</div>
 <div>Type: ${esc(ship.type) || 'Unknown'}</div>
 <div>Speed: ${speedKts} kts</div>
 <div>Heading: ${headingPadded}&deg; ${compass}</div>
@@ -138,7 +139,7 @@ export function formatSatelliteLabel(sat: {
   const content = `
 <div style="color:${nameColor};font-weight:bold">&#11088; ${esc(sat.name)}</div>
 <div>${categoryBadge}</div>
-<div style="color:#7a9ab0">Country: ${esc(sat.country) || 'Unknown'}</div>
+<div style="color:#7a9ab0">${countryToFlag(sat.country)} ${esc(sat.country) || 'Unknown'}</div>
 <div>Orbit: <span style="color:#aaccee">${orbit}</span> &mdash; ${altKm.toLocaleString()} km</div>
 <div>Velocity: ${velKms} km/s</div>
 <div>Footprint: ~${footprintKm.toLocaleString()} km</div>

@@ -7,6 +7,7 @@ import {
   ConflictEvent,
 } from '../../types';
 import { headingToCompass, getOrbitClass } from '../../utils/geoMath';
+import { countryToFlag } from '../../utils/flags';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -382,7 +383,7 @@ function SatelliteInfo({ entity, onFlyTo }: { entity: SatelliteEntity; onFlyTo: 
 
       <div style={styles.section}>
         <SectionHead>Identification</SectionHead>
-        <InfoRow label="Country" value={entity.country} />
+        <InfoRow label="Country" value={<span>{countryToFlag(entity.country)} {entity.country}</span>} />
         <InfoRow label="NORAD ID" value={entity.id} />
         <InfoRow label="Footprint" value={`${(entity.footprintRadius ?? 0).toLocaleString()} km radius`} />
       </div>
@@ -421,7 +422,7 @@ function AircraftInfo({ entity, onFlyTo }: { entity: AircraftEntity; onFlyTo: (l
             {entity.onGround ? 'On Ground' : 'Airborne'}
           </span>
         </div>
-        <InfoRow label="Country" value={entity.country} />
+        <InfoRow label="Country" value={<span>{countryToFlag(entity.country)} {entity.country}</span>} />
       </div>
 
       <div style={styles.section}>
@@ -464,7 +465,7 @@ function ShipInfo({ entity, onFlyTo }: { entity: ShipEntity; onFlyTo: (lat: numb
     <>
       <div style={styles.section}>
         <SectionHead>Identification</SectionHead>
-        <InfoRow label="Flag" value={entity.flag} />
+        <InfoRow label="Flag" value={<span>{countryToFlag(entity.flag)} {entity.flag}</span>} />
         <InfoRow label="MMSI" value={<span style={{ fontFamily: 'monospace', color: '#aaddff' }}>{entity.mmsi}</span>} />
         <InfoRow label="Type" value={shipTypeLabel[entity.type]} />
         {entity.length !== undefined && (
@@ -631,7 +632,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
 
   if (type === 'satellite') {
     const sat = data as SatelliteEntity;
-    title = sat.name;
+    title = `${countryToFlag(sat.country)} ${sat.name}`;
     const catColor = satelliteCategoryColor[sat.category] ?? '#888888';
     badges = [
       <Badge
@@ -645,7 +646,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     flyLng = sat.lng;
   } else if (type === 'aircraft') {
     const ac = data as AircraftEntity;
-    title = ac.callsign || ac.icao24?.toUpperCase() || 'UNKNOWN';
+    title = `${countryToFlag(ac.country)} ${ac.callsign || ac.icao24?.toUpperCase() || 'UNKNOWN'}`;
     if (ac.isMilitary) {
       badges = [<Badge key="mil" label="Military" color="#ff4444" bg="rgba(255,68,68,0.15)" />];
     }
@@ -653,7 +654,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     flyLng = ac.lng;
   } else if (type === 'ship') {
     const ship = data as ShipEntity;
-    title = ship.name;
+    title = `${countryToFlag(ship.flag)} ${ship.name}`;
     badges = [
       <Badge
         key="type"

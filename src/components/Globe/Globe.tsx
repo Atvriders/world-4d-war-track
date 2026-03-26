@@ -894,9 +894,9 @@ function pointAltitudeAccessor(d: object) {
   return s.alt / 6371;
 }
 function pointRadiusAccessor(d: object) {
-  const p = d as { _type?: string; category?: string };
-  if (p._type === 'aircraft') return 0.2;
-  if (p._type === 'ship') return 0.25;
+  const p = d as { _type?: string; category?: string; isMilitary?: boolean; type?: string };
+  if (p._type === 'aircraft') return p.isMilitary ? 0.35 : 0.2;
+  if (p._type === 'ship') return (p.type === 'warship' || p.type === 'military') ? 0.35 : 0.25;
   // satellite
   const cat = (d as SatelliteEntity).category;
   if (cat === 'iss') return 0.8;
@@ -1296,15 +1296,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           const cs = a.callsign?.trim();
           const displayName = cs || a.icao24 || 'N/A';
           return {
-            name: displayName,
+            name: `✈ ${displayName}`,
             lat: a.lat,
             lng: a.lng,
             alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
             color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
-            size: a.isMilitary ? 1.2 : 0.8,
+            size: a.isMilitary ? 1.4 : 1.0,
             _type: 'aircraft',
             _data: a,
-            dotRadius: a.isMilitary ? 0.4 : 0.2,
+            dotRadius: a.isMilitary ? 0.5 : 0.3,
           };
         });
       labels.push(...acLabels);
@@ -1323,15 +1323,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         .map(s => {
           const isWarship = s.type === 'warship' || s.type === 'military';
           return {
-            name: s.name || s.mmsi || 'N/A',
+            name: `🚢 ${s.name || s.mmsi || 'N/A'}`,
             lat: s.lat,
             lng: s.lng,
             alt: 0.001,
             color: isWarship ? 'rgba(255,60,60,1.0)' : 'rgba(60,120,255,0.9)',
-            size: isWarship ? 0.9 : 0.6,
+            size: isWarship ? 1.1 : 0.8,
             _type: 'ship',
             _data: s,
-            dotRadius: 0.3,
+            dotRadius: isWarship ? 0.4 : 0.3,
           };
         });
       labels.push(...shipLabels);
