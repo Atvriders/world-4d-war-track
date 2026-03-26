@@ -167,7 +167,7 @@ export default function App() {
   // ── Custom hooks for data refresh, alert generation, and globe time ───────
   const { refresh } = useDataRefresh();
   useAlertGenerator();
-  useSatelliteTimePropagation();
+  // useSatelliteTimePropagation(); // Satellites disabled
   const { currentTime } = useGlobeTime();
   const isMobile = useIsMobile();
 
@@ -245,8 +245,9 @@ export default function App() {
           .catch(e => store.setError('aircraft', String(e))),
         fetchShips().then(ships => { if (ships.length > 0) { store.setShips(ships as any); store.setLastRefresh('ships'); } })
           .catch(e => store.setError('ships', String(e))),
-        fetchSatellitePositions().then(sats => { if (sats.length > 0) { store.setSatellites(sats as any); store.setLastRefresh('satellites'); } })
-          .catch(e => store.setError('satellites', String(e))),
+        // Satellites disabled
+        // fetchSatellitePositions().then(sats => { if (sats.length > 0) { store.setSatellites(sats as any); store.setLastRefresh('satellites'); } })
+        //   .catch(e => store.setError('satellites', String(e))),
       ]);
     }
     loadData();
@@ -265,12 +266,12 @@ export default function App() {
       }
       if (document.activeElement?.tagName === 'INPUT') return;
       switch (e.key.toLowerCase()) {
-        case 's': store.toggleLayer('satellites'); break;
+        // case 's': store.toggleLayer('satellites'); break; // Satellites disabled
         case 'a': store.toggleLayer('aircraft'); break;
         case 'v': store.toggleLayer('ships'); break;
         case 'w': store.toggleLayer('warZones'); break;
         case 'j': store.toggleLayer('gpsJam'); break;
-        case 'o': store.toggleLayer('satelliteOrbits'); break;
+        // case 'o': store.toggleLayer('satelliteOrbits'); break; // Satellites disabled
         case 'n': store.toggleLayer('nuclearSites'); break;
         case 'b': store.toggleLayer('militaryBases'); break;
         case 'c': store.toggleLayer('seaCables'); break;
@@ -543,13 +544,13 @@ export default function App() {
           )}
 
           {/* Satellite panel (mutually exclusive with other specialty panels) */}
-          <SatellitePanel
+          {false && <SatellitePanel
             satellites={satellites}
             onSelect={handleSatSelect}
             onFlyTo={handleFlyTo}
             visible={showSatellitePanel}
             onToggle={() => toggleSpecialtyPanel('satellite')}
-          />
+          />}
 
           {/* GPS jam panel (mutually exclusive with other specialty panels) */}
           <GpsJamPanel

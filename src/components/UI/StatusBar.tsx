@@ -128,12 +128,14 @@ const StatusBar: React.FC<StatusBarProps> = ({
           <span style={{ color: '#4da8ff' }}>✈ {aircraft.toLocaleString()}</span>
           <span style={{ color: '#3a5a6a', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
           <span style={{ color: '#ff8c00' }}>🚢 {ships.toLocaleString()}</span>
+          {/* Satellite count hidden
           {!isMobile && (
             <>
               <span style={{ color: '#3a5a6a', margin: '0 6px' }}>|</span>
               <span style={{ color: '#00ff88' }}>🛰 {satellites.toLocaleString()}</span>
             </>
           )}
+          */}
           <span style={{ color: '#3a5a6a', margin: isMobile ? '0 3px' : '0 6px' }}>|</span>
           <span style={{ color: '#ff3b3b' }}>⚔ {activeConflicts}</span>
         </span>

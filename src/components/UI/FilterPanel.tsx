@@ -290,7 +290,7 @@ function LayerRow({ icon, label, layerKey, on, onToggle, countBadge, subLabel, i
 }
 
 const COLLAPSED_ICONS = [
-  { icon: '🛰️', title: 'Satellites', layerKey: 'satellites' },
+  // { icon: '🛰️', title: 'Satellites', layerKey: 'satellites' },  // hidden
   { icon: '✈️', title: 'Aircraft', layerKey: 'aircraft' },
   { icon: '🚢', title: 'Ships', layerKey: 'ships' },
   { icon: '⚔️', title: 'Conflicts', layerKey: 'warZones' },
@@ -368,7 +368,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
           </div>
           {/* Scrollable content — reuse same sections */}
           <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 24 }}>
-            {/* SATELLITES */}
+            {/* SATELLITES - hidden
             <div style={styles.section}>
               <div style={styles.sectionLabel}>Satellites</div>
               <LayerRow icon="🛰️" label="Satellites" layerKey="satellites" on={layers.satellites} onToggle={onToggleLayer} countBadge={formatCount(counts.satellites)} subLabel={counts.militarySatellites > 0 ? `⚠ ${formatCount(counts.militarySatellites)} MIL` : undefined} />
@@ -376,6 +376,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
               <LayerRow icon="⭕" label="Coverage Footprints" layerKey="satelliteFootprints" on={layers.satelliteFootprints} onToggle={onToggleLayer} indent />
               <LayerRow icon="🔗" label="Connection Lines" layerKey="satelliteConnections" on={layers.satelliteConnections} onToggle={onToggleLayer} indent />
             </div>
+            */}
             <div style={styles.section}>
               <div style={styles.sectionLabel}>Air Traffic</div>
               <LayerRow icon="✈️" label="Aircraft" layerKey="aircraft" on={layers.aircraft} onToggle={onToggleLayer} countBadge={formatCount(counts.aircraft)} subLabel={counts.militaryAircraft > 0 ? `⚠ ${formatCount(counts.militaryAircraft)} MIL` : undefined} />
@@ -433,7 +434,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
             {/* Scrollable content */}
             <div style={styles.scrollArea}>
 
-              {/* SATELLITES */}
+              {/* SATELLITES - hidden
               <div style={styles.section}>
                 <div style={styles.sectionLabel}>Satellites</div>
                 <LayerRow
@@ -474,6 +475,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({ layers, onToggleLayer, counts
                   indent
                 />
               </div>
+              */}
 
               {/* AIR TRAFFIC */}
               <div style={styles.section}>

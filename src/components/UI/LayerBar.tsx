@@ -14,7 +14,7 @@ const LAYER_BUTTONS: {
   color: string;
 }[] = [
   { label: 'FLT',  icon: '✈',  key: 'aircraft',      color: '#00e5ff' },
-  { label: 'SAT',  icon: '🛰', key: 'satellites',    color: '#4caf50' },
+  // { label: 'SAT',  icon: '🛰', key: 'satellites',    color: '#4caf50' },  // hidden
   { label: 'MAR',  icon: '🚢', key: 'ships',         color: '#2196f3' },
   { label: 'WAR',  icon: '⚔',  key: 'warZones',      color: '#f44336' },
   { label: 'GPS',  icon: '📡', key: 'gpsJam',        color: '#ff9800' },

@@ -101,8 +101,8 @@ export interface AppState {
 // === DEFAULT VALUES ===
 
 const DEFAULT_LAYERS: LayerVisibility = {
-  satellites: true,
-  satelliteOrbits: true,
+  satellites: false,
+  satelliteOrbits: false,
   satelliteFootprints: false,
   satelliteConnections: false,
   aircraft: true,

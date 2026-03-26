@@ -249,7 +249,8 @@ export function useDataRefresh(): { refresh: () => void } {
     retryCounts.current = { aircraft: 0, ships: 0, satellites: 0, gpsJam: 0 };
     fetchAircraftData();
     fetchShipData();
-    fetchSatelliteData();
+    // Satellites disabled
+    // fetchSatelliteData();
     fetchGpsJamData();
   }, [fetchAircraftData, fetchShipData, fetchSatelliteData, fetchGpsJamData]);
 
@@ -260,13 +261,14 @@ export function useDataRefresh(): { refresh: () => void } {
     // Periodic intervals
     const aircraftTimer = setInterval(fetchAircraftData, AIRCRAFT_INTERVAL);
     const shipTimer = setInterval(fetchShipData, SHIP_INTERVAL);
-    const satelliteTimer = setInterval(fetchSatelliteData, SATELLITE_INTERVAL);
+    // Satellites disabled
+    // const satelliteTimer = setInterval(fetchSatelliteData, SATELLITE_INTERVAL);
     const gpsJamTimer = setInterval(fetchGpsJamData, GPS_JAM_INTERVAL);
 
     return () => {
       clearInterval(aircraftTimer);
       clearInterval(shipTimer);
-      clearInterval(satelliteTimer);
+      // clearInterval(satelliteTimer); // Satellites disabled
       clearInterval(gpsJamTimer);
       // Clear any pending retry timeouts
       retryTimers.current.forEach((t) => clearTimeout(t));
@@ -412,32 +414,27 @@ export function useAlertGenerator(): void {
       });
     }
 
+    // Satellites disabled
     // 5. Satellite passing over conflict zone (alt < 600 km, within footprint)
-    for (const sat of satellites) {
-      if (sat.alt >= SATELLITE_MAX_ALT_KM) continue;
-
-      for (const zone of conflictZones) {
-        // Use footprintRadius as the buffer — satellite covers ground within that radius
-        const near = pointNearConflictZone(sat.lat, sat.lng, zone, sat.footprintRadius);
-        if (!near) continue;
-
-        // Distance check: satellite sub-point must be within footprintRadius
-        // We refine with a simple distance check to the zone centroid area;
-        // pointNearConflictZone already does a bbox+buffer check, which is sufficient.
-        const key = `satellite-pass-${sat.id}-${zone.id}`;
-        maybeAlert(key, {
-          id: newId(),
-          type: 'satellite-pass',
-          severity: 'info',
-          message: `Satellite ${sat.name} passing over ${zone.name}`,
-          lat: sat.lat,
-          lng: sat.lng,
-          entityId: sat.id,
-          timestamp: now,
-          dismissed: false,
-        });
-      }
-    }
+    // for (const sat of satellites) {
+    //   if (sat.alt >= SATELLITE_MAX_ALT_KM) continue;
+    //   for (const zone of conflictZones) {
+    //     const near = pointNearConflictZone(sat.lat, sat.lng, zone, sat.footprintRadius);
+    //     if (!near) continue;
+    //     const key = `satellite-pass-${sat.id}-${zone.id}`;
+    //     maybeAlert(key, {
+    //       id: newId(),
+    //       type: 'satellite-pass',
+    //       severity: 'info',
+    //       message: `Satellite ${sat.name} passing over ${zone.name}`,
+    //       lat: sat.lat,
+    //       lng: sat.lng,
+    //       entityId: sat.id,
+    //       timestamp: now,
+    //       dismissed: false,
+    //     });
+    //   }
+    // }
   }, [aircraft, ships, satellites, gpsJamCells, conflictZones, maybeAlert]);
 
   // Periodically clear alertedKeys to prevent unbounded memory growth
@@ -471,6 +468,8 @@ export function useAlertGenerator(): void {
  */
 export function useSatelliteTimePropagation(): void {
   const satellites = useStore((s) => s.satellites);
+  // Satellites disabled — early return when no satellite data
+  if (satellites.length === 0) return;
   const timeOffset = useStore((s) => s.timeOffset);
   const setSatellites = useStore((s) => s.setSatellites);
 

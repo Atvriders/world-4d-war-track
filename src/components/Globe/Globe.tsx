@@ -1215,12 +1215,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   const allPoints = useMemo(() => {
     const pts: any[] = [];
 
-    // Satellites (skip entirely in low performance mode — heaviest layer)
-    if (layers.satellites && performanceMode !== 'low') {
-      for (const s of satellites) {
-        pts.push({ ...s, _type: 'satellite' });
-      }
-    }
+    // Satellites disabled
 
     // Aircraft (not on ground)
     if (layers.aircraft) {
@@ -1255,21 +1250,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       dotRadius?: number;
     }> = [];
 
-    // Satellite labels (top 10)
-    if (layers.satellites) {
-      const topSats = [...satellites]
-        .sort((a, b) => b.alt - a.alt)
-        .slice(0, 10)
-        .map(s => ({
-          name: `◆ ${s.name}`,
-          lat: s.lat,
-          lng: s.lng,
-          alt: s.alt / 6371,
-          color: satelliteColor(s.category),
-          size: 0.8,
-        }));
-      labels.push(...topSats);
-    }
+    // Satellite labels disabled
 
     // Country name labels (subtle background text, no dot)
     const countryLabels = COUNTRY_LABELS.map(c => ({
@@ -1432,41 +1413,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
   const satelliteTrackPaths: PathEntry[] = useMemo(
-    () => {
-      if (!layers.satelliteOrbits) return [];
-      return satellites
-        .map((s) => {
-          const altNorm = s.alt / 6371;
-          // Use TLE-propagated ground track if available
-          if (s.groundTrack && s.groundTrack.length > 1) {
-            return {
-              _kind: 'sat' as const,
-              sat: s,
-              coords: s.groundTrack.map(([lat, lng]) => ({ lat, lng, alt: altNorm })),
-            };
-          }
-          // Fallback: approximate great-circle orbit from current position + heading
-          if (s.lat !== undefined && s.lng !== undefined && s.heading !== undefined) {
-            const points = 60;
-            const arcSpan = 60; // degrees of arc to trace
-            const coords: { lat: number; lng: number; alt: number }[] = [];
-            const headRad = s.heading * Math.PI / 180;
-            for (let i = 0; i < points; i++) {
-              const frac = (i / (points - 1)) - 0.5;
-              const angDeg = frac * arcSpan;
-              const dLat = Math.cos(headRad) * angDeg;
-              const dLng = Math.sin(headRad) * angDeg / Math.max(Math.cos(s.lat * Math.PI / 180), 0.01);
-              coords.push({ lat: s.lat + dLat, lng: s.lng + dLng, alt: altNorm });
-            }
-            if (coords.length > 1) {
-              return { _kind: 'sat' as const, sat: s, coords };
-            }
-          }
-          return null;
-        })
-        .filter(entry => entry !== null) as PathEntry[];
-    },
-    [layers.satelliteOrbits, satellites]
+    () => [],
+    []
   );
 
   const aircraftTrailPaths: PathEntry[] = useMemo(
@@ -1548,66 +1496,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // ── Navigation constellation connection paths ─────────────────────────────
   // Groups nav satellites by constellation and draws connecting lines.
   // Starlink skipped (too many for connecting lines).
-  const constellationPaths: PathEntry[] = useMemo(() => {
-    if (!layers.satelliteOrbits) return [];
-
-    const groups = new Map<ConstellationName, SatelliteEntity[]>();
-    for (const sat of satellites) {
-      const constellation = getConstellation(sat);
-      if (!constellation || constellation === 'Starlink') continue;
-      if (!groups.has(constellation)) groups.set(constellation, []);
-      groups.get(constellation)!.push(sat);
-    }
-
-    const paths: PathEntry[] = [];
-    const MAX_CONNECT_KM = 12000;
-
-    for (const [constellation, sats] of groups) {
-      if (sats.length < 2 || sats.length > 50) continue;
-      const color = CONSTELLATION_COLORS[constellation] + '88';
-
-      const sorted = [...sats].sort((a, b) => a.lng - b.lng);
-
-      // Greedy nearest-neighbor chain using fast approximate distance
-      const connected = new Set<number>();
-      connected.add(0);
-      let current = 0;
-
-      while (connected.size < sorted.length) {
-        let nearestIdx = -1;
-        let nearestDist = Infinity;
-
-        for (let i = 0; i < sorted.length; i++) {
-          if (connected.has(i)) continue;
-          const dist = approxDistKm(sorted[current], sorted[i]);
-          if (dist < nearestDist) {
-            nearestDist = dist;
-            nearestIdx = i;
-          }
-        }
-
-        if (nearestIdx === -1 || nearestDist > MAX_CONNECT_KM) break;
-
-        const s1 = sorted[current];
-        const s2 = sorted[nearestIdx];
-        const alt = Math.min(s1.alt, s2.alt) / 6371;
-        paths.push({
-          _kind: 'constellation',
-          constellation,
-          color,
-          coords: [
-            { lat: s1.lat, lng: s1.lng, alt },
-            { lat: s2.lat, lng: s2.lng, alt },
-          ],
-        });
-
-        connected.add(nearestIdx);
-        current = nearestIdx;
-      }
-    }
-
-    return paths;
-  }, [layers.satelliteOrbits, satellites]);
+  const constellationPaths: PathEntry[] = useMemo(
+    () => [],
+    []
+  );
 
   // Weapon range circles
   const weaponRangePaths: PathEntry[] = useMemo(
@@ -1690,12 +1582,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   const arcsData: ArcEntry[] = useMemo(() => {
     if (performanceMode === 'low') return [];
     if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats && !layers.tradeRoutes && !layers.armsFlows) return [];
-    const milArcs = layers.satelliteConnections ? getMilitarySatelliteConnections(
-      satellites as any,
-      conflictZones as any,
-      30
-    ) : [];
-    const jamArcs = layers.satelliteConnections ? getGpsJamConnections(satellites as any, gpsJamCells as any, 10) : [];
+    // Satellite connections disabled
+    const milArcs: any[] = [];
+    const jamArcs: any[] = [];
     // Refugee / displacement flow arcs
     const refugeeArcs: RefugeeArc[] = layers.refugeeFlows
       ? REFUGEE_FLOWS.map((flow) => ({
@@ -1750,12 +1639,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Satellite footprint rings
   const ringsData: FootprintRing[] = useMemo(
-    () =>
-      performanceMode === 'low' ? [] :
-      layers.satelliteFootprints
-        ? getSatelliteFootprints(satellites as any, ['military', 'spy', 'reconnaissance', 'navigation'])
-        : [],
-    [layers.satelliteFootprints, satellites, performanceMode]
+    () => [],
+    []
   );
 
   // ── Carrier Strike Group detection ─────────────────────────────────────────

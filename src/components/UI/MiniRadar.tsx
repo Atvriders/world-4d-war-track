@@ -186,19 +186,19 @@ function drawRadar(
     ctx.fill();
   }
 
-  // Draw satellites
-  for (const sat of satellites) {
-    const { x, y } = latLngToCanvas(sat.lat, sat.lng);
-    if (!isInsideCircle(x, y)) continue;
-    const isMilSat = sat.category?.toLowerCase().includes('mil') ||
-                     sat.category?.toLowerCase().includes('recon') ||
-                     sat.category?.toLowerCase().includes('spy') ||
-                     sat.category?.toLowerCase().includes('surveillance');
-    ctx.beginPath();
-    ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-    ctx.fillStyle = isMilSat ? '#ff3333' : '#00cc44';
-    ctx.fill();
-  }
+  // Draw satellites - hidden
+  // for (const sat of satellites) {
+  //   const { x, y } = latLngToCanvas(sat.lat, sat.lng);
+  //   if (!isInsideCircle(x, y)) continue;
+  //   const isMilSat = sat.category?.toLowerCase().includes('mil') ||
+  //                    sat.category?.toLowerCase().includes('recon') ||
+  //                    sat.category?.toLowerCase().includes('spy') ||
+  //                    sat.category?.toLowerCase().includes('surveillance');
+  //   ctx.beginPath();
+  //   ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+  //   ctx.fillStyle = isMilSat ? '#ff3333' : '#00cc44';
+  //   ctx.fill();
+  // }
 
   ctx.restore(); // end clip
 
@@ -459,9 +459,9 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
             { color: '#3399ff', label: 'Civil AC' },
             { color: '#ff3333', label: 'Mil AC' },
             { color: '#ff8c00', label: 'Ships' },
-            { color: '#00cc44', label: 'Sat' },
-            { color: '#ff3333', label: 'Mil Sat', dashed: true },
-          ].map(({ color, label, dashed }) => (
+            // { color: '#00cc44', label: 'Sat' },        // hidden
+            // { color: '#ff3333', label: 'Mil Sat', dashed: true },  // hidden
+          ].map(({ color, label }) => (
             <div
               key={label}
               style={{ display: 'flex', alignItems: 'center', gap: 3 }}
@@ -472,8 +472,8 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
                   height: 5,
                   borderRadius: '50%',
                   background: color,
-                  opacity: dashed ? 0.7 : 1,
-                  boxShadow: dashed ? `0 0 2px ${color}` : undefined,
+                  opacity: 1,
+                  boxShadow: undefined,
                 }}
               />
               <span

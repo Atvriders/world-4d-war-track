@@ -123,15 +123,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
         }
       }
 
-      for (const sat of satellites) {
-        const s = Math.max(
-          scoreMatch(sat.name, q),
-          scoreMatch(sat.category, q)
-        );
-        if (s > 0) {
-          found.push({ type: 'satellite', entity: sat, score: s, lat: sat.lat, lng: sat.lng });
-        }
-      }
+      // Satellite search hidden
+      // for (const sat of satellites) {
+      //   const s = Math.max(
+      //     scoreMatch(sat.name, q),
+      //     scoreMatch(sat.category, q)
+      //   );
+      //   if (s > 0) {
+      //     found.push({ type: 'satellite', entity: sat, score: s, lat: sat.lat, lng: sat.lng });
+      //   }
+      // }
 
       for (const conflict of conflictZones) {
         const nameScore = scoreMatch(conflict.name, q);
