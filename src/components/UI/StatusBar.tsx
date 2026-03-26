@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useStore } from '../../store';
 
 interface StatusBarProps {
   satellites: number;
@@ -67,6 +68,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
   currentTime,
   isMobile,
 }) => {
+  const performanceMode = useStore((s: any) => s.performanceMode);
   const [clock, setClock] = useState<Date>(currentTime);
 
   useEffect(() => {
@@ -146,6 +148,19 @@ const StatusBar: React.FC<StatusBarProps> = ({
           <span style={{ color: '#e0f0ff', fontSize: isMobile ? 9 : 12, fontWeight: 700, letterSpacing: '0.06em' }}>
             {formatUTC(clock)}
           </span>
+          {performanceMode === 'low' && (
+            <span
+              style={{
+                color: '#ffd700',
+                fontSize: isMobile ? 7 : 9,
+                fontWeight: 700,
+                letterSpacing: '0.05em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ⚡ LOW PERF
+            </span>
+          )}
           {/* Status badge */}
           <span
             style={{

@@ -67,6 +67,9 @@ export interface AppState {
     gpsJam: string | null;
   };
 
+  // Performance
+  performanceMode: 'high' | 'low';
+
   // Globe appearance
   globeSettings: {
     atmosphereColor: string;
@@ -92,6 +95,7 @@ export interface AppState {
   setLoading: (key: keyof AppState['isLoading'], val: boolean) => void;
   setError: (key: keyof AppState['errors'], err: string | null) => void;
   setLastRefresh: (key: keyof AppState['lastRefresh']) => void;
+  setPerformanceMode: (mode: 'high' | 'low') => void;
 }
 
 // === DEFAULT VALUES ===
@@ -170,6 +174,7 @@ export const useStore = create<AppState>()(
         ships: null,
         gpsJam: null,
       },
+      performanceMode: 'high',
       globeSettings: DEFAULT_GLOBE_SETTINGS,
 
       // Actions
@@ -256,6 +261,9 @@ export const useStore = create<AppState>()(
           false,
           'setLastRefresh'
         ),
+
+      setPerformanceMode: (mode) =>
+        set({ performanceMode: mode }, false, 'setPerformanceMode'),
 
     }),
     { name: 'world-4d-war-track' }

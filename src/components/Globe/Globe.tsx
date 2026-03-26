@@ -27,6 +27,7 @@ import { NUCLEAR_SITES, type NuclearSite } from '../../data/nuclearSites';
 import { CHOKEPOINTS, type Chokepoint } from '../../data/chokepoints';
 import { ARMS_FLOWS, type ArmsFlow } from '../../data/armsFlows';
 import { AIRSPACE_CLOSURES } from '../../data/airspaceClosures';
+import { useStore } from '../../store';
 
 
 // ─── Inject chokepoint pulse animation CSS (once) ────────────────────────────
@@ -1092,6 +1093,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   { satellites, aircraft, ships, conflictZones, gpsJamCells, layers, onEntityClick, timeOffset, globeSettings },
   ref
 ) {
+  const performanceMode = useStore((s: any) => s.performanceMode);
   const globeRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -1193,11 +1195,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // GPS hex bin points
   const hexBinPoints = useMemo(
-    () => (layers.gpsJam ? gpsJamCells.flatMap(expandJamCell) : []),
-    [layers.gpsJam, gpsJamCells]
+    () => (performanceMode === 'low' ? [] : layers.gpsJam ? gpsJamCells.flatMap(expandJamCell) : []),
+    [layers.gpsJam, gpsJamCells, performanceMode]
   );
   // Drone activity heatmap data
   const droneActivityHeatmap = useMemo(() => {
+    if (performanceMode === 'low') return [];
     if (!layers.droneActivity) return [];
     const pts = expandDroneEvents(conflictZones);
     if (pts.length === 0) return [];
@@ -1205,15 +1208,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       id: 'drone-activity',
       points: pts,
     }];
-  }, [layers.droneActivity, conflictZones]);
+  }, [layers.droneActivity, conflictZones, performanceMode]);
 
 
   // ── Merged points: satellites + aircraft + ships ──────────────────────────
   const allPoints = useMemo(() => {
     const pts: any[] = [];
 
-    // Satellites
-    if (layers.satellites) {
+    // Satellites (skip entirely in low performance mode — heaviest layer)
+    if (layers.satellites && performanceMode !== 'low') {
       for (const s of satellites) {
         pts.push({ ...s, _type: 'satellite' });
       }
@@ -1235,7 +1238,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     }
 
     return pts;
-  }, [satellites, aircraft, ships, layers.satellites, layers.aircraft, layers.ships]);
+  }, [satellites, aircraft, ships, layers.satellites, layers.aircraft, layers.ships, performanceMode]);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   const allLabels = useMemo(() => {
@@ -1420,11 +1423,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       });
     }
 
-    // Cap total labels for performance (~100 max)
-    return labels.slice(0, 100);
+    // Cap total labels for performance
+    const cap = performanceMode === 'low' ? 30 : 100;
+    return labels.slice(0, cap);
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
       layers.nuclearSites, layers.militaryBases, layers.energyInfra, layers.chokepoints, layers.piracyZones,
-      layers.warZones, conflictZones, cameraAltitude]);
+      layers.warZones, conflictZones, cameraAltitude, performanceMode]);
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
   const satelliteTrackPaths: PathEntry[] = useMemo(
@@ -1676,12 +1680,15 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   );
 
   const allPaths: PathEntry[] = useMemo(
-    () => [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths, ...nuclearZonePaths, ...conflictBorderPaths],
-    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths, nuclearZonePaths, conflictBorderPaths]
+    () => performanceMode === 'low'
+      ? [...conflictBorderPaths, ...frontLinePaths]
+      : [...satelliteTrackPaths, ...aircraftTrailPaths, ...shipTrailPaths, ...frontLinePaths, ...seaCablePaths, ...constellationPaths, ...weaponRangePaths, ...nuclearZonePaths, ...conflictBorderPaths],
+    [satelliteTrackPaths, aircraftTrailPaths, shipTrailPaths, frontLinePaths, seaCablePaths, constellationPaths, weaponRangePaths, nuclearZonePaths, conflictBorderPaths, performanceMode]
   );
 
   // Satellite connection arcs: military/spy/recon → nearest conflict zone + nav → GPS jam cells
   const arcsData: ArcEntry[] = useMemo(() => {
+    if (performanceMode === 'low') return [];
     if (!layers.satelliteConnections && !layers.refugeeFlows && !layers.cyberThreats && !layers.tradeRoutes && !layers.armsFlows) return [];
     const milArcs = layers.satelliteConnections ? getMilitarySatelliteConnections(
       satellites as any,
@@ -1739,15 +1746,16 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         }))
       : [];
     return [...milArcs, ...jamArcs, ...refugeeArcs, ...cyberArcs, ...tradeArcs, ...armsArcs];
-  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, layers.tradeRoutes, layers.armsFlows, satellites, conflictZones, gpsJamCells]);
+  }, [layers.satelliteConnections, layers.refugeeFlows, layers.cyberThreats, layers.tradeRoutes, layers.armsFlows, satellites, conflictZones, gpsJamCells, performanceMode]);
 
   // Satellite footprint rings
   const ringsData: FootprintRing[] = useMemo(
     () =>
+      performanceMode === 'low' ? [] :
       layers.satelliteFootprints
         ? getSatelliteFootprints(satellites as any, ['military', 'spy', 'reconnaissance', 'navigation'])
         : [],
-    [layers.satelliteFootprints, satellites]
+    [layers.satelliteFootprints, satellites, performanceMode]
   );
 
   // ── Carrier Strike Group detection ─────────────────────────────────────────
@@ -1765,8 +1773,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (!a.isMilitary && b.isMilitary) return 1;
       return b.altitude - a.altitude;
     });
-    return sorted.map(a => ({ ...a, _marker: 'aircraft' as const }));
-  }, [layers.aircraft, aircraft]);
+    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted;
+    return limited.map(a => ({ ...a, _marker: 'aircraft' as const }));
+  }, [layers.aircraft, aircraft, performanceMode]);
 
   // ── Ship HTML markers (ship icons) ──────────────────────────────────────
   const shipHtmlMarkers = useMemo(() => {
@@ -1776,8 +1785,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
       return bW - aW;
     });
-    return sorted.map(s => ({ ...s, _marker: 'ship' as const }));
-  }, [layers.ships, ships]);
+    const limited = performanceMode === 'low' ? sorted.slice(0, 10) : sorted;
+    return limited.map(s => ({ ...s, _marker: 'ship' as const }));
+  }, [layers.ships, ships, performanceMode]);
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
   // No custom THREE objects — use built-in points layer instead to avoid duplicate Three.js instances
@@ -2410,8 +2420,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         backgroundImageUrl="/img/night-sky.png"
         onGlobeReady={handleGlobeReady}
         atmosphereColor="#1a6aff"
-        atmosphereAltitude={0.25}
-        showAtmosphere={layers.atmosphere}
+        atmosphereAltitude={performanceMode === 'low' ? 0.1 : 0.25}
+        showAtmosphere={performanceMode === 'low' ? false : layers.atmosphere}
 
         // ── War-zone polygons REMOVED — conflict borders now rendered as paths
         // (polygon 3D meshes intercepted hover events everywhere on the globe)
@@ -2444,7 +2454,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         pointAltitude={pointAltitudeAccessor}
         pointColor={pointColor}
         pointRadius={pointRadiusAccessor}
-        pointResolution={4}
+        pointResolution={performanceMode === 'low' ? 2 : 4}
         pointLabel={pointLabel}
         onPointClick={handlePointClick}
 

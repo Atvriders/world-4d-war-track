@@ -181,6 +181,7 @@ export interface AppState {
     ships: string | null;
     gpsJam: string | null;
   };
+  performanceMode: 'high' | 'low';
   globeSettings: {
     atmosphereColor: string;
     showGraticules: boolean;

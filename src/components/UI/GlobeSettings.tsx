@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useStore } from '../../store';
 
 const IMAGERY_URLS = {
   satellite: '/img/earth-blue-marble.jpg',
@@ -68,6 +69,7 @@ export default function GlobeSettings({
   onToggle,
 }: GlobeSettingsProps) {
   const [resetHover, setResetHover] = useState(false);
+  const { performanceMode, setPerformanceMode } = useStore();
 
   const sectionLabel: React.CSSProperties = {
     fontSize: 10,
@@ -159,6 +161,54 @@ export default function GlobeSettings({
           >
             Globe Settings
           </div>
+
+          {/* PERFORMANCE */}
+          <div style={sectionLabel}>Performance</div>
+
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {(['high', 'low'] as const).map((mode) => {
+                const isActive = performanceMode === mode;
+                const activeColor = mode === 'high' ? '#00ff88' : '#ffaa00';
+                const activeBg = mode === 'high' ? '#0d2a0d' : '#2a2200';
+                return (
+                  <button
+                    key={mode}
+                    onClick={() => setPerformanceMode(mode)}
+                    style={{
+                      flex: 1,
+                      padding: '4px 0',
+                      fontSize: 10,
+                      fontFamily: "'Courier New', monospace",
+                      fontWeight: 600,
+                      letterSpacing: 0.5,
+                      textTransform: 'uppercase',
+                      cursor: 'pointer',
+                      borderRadius: 3,
+                      border: `1px solid ${isActive ? activeColor : '#333'}`,
+                      background: isActive ? activeBg : 'transparent',
+                      color: isActive ? activeColor : '#666',
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    {mode}
+                  </button>
+                );
+              })}
+            </div>
+            <div
+              style={{
+                fontSize: 9,
+                color: '#666',
+                marginTop: 6,
+                lineHeight: 1.4,
+              }}
+            >
+              Low: reduces markers, paths, and effects for better FPS
+            </div>
+          </div>
+
+          <div style={divider} />
 
           {/* GLOBE DISPLAY */}
           <div style={sectionLabel}>Globe Display</div>
