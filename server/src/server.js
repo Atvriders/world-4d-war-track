@@ -259,9 +259,15 @@ async function refreshAdsb() {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10_000);
   try {
+    const openSkyUser = process.env.OPENSKY_USERNAME;
+    const openSkyPass = process.env.OPENSKY_PASSWORD;
+    const headers = { 'User-Agent': UA };
+    if (openSkyUser && openSkyPass) {
+      headers['Authorization'] = 'Basic ' + Buffer.from(`${openSkyUser}:${openSkyPass}`).toString('base64');
+    }
     const res = await fetch('https://opensky-network.org/api/states/all', {
       signal: controller.signal,
-      headers: { 'User-Agent': UA },
+      headers,
     });
     if (res.status === 429) {
       adsbRateLimitedUntil = Date.now() + 5 * 60_000; // back off 5 minutes
@@ -447,6 +453,8 @@ async function fetchTleGroup(group) {
 
 /** Refresh all TLE data and recompute satellite positions — runs every 60min */
 async function refreshSatellites() {
+  // Satellites disabled in frontend — skip API calls to avoid rate limiting
+  return;
   try {
     // Fetch TLE for all groups in parallel
     await Promise.allSettled(
@@ -633,7 +641,7 @@ async function initialFetch() {
     console.log(`[boot] Initial data fetch attempt ${attempt}/3...`);
     await refreshAdsb();
     await refreshAis();
-    await refreshSatellites();
+    // await refreshSatellites(); // Satellites disabled
 
     const hasData = (latestAdsb.states?.length > 0) ||
                     (latestAis.length > 0) ||
@@ -661,5 +669,5 @@ app.listen(PORT, () => {
   // Schedule recurring background fetches
   setInterval(refreshAdsb, 900_000);       // every 15 minutes (OpenSky free: ~100 req/day)
   setInterval(refreshAis, 300_000);        // every 5 minutes (AISHub is more lenient)
-  setInterval(refreshSatellites, 3_600_000); // every 60 minutes (CelesTrak fair use)
+  // setInterval(refreshSatellites, 3_600_000); // Satellites disabled
 });

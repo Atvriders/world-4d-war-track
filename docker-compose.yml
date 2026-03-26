@@ -8,6 +8,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - AISHUB_USERNAME=        # Get free account at https://www.aishub.net/
+      - OPENSKY_USERNAME=       # Optional: OpenSky Network credentials
+      - OPENSKY_PASSWORD=
       # - AISSTREAM_API_KEY=    # Optional: free key from https://aisstream.io/
     restart: unless-stopped
     healthcheck:
