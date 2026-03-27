@@ -909,11 +909,28 @@ function pointRadiusAccessor(d: object) {
 // Label accessors (country names + satellite diamonds + airspace closures)
 function labelLatAccessor(d: object) { return (d as { lat: number }).lat; }
 function labelLngAccessor(d: object) { return (d as { lng: number }).lng; }
-function labelTextAccessor() { return ''; }
+function labelTextAccessor(d: object) {
+  const p = d as { _type?: string };
+  if (p._type === 'aircraft') return '✈';
+  if (p._type === 'ship') return '⚓';
+  return '';
+}
 function labelAltAccessor(d: object) { return (d as { alt: number }).alt; }
-function labelSizeAccessor(d: object) { return (d as { size: number }).size || 1.0; }
-function labelColorAccessor(d: object) { return (d as { color: string }).color; }
-function labelDotRadiusAccessor(d: object) { return (d as { dotRadius?: number }).dotRadius ?? 0; }
+function labelSizeAccessor(d: object) {
+  const p = d as { _type?: string };
+  if (p._type === 'aircraft') return 1.2;
+  if (p._type === 'ship') return 1.0;
+  return (d as { size: number }).size || 0.5;
+}
+function labelColorAccessor(d: object) {
+  const p = d as { _type?: string; isMilitary?: boolean; type?: string };
+  if (p._type === 'aircraft') return p.isMilitary ? '#FF4444' : '#44BBFF';
+  if (p._type === 'ship') return (p.type === 'warship' || p.type === 'military') ? '#FF4444' : '#44BBFF';
+  if (p._type === 'nuclear') return '#FF4444';
+  if (p._type === 'base') return '#FF4444';
+  return (d as { color: string }).color || '#44BBFF';
+}
+function labelDotRadiusAccessor() { return 0; }
 
 function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
 function pathPointLatAccessor(pt: object) { return (pt as { lat: number }).lat; }
@@ -1240,28 +1257,6 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       dotRadius?: number;
     };
 
-    // ── Conflict zones FIRST — these are essential for the war tracker ──
-    const conflictLabels: LabelEntry[] = [];
-    if (layers.warZones) {
-      conflictZones.forEach(zone => {
-        const geom = zone.geoJSON?.geometry;
-        const coords = geom?.type === 'MultiPolygon'
-          ? (geom.coordinates as number[][][][])?.[0]?.[0]
-          : (geom?.coordinates as number[][][])?.[0];
-        if (!coords || coords.length === 0) return;
-        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
-        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
-
-        conflictLabels.push({
-          name: zone.name,
-          lat: avgLat, lng: avgLng, alt: 0.005,
-          color: zone.intensity === 'critical' ? 'rgba(255,50,50,1)' :
-                 zone.intensity === 'high' ? 'rgba(255,140,0,1)' : 'rgba(255,200,0,1)',
-          size: 1.5, dotRadius: 0.6, _type: 'conflict', _data: zone,
-        });
-      });
-    }
-
     const otherLabels: LabelEntry[] = [];
 
     // Satellite labels disabled
@@ -1326,74 +1321,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       otherLabels.push(...shipLabels);
     }
 
-    // Nuclear sites
-    if (layers.nuclearSites) {
-      NUCLEAR_SITES.forEach(site => {
-        otherLabels.push({
-          name: site.name,
-          lat: site.lat, lng: site.lng, alt: 0.003,
-          color: site.risk === 'critical' ? 'rgba(255,50,50,1)' : 'rgba(255,200,0,0.9)',
-          size: 0.8, dotRadius: 0.35, _type: 'nuclear',
-        });
-      });
-    }
-
-    // Military bases
-    if (layers.militaryBases) {
-      MILITARY_BASES.forEach(base => {
-        otherLabels.push({
-          name: `◆ ${base.name}`,
-          lat: base.lat, lng: base.lng, alt: 0.002,
-          color: base.operator.includes('US') ? 'rgba(68,136,255,0.9)' :
-                 base.operator.includes('Russia') ? 'rgba(255,50,50,0.9)' : 'rgba(200,200,200,0.8)',
-          size: 0.5, dotRadius: 0.2, _type: 'base',
-        });
-      });
-    }
-
-    // Energy infrastructure
-    if (layers.energyInfra) {
-      ENERGY_FACILITIES.forEach(fac => {
-        otherLabels.push({
-          name: fac.name,
-          lat: fac.lat, lng: fac.lng, alt: 0.002,
-          color: fac.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,170,0,0.8)',
-          size: 0.45, dotRadius: 0.18, _type: 'energy',
-        });
-      });
-    }
-
-    // Chokepoints
-    if (layers.chokepoints) {
-      CHOKEPOINTS.forEach(cp => {
-        otherLabels.push({
-          name: cp.name,
-          lat: cp.lat, lng: cp.lng, alt: 0.002,
-          color: cp.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,200,0,0.8)',
-          size: 0.6, dotRadius: 0.25, _type: 'chokepoint',
-        });
-      });
-    }
-
-    // Piracy zones
-    if (layers.piracyZones) {
-      PIRACY_ZONES.forEach(pz => {
-        otherLabels.push({
-          name: pz.name,
-          lat: pz.lat, lng: pz.lng, alt: 0.002,
-          color: 'rgba(255,80,80,0.9)',
-          size: 0.6, dotRadius: 0.25, _type: 'piracy',
-        });
-      });
-    }
-
-    // Cap other labels for performance, but always keep ALL conflict labels
+    // Cap labels for performance
     const totalCap = performanceMode === 'low' ? 40 : 120;
-    const otherCap = Math.max(0, totalCap - conflictLabels.length);
-    return [...conflictLabels, ...otherLabels.slice(0, otherCap)];
+    return otherLabels.slice(0, totalCap);
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
-      layers.nuclearSites, layers.militaryBases, layers.energyInfra, layers.chokepoints, layers.piracyZones,
-      layers.warZones, conflictZones, zoomTier, performanceMode]);
+      zoomTier, performanceMode]);
 
   // Unified path entries — satellite ground tracks + aircraft trails share one pathsData prop
   const satelliteTrackPaths: PathEntry[] = useMemo(
@@ -2366,6 +2298,12 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         pathDashGap={pathDashGapAccessor}
         pathStroke={pathStrokeAccessor}
         pathLabel={pathLabelAccessor}
+        onPathClick={(path: object) => {
+          const p = path as { _kind?: string; zone?: unknown };
+          if (p._kind === 'conflictBorder' && p.zone) {
+            onEntityClick('conflict', p.zone);
+          }
+        }}
 
         // ── Connection arcs (military → conflict, nav → GPS jam) ──
         arcsData={arcsData}
