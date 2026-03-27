@@ -1330,7 +1330,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const shipLabels = sorted
         .slice(0, maxShipLabels)
         .map(s => {
-          const shipName = (s.name || s.mmsi || 'N/A').replace(/^\?\s*/, '');
+          const shipName = (s.name?.trim() || s.mmsi || 'N/A').replace(/^\?\s*/, '');
           return {
             name: `🚢 ${shipName}`,
             lat: s.lat,
@@ -2115,7 +2115,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     const isMil = ac.isMilitary;
     const color = isMil ? '#ff3333' : '#00aaff';
     const flag = countryToFlag(ac.country);
-    const cs = ac.callsign?.trim() || ac.icao24?.toUpperCase() || '?';
+    const cs = ac.callsign?.trim() || ac.icao24?.toUpperCase() || '';
 
     const wrapper = document.createElement('div');
     wrapper.style.position = 'relative';
@@ -2178,7 +2178,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     const isWar = ship.type === 'warship' || ship.type === 'military';
     const color = isWar ? '#ff6600' : '#00ff88';
     const flag = countryToFlag(ship.flag);
-    const name = ship.name || ship.mmsi || '?';
+    const name = (ship.name?.trim()) || ship.mmsi || '';
 
     const wrapper = document.createElement('div');
     wrapper.style.position = 'relative';
