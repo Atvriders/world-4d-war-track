@@ -6,13 +6,18 @@ import {
   ConflictZone,
   ConflictEvent,
 } from '../../types';
+import { NUCLEAR_SITES, type NuclearSite } from '../../data/nuclearSites';
+import { MILITARY_BASES, type MilitaryBase } from '../../data/militaryBases';
+import { ENERGY_FACILITIES, type EnergyFacility } from '../../data/energyInfra';
+import { CHOKEPOINTS, type Chokepoint } from '../../data/chokepoints';
+import { PIRACY_ZONES, type PiracyZone } from '../../data/piracyZones';
 import { headingToCompass, getOrbitClass } from '../../utils/geoMath';
 import { countryToFlag } from '../../utils/flags';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SelectedEntity {
-  type: 'satellite' | 'aircraft' | 'ship' | 'conflict' | 'event';
+  type: 'satellite' | 'aircraft' | 'ship' | 'conflict' | 'event' | 'nuclear' | 'base' | 'energy' | 'chokepoint' | 'piracy';
   id: string;
   data: unknown;
 }
@@ -712,6 +717,36 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
     ];
     flyLat = evt.lat;
     flyLng = evt.lng;
+  } else if (type === 'nuclear') {
+    const nuc = data as any;
+    title = nuc.name || 'Nuclear Site';
+    badges = [<Badge key="risk" label={nuc.risk || 'unknown'} color={nuc.risk === 'critical' ? '#FF3838' : '#FFB020'} bg={nuc.risk === 'critical' ? 'rgba(255,56,56,0.15)' : 'rgba(255,176,32,0.15)'} />];
+    flyLat = nuc.lat || 0;
+    flyLng = nuc.lng || 0;
+  } else if (type === 'base') {
+    const base = data as any;
+    title = base.name || 'Military Base';
+    badges = [<Badge key="branch" label={base.branch || 'military'} color="#3CB8FF" bg="rgba(60,180,255,0.12)" />];
+    flyLat = base.lat || 0;
+    flyLng = base.lng || 0;
+  } else if (type === 'energy') {
+    const fac = data as any;
+    title = fac.name || 'Energy Facility';
+    badges = [<Badge key="type" label={(fac.type || '').replace(/_/g, ' ')} color="#FFB020" bg="rgba(255,176,32,0.12)" />];
+    flyLat = fac.lat || 0;
+    flyLng = fac.lng || 0;
+  } else if (type === 'chokepoint') {
+    const cp = data as any;
+    title = cp.name || 'Chokepoint';
+    badges = [<Badge key="risk" label={cp.risk || 'unknown'} color={cp.risk === 'critical' ? '#FF3838' : '#FFB020'} bg={cp.risk === 'critical' ? 'rgba(255,56,56,0.15)' : 'rgba(255,176,32,0.15)'} />];
+    flyLat = cp.lat || 0;
+    flyLng = cp.lng || 0;
+  } else if (type === 'piracy') {
+    const pz = data as any;
+    title = pz.name || 'Piracy Zone';
+    badges = [<Badge key="risk" label={pz.risk || 'unknown'} color="#FF3838" bg="rgba(255,56,56,0.15)" />];
+    flyLat = pz.lat || 0;
+    flyLng = pz.lng || 0;
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -818,6 +853,73 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({ selectedEntity, onClose, o
                   {evt.description}
                 </p>
               </div>
+            </div>
+          );
+        })()}
+        {type === 'nuclear' && (() => {
+          const nuc = data as any;
+          return (
+            <div style={styles.section}>
+              <SectionHead>Nuclear Facility</SectionHead>
+              <InfoRow label="Type" value={(nuc.type || '').replace(/_/g, ' ')} />
+              <InfoRow label="Country" value={nuc.country} />
+              <InfoRow label="Status" value={nuc.status} />
+              <InfoRow label="Risk" value={<span style={{ color: nuc.risk === 'critical' ? '#FF3838' : '#FFB020', fontWeight: 700, textTransform: 'uppercase' }}>{nuc.risk}</span>} />
+              <InfoRow label="Operator" value={nuc.operator} />
+              {nuc.nearConflict && <InfoRow label="Near Conflict" value={<span style={{ color: '#FF3838' }}>{nuc.nearConflict}</span>} />}
+              <div style={{ marginTop: 8, color: '#6A8AAA', fontSize: 11, lineHeight: 1.5 }}>{nuc.description}</div>
+            </div>
+          );
+        })()}
+        {type === 'base' && (() => {
+          const base = data as any;
+          return (
+            <div style={styles.section}>
+              <SectionHead>Military Installation</SectionHead>
+              <InfoRow label="Operator" value={base.operator} />
+              <InfoRow label="Branch" value={base.branch} />
+              <InfoRow label="Type" value={(base.type || '').replace(/_/g, ' ')} />
+              <InfoRow label="Country" value={base.country} />
+              {base.description && <div style={{ marginTop: 8, color: '#6A8AAA', fontSize: 11, lineHeight: 1.5 }}>{base.description}</div>}
+            </div>
+          );
+        })()}
+        {type === 'energy' && (() => {
+          const fac = data as any;
+          return (
+            <div style={styles.section}>
+              <SectionHead>Energy Infrastructure</SectionHead>
+              <InfoRow label="Type" value={(fac.type || '').replace(/_/g, ' ')} />
+              <InfoRow label="Country" value={fac.country} />
+              <InfoRow label="Capacity" value={fac.capacity} />
+              <InfoRow label="Risk" value={<span style={{ color: fac.risk === 'critical' ? '#FF3838' : '#FFB020', fontWeight: 700, textTransform: 'uppercase' }}>{fac.risk}</span>} />
+              {fac.nearConflict && <InfoRow label="Near Conflict" value={<span style={{ color: '#FF3838' }}>{fac.nearConflict}</span>} />}
+            </div>
+          );
+        })()}
+        {type === 'chokepoint' && (() => {
+          const cp = data as any;
+          return (
+            <div style={styles.section}>
+              <SectionHead>Strategic Chokepoint</SectionHead>
+              <InfoRow label="Width" value={cp.width} />
+              <InfoRow label="Daily Traffic" value={cp.dailyTraffic} />
+              <InfoRow label="Oil Flow" value={cp.oilFlow} />
+              <InfoRow label="Risk" value={<span style={{ color: cp.risk === 'critical' ? '#FF3838' : '#FFB020', fontWeight: 700, textTransform: 'uppercase' }}>{cp.risk}</span>} />
+              <InfoRow label="Threat" value={<span style={{ color: '#FF8866' }}>{cp.threat}</span>} />
+              {cp.description && <div style={{ marginTop: 8, color: '#6A8AAA', fontSize: 11, lineHeight: 1.5 }}>{cp.description}</div>}
+            </div>
+          );
+        })()}
+        {type === 'piracy' && (() => {
+          const pz = data as any;
+          return (
+            <div style={styles.section}>
+              <SectionHead>Piracy Zone</SectionHead>
+              <InfoRow label="Type" value={(pz.type || '').replace(/_/g, ' ')} />
+              <InfoRow label="Risk" value={<span style={{ color: '#FF3838', fontWeight: 700, textTransform: 'uppercase' }}>{pz.risk}</span>} />
+              <InfoRow label="Incidents (2024)" value={pz.incidents2024} />
+              {pz.description && <div style={{ marginTop: 8, color: '#6A8AAA', fontSize: 11, lineHeight: 1.5 }}>{pz.description}</div>}
             </div>
           );
         })()}
