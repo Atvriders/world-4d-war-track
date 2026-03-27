@@ -888,7 +888,7 @@ function pointLngAccessor(d: object) { return (d as { lng: number }).lng; }
 function pointAltitudeAccessor(d: object) {
   const p = d as { _type?: string; alt?: number; altitude?: number };
   if (p._type === 'aircraft') {
-    return (p.altitude && !isNaN(p.altitude)) ? p.altitude / 6_371_000 : 0.005;
+    return (p.altitude && !isNaN(p.altitude)) ? Math.max(p.altitude / 6_371_000, 0.003) : 0.005;
   }
   if (p._type === 'ship') return 0.001;
   // satellite
@@ -897,8 +897,8 @@ function pointAltitudeAccessor(d: object) {
 }
 function pointRadiusAccessor(d: object) {
   const p = d as { _type?: string; category?: string; isMilitary?: boolean; type?: string };
-  if (p._type === 'aircraft') return p.isMilitary ? 0.5 : 0.3;
-  if (p._type === 'ship') return (p.type === 'warship' || p.type === 'military') ? 0.5 : 0.3;
+  if (p._type === 'aircraft') return p.isMilitary ? 0.4 : 0.2;
+  if (p._type === 'ship') return (p.type === 'warship' || p.type === 'military') ? 0.4 : 0.2;
   // satellite
   const cat = (d as SatelliteEntity).category;
   if (cat === 'iss') return 0.8;
@@ -909,7 +909,7 @@ function pointRadiusAccessor(d: object) {
 // Label accessors (country names + satellite diamonds + airspace closures)
 function labelLatAccessor(d: object) { return (d as { lat: number }).lat; }
 function labelLngAccessor(d: object) { return (d as { lng: number }).lng; }
-function labelTextAccessor(d: object) { return (d as { name: string }).name; }
+function labelTextAccessor() { return ''; }
 function labelAltAccessor(d: object) { return (d as { alt: number }).alt; }
 function labelSizeAccessor(d: object) { return (d as { size: number }).size || 1.0; }
 function labelColorAccessor(d: object) { return (d as { color: string }).color; }
@@ -1257,7 +1257,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           lat: avgLat, lng: avgLng, alt: 0.005,
           color: zone.intensity === 'critical' ? 'rgba(255,50,50,1)' :
                  zone.intensity === 'high' ? 'rgba(255,140,0,1)' : 'rgba(255,200,0,1)',
-          size: 0.8, dotRadius: 0.3, _type: 'conflict', _data: zone,
+          size: 1.5, dotRadius: 0.6, _type: 'conflict', _data: zone,
         });
       });
     }
@@ -1266,18 +1266,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Satellite labels disabled
 
-    // Country name labels (subtle background text, no dot) — only when zoomed in
-    if (zoomTier <= 2) {
-      const countryLabels = COUNTRY_LABELS.map(c => ({
-        name: c.name,
-        lat: c.lat,
-        lng: c.lng,
-        alt: 0.001,
-        color: 'rgba(200,220,255,0.6)',
-        size: 0.5,
-      }));
-      otherLabels.push(...countryLabels);
-    }
+    // Country labels removed — visible on globe texture, dots-only approach
 
     // Aircraft labels — show at all zoom levels with ✈ icon
     if (layers.aircraft) {
@@ -1287,7 +1276,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         if (!a.isMilitary && b.isMilitary) return 1;
         return b.altitude - a.altitude;
       });
-      const maxLabels = performanceMode === 'low' ? 8 : 20;
+      const maxLabels = performanceMode === 'low' ? 15 : 50;
       const acLabels = sorted
         .slice(0, maxLabels)
         .map(a => {
@@ -1299,10 +1288,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             lng: a.lng,
             alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
             color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
-            size: 0.7,
+            size: 0.4,
             _type: 'aircraft',
             _data: a,
-            dotRadius: 0.25,
+            dotRadius: 0.15,
           };
         });
       otherLabels.push(...acLabels);
@@ -1317,7 +1306,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
           return bWar - aWar;
         });
-      const maxShipLabels = performanceMode === 'low' ? 5 : 12;
+      const maxShipLabels = performanceMode === 'low' ? 10 : 35;
       const shipLabels = sorted
         .slice(0, maxShipLabels)
         .map(s => {
@@ -1328,10 +1317,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
             lng: s.lng,
             alt: 0.001,
             color: 'rgba(255,60,60,1.0)',
-            size: 0.6,
+            size: 0.35,
             _type: 'ship',
             _data: s,
-            dotRadius: 0.2,
+            dotRadius: 0.12,
           };
         });
       otherLabels.push(...shipLabels);
@@ -1344,7 +1333,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           name: site.name,
           lat: site.lat, lng: site.lng, alt: 0.003,
           color: site.risk === 'critical' ? 'rgba(255,50,50,1)' : 'rgba(255,200,0,0.9)',
-          size: 0.8, dotRadius: 0.3, _type: 'nuclear',
+          size: 0.8, dotRadius: 0.35, _type: 'nuclear',
         });
       });
     }
@@ -1357,7 +1346,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           lat: base.lat, lng: base.lng, alt: 0.002,
           color: base.operator.includes('US') ? 'rgba(68,136,255,0.9)' :
                  base.operator.includes('Russia') ? 'rgba(255,50,50,0.9)' : 'rgba(200,200,200,0.8)',
-          size: 0.6, dotRadius: 0.2, _type: 'base',
+          size: 0.5, dotRadius: 0.2, _type: 'base',
         });
       });
     }
@@ -1369,7 +1358,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           name: fac.name,
           lat: fac.lat, lng: fac.lng, alt: 0.002,
           color: fac.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,170,0,0.8)',
-          size: 0.6, dotRadius: 0.2, _type: 'energy',
+          size: 0.45, dotRadius: 0.18, _type: 'energy',
         });
       });
     }
@@ -1381,7 +1370,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           name: cp.name,
           lat: cp.lat, lng: cp.lng, alt: 0.002,
           color: cp.risk === 'critical' ? 'rgba(255,50,50,0.9)' : 'rgba(255,200,0,0.8)',
-          size: 0.7, dotRadius: 0.3, _type: 'chokepoint',
+          size: 0.6, dotRadius: 0.25, _type: 'chokepoint',
         });
       });
     }
@@ -1393,13 +1382,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           name: pz.name,
           lat: pz.lat, lng: pz.lng, alt: 0.002,
           color: 'rgba(255,80,80,0.9)',
-          size: 0.7, dotRadius: 0.3, _type: 'piracy',
+          size: 0.6, dotRadius: 0.25, _type: 'piracy',
         });
       });
     }
 
     // Cap other labels for performance, but always keep ALL conflict labels
-    const totalCap = performanceMode === 'low' ? 25 : 60;
+    const totalCap = performanceMode === 'low' ? 40 : 120;
     const otherCap = Math.max(0, totalCap - conflictLabels.length);
     return [...conflictLabels, ...otherLabels.slice(0, otherCap)];
   }, [satellites, layers.satellites, aircraft, layers.aircraft, ships, layers.ships,
@@ -1702,10 +1691,10 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     (d: object) => {
       const p = d as { _type?: string; isMilitary?: boolean; type?: string; category?: SatelliteEntity['category'] };
       if (p._type === 'aircraft') {
-        return p.isMilitary ? '#ff3333' : '#00aaff';
+        return p.isMilitary ? '#FF4444' : '#44BBFF';
       }
       if (p._type === 'ship') {
-        return (p.type === 'military' || p.type === 'warship') ? '#ff6600' : '#00ff88';
+        return (p.type === 'military' || p.type === 'warship') ? '#FF8800' : '#22DDAA';
       }
       // satellite
       return satelliteColor(p.category!);
@@ -1726,6 +1715,32 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // Aircraft/ships visible via trail paths instead
 
   // Path callbacks now use module-level functions (pathPointsAccessor, pathColorAccessor, etc.)
+
+  const labelTooltip = useCallback((d: object) => {
+    const p = d as { _type?: string; name?: string; _data?: any };
+    if (!p.name) return '';
+    const name = p.name.replace(/^[✈🚢◆]\s*/, ''); // strip icon prefixes
+    if (p._type === 'conflict' && p._data) {
+      const zone = p._data as any;
+      return `<div style="background:rgba(8,14,28,0.92);backdrop-filter:blur(8px);border:1px solid rgba(255,60,60,0.4);border-radius:6px;padding:8px 12px;font-family:Rajdhani,sans-serif;max-width:220px">
+        <div style="color:#FF3838;font-weight:700;font-size:13px;letter-spacing:0.05em">${name}</div>
+        <div style="color:#8BA4BE;font-size:11px;margin-top:2px">${zone.status || ''} · ${zone.intensity || ''}</div>
+      </div>`;
+    }
+    if (p._type === 'aircraft') {
+      return `<div style="background:rgba(8,14,28,0.92);backdrop-filter:blur(8px);border:1px solid rgba(60,180,255,0.3);border-radius:6px;padding:6px 10px;font-family:Rajdhani,sans-serif">
+        <div style="color:#3CB8FF;font-weight:600;font-size:12px">✈ ${name}</div>
+      </div>`;
+    }
+    if (p._type === 'ship') {
+      return `<div style="background:rgba(8,14,28,0.92);backdrop-filter:blur(8px);border:1px solid rgba(0,255,136,0.3);border-radius:6px;padding:6px 10px;font-family:Rajdhani,sans-serif">
+        <div style="color:#00FF88;font-weight:600;font-size:12px">⚓ ${name}</div>
+      </div>`;
+    }
+    return `<div style="background:rgba(8,14,28,0.92);backdrop-filter:blur(8px);border:1px solid rgba(60,180,255,0.2);border-radius:6px;padding:6px 10px;font-family:Rajdhani,sans-serif">
+      <div style="color:#E4EEF8;font-size:11px">${name}</div>
+    </div>`;
+  }, []);
 
   // ── Military base HTML markers ──────────────────────────────────────────────
   const militaryBaseMarkers = useMemo(
@@ -2385,6 +2400,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         labelColor={labelColorAccessor}
         labelDotRadius={labelDotRadiusAccessor}
         labelResolution={1}
+        labelLabel={labelTooltip}
         onLabelClick={(label: object) => {
           const d = label as { _type?: string; _data?: unknown };
           if (d._type === 'conflict' && d._data) {
