@@ -715,6 +715,9 @@ app.get('/api/health', (req, res) => {
       ais: latestAisUpdated ? `${Math.round((Date.now() - latestAisUpdated) / 1000)}s ago` : 'never',
       satellites: latestSatPositionsUpdated ? `${Math.round((Date.now() - latestSatPositionsUpdated) / 1000)}s ago` : 'never',
       aisStream: aisStreamConnected ? 'connected' : 'disconnected',
+      aisStreamVessels: aisStreamVessels.size,
+      openSkyAuth: OPENSKY_CLIENT_ID ? (openSkyToken ? 'token_acquired' : 'token_pending') : 'no_credentials',
+      adsbCount: latestAdsb.states?.length || 0,
     },
   });
 });
