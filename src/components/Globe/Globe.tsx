@@ -1210,7 +1210,11 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // ── Derived data (memoized) ─────────────────────────────────────────────────
 
-  // War zone polygon data removed — conflict borders now rendered as paths
+  // War zone polygons — transparent clickable areas
+  const conflictPolygons = useMemo(() => {
+    if (!layers.warZones) return [];
+    return conflictZones.filter(z => z.geoJSON?.geometry);
+  }, [layers.warZones, conflictZones]);
 
   // GPS hex bin points
   const hexBinPoints = useMemo(
@@ -2252,8 +2256,24 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         atmosphereAltitude={performanceMode === 'low' ? 0.1 : 0.25}
         showAtmosphere={performanceMode === 'low' ? false : layers.atmosphere}
 
-        // ── War-zone polygons REMOVED — conflict borders now rendered as paths
-        // (polygon 3D meshes intercepted hover events everywhere on the globe)
+        // ── War-zone polygons — transparent clickable areas ──────────────
+        polygonsData={conflictPolygons}
+        polygonGeoJsonGeometry={(d: object) => (d as any).geoJSON?.geometry}
+        polygonCapColor={() => 'rgba(255, 40, 40, 0.08)'}
+        polygonSideColor={() => 'rgba(255, 40, 40, 0.05)'}
+        polygonStrokeColor={() => 'rgba(255, 60, 60, 0.0)'}
+        polygonAltitude={0.001}
+        polygonLabel={(d: object) => {
+          const z = d as any;
+          return `<div style="background:rgba(8,14,28,0.92);backdrop-filter:blur(8px);border:1px solid rgba(255,60,60,0.4);border-radius:6px;padding:8px 12px;font-family:Rajdhani,sans-serif;max-width:240px">
+            <div style="color:#FF3838;font-weight:700;font-size:14px;letter-spacing:0.05em">${z.name || ''}</div>
+            <div style="color:#8BA4BE;font-size:11px;margin-top:3px">${z.status || ''} · ${z.intensity || ''}</div>
+            <div style="color:#6A8AAA;font-size:10px;margin-top:2px">Click for details</div>
+          </div>`;
+        }}
+        onPolygonClick={(polygon: object) => {
+          onEntityClick('conflict', polygon);
+        }}
 
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
