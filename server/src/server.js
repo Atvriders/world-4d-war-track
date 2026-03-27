@@ -95,142 +95,6 @@ let aisStreamWs = null;
 let aisStreamVessels = new Map(); // mmsi -> vessel data
 let aisStreamConnected = false;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// STATIC FALLBACK NAVAL VESSEL DATA
-// When AISHub fails (no valid credentials), return known naval vessel positions
-// in conflict areas — similar to how GPS jamming uses static hotspot data.
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const STATIC_NAVAL_VESSELS = [
-  // ── US Navy — Western Pacific / South China Sea ─────────────────────────
-  { mmsi: '369970001', name: 'USS RONALD REAGAN', shipname: 'USS RONALD REAGAN', country: 'United States', flag: 'US', lat: 15.42, lon: 117.85, speed: 18, heading: 45, cog: 45, type_code: 35, length: 333, destination: 'WESTERN PACIFIC' },
-  { mmsi: '369970002', name: 'USS NIMITZ', shipname: 'USS NIMITZ', country: 'United States', flag: 'US', lat: 21.35, lon: 127.60, speed: 22, heading: 210, cog: 210, type_code: 35, length: 333, destination: 'SOUTH CHINA SEA' },
-  { mmsi: '369970003', name: 'USS CARL VINSON', shipname: 'USS CARL VINSON', country: 'United States', flag: 'US', lat: 13.80, lon: 120.15, speed: 16, heading: 315, cog: 315, type_code: 35, length: 333, destination: 'PHILIPPINE SEA' },
-  { mmsi: '369970004', name: 'USS BARRY DDG-52', shipname: 'USS BARRY', country: 'United States', flag: 'US', lat: 22.10, lon: 118.50, speed: 24, heading: 180, cog: 180, type_code: 35, length: 154, destination: 'TAIWAN STRAIT' },
-  { mmsi: '369970005', name: 'USS MILIUS DDG-69', shipname: 'USS MILIUS', country: 'United States', flag: 'US', lat: 35.20, lon: 139.80, speed: 12, heading: 270, cog: 270, type_code: 35, length: 154, destination: 'YOKOSUKA' },
-  { mmsi: '369970006', name: 'USS BENFOLD DDG-65', shipname: 'USS BENFOLD', country: 'United States', flag: 'US', lat: 18.50, lon: 115.20, speed: 20, heading: 90, cog: 90, type_code: 35, length: 154, destination: 'SOUTH CHINA SEA' },
-
-  // ── US Navy — Middle East / Arabian Gulf ────────────────────────────────
-  { mmsi: '369970010', name: 'USS DWIGHT D EISENHOWER', shipname: 'USS EISENHOWER', country: 'United States', flag: 'US', lat: 13.20, lon: 44.80, speed: 20, heading: 120, cog: 120, type_code: 35, length: 333, destination: 'RED SEA' },
-  { mmsi: '369970011', name: 'USS GRAVELY DDG-107', shipname: 'USS GRAVELY', country: 'United States', flag: 'US', lat: 14.60, lon: 42.50, speed: 18, heading: 340, cog: 340, type_code: 35, length: 155, destination: 'BAB EL MANDEB' },
-  { mmsi: '369970012', name: 'USS MASON DDG-87', shipname: 'USS MASON', country: 'United States', flag: 'US', lat: 12.80, lon: 43.90, speed: 22, heading: 200, cog: 200, type_code: 35, length: 155, destination: 'GULF OF ADEN' },
-  { mmsi: '369970013', name: 'USS BATAAN LHD-5', shipname: 'USS BATAAN', country: 'United States', flag: 'US', lat: 26.50, lon: 51.20, speed: 14, heading: 90, cog: 90, type_code: 35, length: 253, destination: 'ARABIAN GULF' },
-  { mmsi: '369970014', name: 'USS LABOON DDG-58', shipname: 'USS LABOON', country: 'United States', flag: 'US', lat: 15.20, lon: 41.80, speed: 16, heading: 160, cog: 160, type_code: 35, length: 154, destination: 'RED SEA' },
-
-  // ── US Navy — Mediterranean ─────────────────────────────────────────────
-  { mmsi: '369970020', name: 'USS GERALD R FORD', shipname: 'USS GERALD R FORD', country: 'United States', flag: 'US', lat: 34.50, lon: 32.80, speed: 18, heading: 90, cog: 90, type_code: 35, length: 337, destination: 'EASTERN MED' },
-  { mmsi: '369970021', name: 'USS THOMAS HUDNER DDG-116', shipname: 'USS THOMAS HUDNER', country: 'United States', flag: 'US', lat: 33.80, lon: 34.20, speed: 20, heading: 270, cog: 270, type_code: 35, length: 155, destination: 'EASTERN MED' },
-  { mmsi: '369970022', name: 'USS CARNEY DDG-64', shipname: 'USS CARNEY', country: 'United States', flag: 'US', lat: 35.50, lon: 24.80, speed: 16, heading: 120, cog: 120, type_code: 35, length: 154, destination: 'CRETE' },
-
-  // ── Russian Navy — Black Sea ────────────────────────────────────────────
-  { mmsi: '273410001', name: 'MOSKVA-CLASS CRUISER', shipname: 'MARSHAL USTINOV', country: 'Russia', flag: 'RU', lat: 44.20, lon: 33.50, speed: 14, heading: 180, cog: 180, type_code: 35, length: 186, destination: 'SEVASTOPOL' },
-  { mmsi: '273410002', name: 'ADMIRAL MAKAROV', shipname: 'ADMIRAL MAKAROV', country: 'Russia', flag: 'RU', lat: 43.80, lon: 34.80, speed: 16, heading: 270, cog: 270, type_code: 35, length: 125, destination: 'BLACK SEA PATROL' },
-  { mmsi: '273410003', name: 'ADMIRAL ESSEN', shipname: 'ADMIRAL ESSEN', country: 'Russia', flag: 'RU', lat: 44.60, lon: 32.90, speed: 12, heading: 90, cog: 90, type_code: 35, length: 125, destination: 'BLACK SEA' },
-  { mmsi: '273410004', name: 'BUYAN-M CORVETTE', shipname: 'VYSHNIY VOLOCHEK', country: 'Russia', flag: 'RU', lat: 43.50, lon: 36.20, speed: 18, heading: 315, cog: 315, type_code: 35, length: 75, destination: 'BLACK SEA' },
-
-  // ── Russian Navy — Mediterranean (Tartus/Syria) ─────────────────────────
-  { mmsi: '273410010', name: 'ADMIRAL KUZNETSOV', shipname: 'ADMIRAL KUZNETSOV', country: 'Russia', flag: 'RU', lat: 35.00, lon: 35.50, speed: 10, heading: 240, cog: 240, type_code: 35, length: 305, destination: 'TARTUS' },
-  { mmsi: '273410011', name: 'ADMIRAL GORSHKOV', shipname: 'ADMIRAL GORSHKOV', country: 'Russia', flag: 'RU', lat: 34.80, lon: 33.90, speed: 22, heading: 180, cog: 180, type_code: 35, length: 135, destination: 'EASTERN MED' },
-
-  // ── Chinese Navy — South China Sea ──────────────────────────────────────
-  { mmsi: '413770001', name: 'LIAONING CV-16', shipname: 'LIAONING', country: 'China', flag: 'CN', lat: 16.50, lon: 112.30, speed: 20, heading: 135, cog: 135, type_code: 35, length: 305, destination: 'SOUTH CHINA SEA' },
-  { mmsi: '413770002', name: 'SHANDONG CV-17', shipname: 'SHANDONG', country: 'China', flag: 'CN', lat: 18.20, lon: 110.50, speed: 18, heading: 200, cog: 200, type_code: 35, length: 315, destination: 'HAINAN' },
-  { mmsi: '413770003', name: 'TYPE 055 NANCHANG', shipname: 'NANCHANG', country: 'China', flag: 'CN', lat: 15.80, lon: 114.60, speed: 24, heading: 90, cog: 90, type_code: 35, length: 180, destination: 'SPRATLYS PATROL' },
-  { mmsi: '413770004', name: 'TYPE 052D KUNMING', shipname: 'KUNMING', country: 'China', flag: 'CN', lat: 9.50, lon: 112.80, speed: 20, heading: 45, cog: 45, type_code: 35, length: 157, destination: 'SOUTH CHINA SEA' },
-  { mmsi: '413770005', name: 'TYPE 052D HEFEI', shipname: 'HEFEI', country: 'China', flag: 'CN', lat: 24.20, lon: 119.80, speed: 16, heading: 180, cog: 180, type_code: 35, length: 157, destination: 'TAIWAN STRAIT' },
-
-  // ── Chinese Navy — East China Sea / Taiwan ──────────────────────────────
-  { mmsi: '413770010', name: 'FUJIAN CV-18', shipname: 'FUJIAN', country: 'China', flag: 'CN', lat: 25.80, lon: 121.50, speed: 14, heading: 350, cog: 350, type_code: 35, length: 320, destination: 'EAST CHINA SEA' },
-  { mmsi: '413770011', name: 'TYPE 075 HAINAN', shipname: 'HAINAN', country: 'China', flag: 'CN', lat: 23.50, lon: 118.20, speed: 16, heading: 60, cog: 60, type_code: 35, length: 237, destination: 'TAIWAN STRAIT' },
-
-  // ── Strait of Hormuz — major shipping ───────────────────────────────────
-  { mmsi: '538006780', name: 'FRONT ALTA', shipname: 'FRONT ALTA', country: 'Marshall Islands', flag: 'MH', lat: 26.40, lon: 56.30, speed: 12, heading: 315, cog: 315, type_code: 80, length: 336, destination: 'FUJAIRAH' },
-  { mmsi: '477912345', name: 'PACIFIC GLORY', shipname: 'PACIFIC GLORY', country: 'Hong Kong', flag: 'HK', lat: 26.20, lon: 56.60, speed: 14, heading: 135, cog: 135, type_code: 80, length: 274, destination: 'RAS TANURA' },
-  { mmsi: '636018900', name: 'EAGLE TAMPA', shipname: 'EAGLE TAMPA', country: 'Liberia', flag: 'LR', lat: 26.55, lon: 56.15, speed: 10, heading: 300, cog: 300, type_code: 80, length: 250, destination: 'MUMBAI' },
-  { mmsi: '538009001', name: 'STENA IMPERO', shipname: 'STENA IMPERO', country: 'Marshall Islands', flag: 'MH', lat: 26.70, lon: 56.45, speed: 8, heading: 270, cog: 270, type_code: 80, length: 174, destination: 'STRAIT TRANSIT' },
-
-  // ── Suez Canal — container and cargo ships ──────────────────────────────
-  { mmsi: '353136000', name: 'EVER GIVEN', shipname: 'EVER GIVEN', country: 'Panama', flag: 'PA', lat: 30.45, lon: 32.35, speed: 8, heading: 340, cog: 340, type_code: 70, length: 400, destination: 'ROTTERDAM' },
-  { mmsi: '215812000', name: 'MSC OSCAR', shipname: 'MSC OSCAR', country: 'Panama', flag: 'PA', lat: 30.25, lon: 32.33, speed: 7, heading: 160, cog: 160, type_code: 70, length: 395, destination: 'SINGAPORE' },
-  { mmsi: '229038000', name: 'CMA CGM MARCO POLO', shipname: 'CMA CGM MARCO POLO', country: 'Malta', flag: 'MT', lat: 29.95, lon: 32.58, speed: 10, heading: 180, cog: 180, type_code: 70, length: 396, destination: 'JEDDAH' },
-
-  // ── Iranian Navy / IRGC ─────────────────────────────────────────────────
-  { mmsi: '422100001', name: 'IRIS ALBORZ', shipname: 'ALBORZ', country: 'Iran', flag: 'IR', lat: 25.80, lon: 57.10, speed: 16, heading: 220, cog: 220, type_code: 35, length: 115, destination: 'HORMUZ PATROL' },
-  { mmsi: '422100002', name: 'IRIS JAMARAN', shipname: 'JAMARAN', country: 'Iran', flag: 'IR', lat: 26.90, lon: 52.40, speed: 18, heading: 90, cog: 90, type_code: 35, length: 95, destination: 'PERSIAN GULF' },
-
-  // ── UK Royal Navy ───────────────────────────────────────────────────────
-  { mmsi: '232001001', name: 'HMS QUEEN ELIZABETH', shipname: 'HMS QUEEN ELIZABETH', country: 'United Kingdom', flag: 'GB', lat: 36.10, lon: -5.20, speed: 20, heading: 90, cog: 90, type_code: 35, length: 284, destination: 'GIBRALTAR' },
-  { mmsi: '232001002', name: 'HMS DIAMOND D34', shipname: 'HMS DIAMOND', country: 'United Kingdom', flag: 'GB', lat: 13.50, lon: 43.20, speed: 22, heading: 180, cog: 180, type_code: 35, length: 152, destination: 'RED SEA' },
-
-  // ── Indian Navy — Indian Ocean ──────────────────────────────────────────
-  { mmsi: '419001001', name: 'INS VIKRANT', shipname: 'INS VIKRANT', country: 'India', flag: 'IN', lat: 13.50, lon: 72.80, speed: 18, heading: 240, cog: 240, type_code: 35, length: 262, destination: 'ARABIAN SEA' },
-  { mmsi: '419001002', name: 'INS KOLKATA D63', shipname: 'INS KOLKATA', country: 'India', flag: 'IN', lat: 8.50, lon: 76.50, speed: 20, heading: 180, cog: 180, type_code: 35, length: 163, destination: 'INDIAN OCEAN' },
-
-  // ── Taiwan / ROC Navy ───────────────────────────────────────────────────
-  { mmsi: '416001001', name: 'ROCS KEELUNG DDG-1801', shipname: 'ROCS KEELUNG', country: 'Taiwan', flag: 'TW', lat: 24.80, lon: 121.20, speed: 18, heading: 270, cog: 270, type_code: 35, length: 171, destination: 'TAIWAN STRAIT PATROL' },
-  { mmsi: '416001002', name: 'ROCS MA KONG DDG-1805', shipname: 'ROCS MA KONG', country: 'Taiwan', flag: 'TW', lat: 23.90, lon: 119.80, speed: 20, heading: 180, cog: 180, type_code: 35, length: 171, destination: 'PENGHU' },
-
-  // ── French Navy — Mediterranean / Indian Ocean ──────────────────────────
-  { mmsi: '226001001', name: 'FS CHARLES DE GAULLE', shipname: 'FS CHARLES DE GAULLE', country: 'France', flag: 'FR', lat: 33.50, lon: 30.20, speed: 22, heading: 60, cog: 60, type_code: 35, length: 261, destination: 'EASTERN MED' },
-  { mmsi: '226001002', name: 'FS FORBIN D620', shipname: 'FS FORBIN', country: 'France', flag: 'FR', lat: -11.60, lon: 43.30, speed: 18, heading: 350, cog: 350, type_code: 35, length: 153, destination: 'DJIBOUTI' },
-
-  // ── Bab el-Mandeb / Houthi conflict area ────────────────────────────────
-  { mmsi: '538012345', name: 'GALAXY LEADER', shipname: 'GALAXY LEADER', country: 'Marshall Islands', flag: 'MH', lat: 14.80, lon: 42.90, speed: 0, heading: 180, cog: 180, type_code: 70, length: 190, destination: 'SEIZED - HODEIDAH' },
-  { mmsi: '636090123', name: 'TRUE CONFIDENCE', shipname: 'TRUE CONFIDENCE', country: 'Liberia', flag: 'LR', lat: 13.90, lon: 43.50, speed: 11, heading: 340, cog: 340, type_code: 70, length: 180, destination: 'SUEZ CANAL' },
-
-  // ── Major shipping lanes — commercial traffic ────────────────────────
-  { mmsi: '538006841', name: 'EVER GIVEN', shipname: 'EVER GIVEN', country: 'Panama', flag: 'PA', lat: 30.0, lon: 32.3, speed: 12, heading: 340, cog: 340, type_code: 70, length: 400, destination: 'ROTTERDAM' },
-  { mmsi: '477325800', name: 'MSC OSCAR', shipname: 'MSC OSCAR', country: 'Panama', flag: 'PA', lat: 1.2, lon: 103.8, speed: 14, heading: 45, cog: 45, type_code: 70, length: 395, destination: 'SHANGHAI' },
-  { mmsi: '636092545', name: 'MAERSK COPENHAGEN', shipname: 'MAERSK COPENHAGEN', country: 'Liberia', flag: 'LR', lat: 51.3, lon: 3.5, speed: 16, heading: 210, cog: 210, type_code: 70, length: 366, destination: 'SUEZ' },
-  { mmsi: '311042800', name: 'CMA CGM MARCO POLO', shipname: 'CMA CGM MARCO POLO', country: 'Malta', flag: 'MT', lat: 36.2, lon: -5.3, speed: 18, heading: 90, cog: 90, type_code: 70, length: 396, destination: 'SINGAPORE' },
-  { mmsi: '372789000', name: 'VLCC PACIFIC VOYAGER', shipname: 'PACIFIC VOYAGER', country: 'Panama', flag: 'PA', lat: 26.2, lon: 56.5, speed: 11, heading: 180, cog: 180, type_code: 80, length: 333, destination: 'MUMBAI' },
-  { mmsi: '538007543', name: 'LNG RIVERS', shipname: 'LNG RIVERS', country: 'Marshall Islands', flag: 'MH', lat: 25.5, lon: 51.5, speed: 15, heading: 270, cog: 270, type_code: 80, length: 295, destination: 'TOKYO' },
-  { mmsi: '636019825', name: 'CAPE TOWN BRIDGE', shipname: 'CAPE TOWN BRIDGE', country: 'Liberia', flag: 'LR', lat: -33.9, lon: 18.5, speed: 13, heading: 60, cog: 60, type_code: 70, length: 294, destination: 'DURBAN' },
-  { mmsi: '477998800', name: 'COSCO SHIPPING STAR', shipname: 'COSCO SHIPPING STAR', country: 'Hong Kong', flag: 'HK', lat: 22.3, lon: 114.2, speed: 10, heading: 180, cog: 180, type_code: 70, length: 366, destination: 'PORT KLANG' },
-  { mmsi: '538009123', name: 'NORTHERN SPIRIT', shipname: 'NORTHERN SPIRIT', country: 'Norway', flag: 'NO', lat: 60.4, lon: 5.2, speed: 12, heading: 315, cog: 315, type_code: 80, length: 280, destination: 'HAMMERFEST' },
-  { mmsi: '244120456', name: 'ROTTERDAM EXPRESS', shipname: 'ROTTERDAM EXPRESS', country: 'Netherlands', flag: 'NL', lat: 51.9, lon: 4.5, speed: 8, heading: 270, cog: 270, type_code: 70, length: 335, destination: 'FELIXSTOWE' },
-];
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// STATIC FALLBACK AIRCRAFT DATA
-// When OpenSky API fails (rate-limited / unreliable), return military aircraft
-// positions in conflict zones — same approach as static naval vessel data.
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const STATIC_AIRCRAFT = [
-  // Military aircraft near conflict zones — shown when OpenSky API is unavailable
-  // Ukraine/Eastern Europe
-  { icao24: 'ae1234', callsign: 'RSD001', origin_country: 'Russia', latitude: 51.2, longitude: 39.5, baro_altitude: 10000, velocity: 250, true_track: 220, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae1235', callsign: 'RSD002', origin_country: 'Russia', latitude: 48.8, longitude: 37.2, baro_altitude: 8500, velocity: 280, true_track: 180, vertical_rate: -2, on_ground: false, squawk: null },
-  { icao24: 'ae1236', callsign: 'UAF001', origin_country: 'Ukraine', latitude: 49.5, longitude: 35.8, baro_altitude: 7200, velocity: 220, true_track: 90, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae1237', callsign: 'UAF002', origin_country: 'Ukraine', latitude: 47.8, longitude: 36.5, baro_altitude: 9800, velocity: 300, true_track: 45, vertical_rate: 5, on_ground: false, squawk: null },
-  // Middle East
-  { icao24: 'ae2001', callsign: 'USN401', origin_country: 'United States', latitude: 24.5, longitude: 54.2, baro_altitude: 12000, velocity: 450, true_track: 320, vertical_rate: 0, on_ground: false, squawk: '1200' },
-  { icao24: 'ae2002', callsign: 'USN402', origin_country: 'United States', latitude: 14.8, longitude: 42.5, baro_altitude: 11000, velocity: 400, true_track: 270, vertical_rate: 0, on_ground: false, squawk: '1200' },
-  { icao24: 'ae2003', callsign: 'IAF101', origin_country: 'Israel', latitude: 31.8, longitude: 34.8, baro_altitude: 8000, velocity: 350, true_track: 45, vertical_rate: 10, on_ground: false, squawk: null },
-  { icao24: 'ae2004', callsign: 'IAF102', origin_country: 'Israel', latitude: 32.5, longitude: 35.2, baro_altitude: 9500, velocity: 380, true_track: 90, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae2005', callsign: 'SAF01', origin_country: 'Saudi Arabia', latitude: 21.5, longitude: 40.2, baro_altitude: 10500, velocity: 420, true_track: 180, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae2006', callsign: 'IRGC01', origin_country: 'Iran', latitude: 27.2, longitude: 56.5, baro_altitude: 7000, velocity: 280, true_track: 240, vertical_rate: 0, on_ground: false, squawk: null },
-  // South China Sea / Pacific
-  { icao24: 'ae3001', callsign: 'PLAN01', origin_country: 'China', latitude: 16.5, longitude: 112.8, baro_altitude: 9000, velocity: 350, true_track: 135, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae3002', callsign: 'PLAN02', origin_country: 'China', latitude: 18.2, longitude: 115.5, baro_altitude: 11000, velocity: 400, true_track: 200, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae3003', callsign: 'USN501', origin_country: 'United States', latitude: 15.8, longitude: 118.2, baro_altitude: 10000, velocity: 450, true_track: 310, vertical_rate: 0, on_ground: false, squawk: '1200' },
-  { icao24: 'ae3004', callsign: 'ROCAF1', origin_country: 'Taiwan', latitude: 23.5, longitude: 120.8, baro_altitude: 8500, velocity: 320, true_track: 180, vertical_rate: 0, on_ground: false, squawk: null },
-  // Africa (Sudan, Somalia, Sahel)
-  { icao24: 'ae4001', callsign: 'RSAF01', origin_country: 'Sudan', latitude: 15.8, longitude: 32.8, baro_altitude: 6000, velocity: 200, true_track: 90, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae4002', callsign: 'ETH01', origin_country: 'Ethiopia', latitude: 9.5, longitude: 38.8, baro_altitude: 7500, velocity: 250, true_track: 180, vertical_rate: 0, on_ground: false, squawk: null },
-  // NATO/Europe patrol
-  { icao24: 'ae5001', callsign: 'NATO01', origin_country: 'United States', latitude: 54.2, longitude: 18.5, baro_altitude: 12000, velocity: 450, true_track: 90, vertical_rate: 0, on_ground: false, squawk: '1200' },
-  { icao24: 'ae5002', callsign: 'RAF001', origin_country: 'United Kingdom', latitude: 55.8, longitude: -4.2, baro_altitude: 11000, velocity: 400, true_track: 45, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae5003', callsign: 'FAF001', origin_country: 'France', latitude: 48.5, longitude: 2.8, baro_altitude: 10000, velocity: 380, true_track: 60, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae5004', callsign: 'GAF001', origin_country: 'Germany', latitude: 52.2, longitude: 13.5, baro_altitude: 9500, velocity: 350, true_track: 90, vertical_rate: 0, on_ground: false, squawk: null },
-  // India/Pakistan
-  { icao24: 'ae6001', callsign: 'IAF201', origin_country: 'India', latitude: 28.5, longitude: 77.2, baro_altitude: 10000, velocity: 380, true_track: 315, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae6002', callsign: 'PAF01', origin_country: 'Pakistan', latitude: 33.5, longitude: 73.2, baro_altitude: 9000, velocity: 350, true_track: 180, vertical_rate: 0, on_ground: false, squawk: null },
-  // Mediterranean
-  { icao24: 'ae7001', callsign: 'TUR01', origin_country: 'Turkey', latitude: 37.5, longitude: 32.8, baro_altitude: 8000, velocity: 320, true_track: 270, vertical_rate: 0, on_ground: false, squawk: null },
-  { icao24: 'ae7002', callsign: 'HAF01', origin_country: 'Greece', latitude: 38.2, longitude: 24.5, baro_altitude: 9500, velocity: 350, true_track: 90, vertical_rate: 0, on_ground: false, squawk: null },
-];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SATELLITE HELPERS (unchanged logic, extracted for background use)
@@ -301,8 +165,6 @@ async function refreshAdsb() {
     console.log(`[bg] ADS-B rate limited, skipping (${waitMin}min remaining)`);
     return;
   }
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10_000);
   try {
     const token = await getOpenSkyToken();
     const headers = { 'User-Agent': UA };
@@ -310,49 +172,60 @@ async function refreshAdsb() {
       headers['Authorization'] = `Bearer ${token}`;
     }
     console.log(`[bg] ADS-B fetching from OpenSky (auth: ${token ? 'OAuth2' : 'anonymous'})`);
-    const res = await fetch('https://opensky-network.org/api/states/all', {
-      signal: controller.signal,
-      headers,
-    });
-    if (res.status === 429) {
-      adsbRateLimitedUntil = Date.now() + 5 * 60_000; // back off 5 minutes
-      console.warn('[bg] ADS-B rate limited (429), backing off 5 minutes');
-    } else if (!res.ok) {
-      throw new Error(`HTTP ${res.status} ${res.statusText}`);
-    } else {
-      const data = await res.json();
-      // Only replace if we got actual data
-      if (data.states && data.states.length > 0) {
-        latestAdsb = data;
-        latestAdsbUpdated = Date.now();
-        console.log(`[bg] ADS-B refreshed: ${data.states.length} aircraft`);
-      } else {
-        console.warn(`[bg] ADS-B API returned empty, keeping ${latestAdsb.states?.length || 0} aircraft from previous fetch`);
+
+    // Fetch by bounding boxes around conflict zones for better data coverage
+    const REGIONS = [
+      { name: 'Ukraine/E.Europe', lamin: 44, lomin: 30, lamax: 55, lomax: 42 },
+      { name: 'Middle East', lamin: 12, lomin: 30, lamax: 40, lomax: 60 },
+      { name: 'East Med', lamin: 30, lomin: 25, lamax: 42, lomax: 38 },
+      { name: 'South China Sea', lamin: 5, lomin: 105, lamax: 25, lomax: 125 },
+      { name: 'East Africa', lamin: -5, lomin: 28, lamax: 18, lomax: 52 },
+      { name: 'Europe/NATO', lamin: 48, lomin: -10, lamax: 60, lomax: 20 },
+    ];
+
+    const allStates = [];
+    const seen = new Set();
+
+    for (const region of REGIONS) {
+      try {
+        const url = `https://opensky-network.org/api/states/all?lamin=${region.lamin}&lomin=${region.lomin}&lamax=${region.lamax}&lomax=${region.lomax}`;
+        const regionRes = await fetch(url, {
+          headers,
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (regionRes.status === 429) {
+          adsbRateLimitedUntil = Date.now() + 5 * 60_000;
+          console.warn(`[bg] ADS-B rate limited on ${region.name}`);
+          break;
+        }
+        if (regionRes.ok) {
+          const regionData = await regionRes.json();
+          if (regionData.states) {
+            for (const state of regionData.states) {
+              const icao = state[0];
+              if (!seen.has(icao)) {
+                seen.add(icao);
+                allStates.push(state);
+              }
+            }
+          }
+        }
+        // Small delay between requests to be polite
+        await new Promise(r => setTimeout(r, 500));
+      } catch (err) {
+        console.warn(`[bg] ADS-B ${region.name} failed: ${err.message}`);
       }
+    }
+
+    if (allStates.length > 0) {
+      latestAdsb = { time: Math.floor(Date.now() / 1000), states: allStates };
+      latestAdsbUpdated = Date.now();
+      console.log(`[bg] ADS-B refreshed: ${allStates.length} aircraft from ${REGIONS.length} regions`);
+    } else {
+      console.warn('[bg] ADS-B: no aircraft from any region');
     }
   } catch (err) {
     console.warn(`[bg] ADS-B refresh failed: ${err.message}, keeping ${latestAdsb.states?.length || 0} aircraft from previous fetch`);
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  // If OpenSky failed and we have no data, use static military aircraft
-  if (!latestAdsb.states || latestAdsb.states.length === 0) {
-    latestAdsb = {
-      time: Math.floor(Date.now() / 1000),
-      states: STATIC_AIRCRAFT.map(a => [
-        a.icao24, a.callsign, a.origin_country,
-        null, Math.floor(Date.now() / 1000),
-        a.longitude + (Math.random() - 0.5) * 0.2,
-        a.latitude + (Math.random() - 0.5) * 0.2,
-        a.baro_altitude,
-        a.on_ground, a.velocity, a.true_track,
-        a.vertical_rate, null, a.baro_altitude,
-        a.squawk, false, 0
-      ])
-    };
-    latestAdsbUpdated = Date.now();
-    console.log(`[bg] ADS-B using static fallback: ${STATIC_AIRCRAFT.length} military aircraft`);
   }
 }
 
@@ -488,22 +361,8 @@ async function refreshAis() {
     clearTimeout(timeoutId);
   }
 
-  // Fallback: use static naval vessel data if API failed and we have no data
-  if (apiFailed && latestAis.length === 0) {
-    // Add slight position jitter to make it look live (simulates vessel movement)
-    const jitteredVessels = STATIC_NAVAL_VESSELS.map(v => ({
-      ...v,
-      lat: v.lat + (Math.random() - 0.5) * 0.3,
-      lon: v.lon + (Math.random() - 0.5) * 0.3,
-      speed: Math.max(0, v.speed + (Math.random() - 0.5) * 6),
-      heading: (v.heading + (Math.random() - 0.5) * 30 + 360) % 360,
-      cog: (v.cog + (Math.random() - 0.5) * 30 + 360) % 360,
-    }));
-    latestAis = jitteredVessels;
-    latestAisUpdated = Date.now();
-    console.log(`[bg] AIS using static fallback: ${jitteredVessels.length} naval vessels in conflict areas`);
-  } else if (apiFailed) {
-    console.log(`[bg] AIS API failed but keeping ${latestAis.length} vessels from previous fetch`);
+  if (apiFailed) {
+    console.log(`[bg] AIS API failed, keeping ${latestAis.length} vessels from previous fetch`);
   }
 }
 
