@@ -2259,8 +2259,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         // ── War-zone polygons — transparent clickable areas ──────────────
         polygonsData={conflictPolygons}
         polygonGeoJsonGeometry={(d: object) => (d as any).geoJSON?.geometry}
-        polygonCapColor={() => 'rgba(255, 40, 40, 0.08)'}
-        polygonSideColor={() => 'rgba(255, 40, 40, 0.05)'}
+        polygonCapColor={() => 'rgba(0, 0, 0, 0)'}
+        polygonSideColor={() => 'rgba(0, 0, 0, 0)'}
         polygonStrokeColor={() => 'rgba(255, 60, 60, 0.0)'}
         polygonAltitude={0.001}
         polygonLabel={(d: object) => {
