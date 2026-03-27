@@ -51,6 +51,44 @@ const SAT_GROUPS = [
 
 const UA = 'World4DWarTrack/1.0 (github.com/Atvriders/world-4d-war-track)';
 
+// ── OpenSky OAuth2 token cache ────────────────────────────────────────────────
+const OPENSKY_CLIENT_ID = process.env.OPENSKY_CLIENT_ID || '';
+const OPENSKY_CLIENT_SECRET = process.env.OPENSKY_CLIENT_SECRET || '';
+let openSkyToken = '';
+let openSkyTokenExpiry = 0;
+
+async function getOpenSkyToken() {
+  if (openSkyToken && Date.now() < openSkyTokenExpiry) return openSkyToken;
+  if (!OPENSKY_CLIENT_ID || !OPENSKY_CLIENT_SECRET) return '';
+
+  try {
+    const params = new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: OPENSKY_CLIENT_ID,
+      client_secret: OPENSKY_CLIENT_SECRET,
+    });
+    const res = await fetch('https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) {
+      console.warn(`[bg] OpenSky OAuth2 token request failed: ${res.status} ${res.statusText}`);
+      return '';
+    }
+    const data = await res.json();
+    openSkyToken = data.access_token;
+    // Refresh 2 minutes before expiry
+    openSkyTokenExpiry = Date.now() + (data.expires_in - 120) * 1000;
+    console.log(`[bg] OpenSky OAuth2 token acquired (expires in ${data.expires_in}s)`);
+    return openSkyToken;
+  } catch (err) {
+    console.warn(`[bg] OpenSky OAuth2 failed: ${err.message}`);
+    return '';
+  }
+}
+
 // ── AISStream.io WebSocket ───────────────────────────────────────────────────
 const AISSTREAM_API_KEY = process.env.AISSTREAM_API_KEY || '';
 let aisStreamWs = null;
@@ -266,13 +304,12 @@ async function refreshAdsb() {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10_000);
   try {
-    const openSkyUser = process.env.OPENSKY_USERNAME;
-    const openSkyPass = process.env.OPENSKY_PASSWORD;
+    const token = await getOpenSkyToken();
     const headers = { 'User-Agent': UA };
-    if (openSkyUser && openSkyPass) {
-      headers['Authorization'] = 'Basic ' + Buffer.from(`${openSkyUser}:${openSkyPass}`).toString('base64');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-    console.log(`[bg] ADS-B fetching from OpenSky (auth: ${openSkyUser ? 'yes' : 'anonymous'})`);
+    console.log(`[bg] ADS-B fetching from OpenSky (auth: ${token ? 'OAuth2' : 'anonymous'})`);
     const res = await fetch('https://opensky-network.org/api/states/all', {
       signal: controller.signal,
       headers,
