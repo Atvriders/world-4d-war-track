@@ -245,10 +245,21 @@ function connectAisStream() {
       console.log('[bg] AISStream: connected');
       aisStreamConnected = true;
 
-      // Subscribe to all vessel positions globally
+      // Subscribe to conflict zones and major shipping lanes
       const subscribeMsg = JSON.stringify({
         APIKey: AISSTREAM_API_KEY,
-        BoundingBoxes: [[[-90, -180], [90, 180]]], // Global
+        BoundingBoxes: [
+          [[44, 30], [55, 42]],      // Ukraine / Eastern Europe
+          [[12, 30], [40, 60]],      // Middle East (Persian Gulf, Red Sea, Yemen)
+          [[30, 25], [42, 38]],      // Eastern Mediterranean (Syria, Lebanon, Israel)
+          [[5, 105], [25, 125]],     // South China Sea / Taiwan Strait
+          [[-5, 28], [18, 52]],      // East Africa (Somalia, Sudan, Ethiopia)
+          [[48, -10], [60, 20]],     // Europe / NATO (North Sea, Baltic)
+          [[25, 50], [32, 60]],      // Strait of Hormuz
+          [[-35, 15], [-30, 35]],    // South Africa (Cape of Good Hope)
+          [[28, 30], [32, 35]],      // Suez Canal
+          [[0, 100], [5, 108]],      // Strait of Malacca
+        ],
         FilterMessageTypes: ['PositionReport']
       });
       aisStreamWs.send(subscribeMsg);
