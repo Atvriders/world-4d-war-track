@@ -910,9 +910,10 @@ function pointRadiusAccessor(d: object) {
 function labelLatAccessor(d: object) { return (d as { lat: number }).lat; }
 function labelLngAccessor(d: object) { return (d as { lng: number }).lng; }
 function labelTextAccessor(d: object) {
-  const p = d as { _type?: string };
+  const p = d as { _type?: string; name?: string };
   if (p._type === 'aircraft') return '✈';
   if (p._type === 'ship') return '⚓';
+  if (p._type === 'conflict') return p.name || '';
   return '';
 }
 function labelAltAccessor(d: object) { return (d as { alt: number }).alt; }
@@ -1263,9 +1264,29 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     const otherLabels: LabelEntry[] = [];
 
-    // Satellite labels disabled
+    // War zone center labels — clickable targets for each conflict
+    if (layers.warZones) {
+      conflictZones.forEach(zone => {
+        const geom = zone.geoJSON?.geometry;
+        const coords = geom?.type === 'MultiPolygon'
+          ? (geom.coordinates as number[][][][])?.[0]?.[0]
+          : (geom?.coordinates as number[][][])?.[0];
+        if (!coords || coords.length === 0) return;
+        const avgLng = coords.reduce((s: number, c: number[]) => s + c[0], 0) / coords.length;
+        const avgLat = coords.reduce((s: number, c: number[]) => s + c[1], 0) / coords.length;
+        otherLabels.push({
+          name: zone.name,
+          lat: avgLat, lng: avgLng, alt: 0.005,
+          color: zone.intensity === 'critical' ? '#FF3838' : zone.intensity === 'high' ? '#FF8800' : '#FFB020',
+          size: 1.0,
+          dotRadius: 0,
+          _type: 'conflict',
+          _data: zone,
+        });
+      });
+    }
 
-    // Country labels removed — visible on globe texture, dots-only approach
+    // Satellite labels disabled
 
     // Aircraft labels — show at all zoom levels with ✈ icon
     if (layers.aircraft) {
@@ -2256,24 +2277,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         atmosphereAltitude={performanceMode === 'low' ? 0.1 : 0.25}
         showAtmosphere={performanceMode === 'low' ? false : layers.atmosphere}
 
-        // ── War-zone polygons — transparent clickable areas ──────────────
-        polygonsData={conflictPolygons}
-        polygonGeoJsonGeometry={(d: object) => (d as any).geoJSON?.geometry}
-        polygonCapColor={() => 'rgba(255, 50, 50, 0.01)'}
-        polygonSideColor={() => 'rgba(0, 0, 0, 0)'}
-        polygonStrokeColor={() => 'rgba(255, 60, 60, 0.0)'}
-        polygonAltitude={0.001}
-        polygonLabel={(d: object) => {
-          const z = d as any;
-          return `<div style="background:rgba(8,14,28,0.92);backdrop-filter:blur(8px);border:1px solid rgba(255,60,60,0.4);border-radius:6px;padding:8px 12px;font-family:Rajdhani,sans-serif;max-width:240px">
-            <div style="color:#FF3838;font-weight:700;font-size:14px;letter-spacing:0.05em">${z.name || ''}</div>
-            <div style="color:#8BA4BE;font-size:11px;margin-top:3px">${z.status || ''} · ${z.intensity || ''}</div>
-            <div style="color:#6A8AAA;font-size:10px;margin-top:2px">Click for details</div>
-          </div>`;
-        }}
-        onPolygonClick={(polygon: object) => {
-          onEntityClick('conflict', polygon);
-        }}
+        // War-zone polygons disabled — raycasting covers entire globe.
+        // War zones clickable via border paths (onPathClick) and center labels (onLabelClick).
 
         // ── GPS jam hexbin ─────────────────────────────────────
         hexBinPointsData={hexBinPoints}
