@@ -2152,16 +2152,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     const icon = document.createElement('div');
     icon.style.position = 'absolute';
-    icon.style.left = '-10px';
-    icon.style.top = '-10px';
-    icon.style.width = '20px';
-    icon.style.height = '20px';
+    icon.style.left = '-14px';
+    icon.style.top = '-14px';
+    icon.style.width = '28px';
+    icon.style.height = '28px';
     icon.style.display = 'flex';
     icon.style.alignItems = 'center';
     icon.style.justifyContent = 'center';
-    icon.style.fontSize = isWar ? '15px' : '12px';
-    icon.style.filter = `drop-shadow(0 0 4px ${color})`;
+    icon.style.fontSize = isWar ? '20px' : '18px';
+    icon.style.filter = `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color})`;
     icon.style.color = color;
+    icon.style.textShadow = `0 0 8px ${color}`;
     icon.style.lineHeight = '1';
     icon.textContent = isWar ? '\u2693' : '\uD83D\uDEA2';
     wrapper.appendChild(icon);
