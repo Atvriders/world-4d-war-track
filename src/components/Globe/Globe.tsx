@@ -1238,24 +1238,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   }, [layers.droneActivity, conflictZones, performanceMode]);
 
 
-  // ── Merged points (empty — aircraft/ships rendered as HTML icons) ────────
-  const allPoints = useMemo(() => {
-    const pts: any[] = [];
-    // Aircraft (not on ground)
-    if (layers.aircraft) {
-      for (const a of aircraft) {
-        if (a.onGround) continue;
-        pts.push({ ...a, _type: 'aircraft' });
-      }
-    }
-    // Ships
-    if (layers.ships) {
-      for (const s of ships) {
-        pts.push({ ...s, _type: 'ship' });
-      }
-    }
-    return pts;
-  }, [aircraft, ships, layers.aircraft, layers.ships]);
+  // ── Points layer empty — aircraft/ships rendered via HTML elements layer ──
+  const allPoints = useMemo(() => [] as any[], []);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
@@ -1307,51 +1291,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Satellite labels disabled
 
-    // Aircraft labels — colored dots with ^ marker
-    if (layers.aircraft) {
-      const airborne = aircraft.filter(a => !a.onGround);
-      const sorted = [...airborne].sort((a, b) => {
-        if (a.isMilitary && !b.isMilitary) return -1;
-        if (!a.isMilitary && b.isMilitary) return 1;
-        return (b.altitude || 0) - (a.altitude || 0);
-      });
-      const maxAc = performanceMode === 'low' ? 30 : 120;
-      otherLabels.push(...sorted.slice(0, maxAc).map(a => ({
-        lat: a.lat,
-        lng: a.lng,
-        alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.003,
-        color: a.isMilitary ? 'rgba(255,60,60,1)' : 'rgba(68,187,255,0.9)',
-        size: a.isMilitary ? 0.6 : 0.35,
-        dotRadius: a.isMilitary ? 0.3 : 0.15,
-        _type: 'aircraft',
-        _data: a,
-        name: '^',
-      })));
-    }
-
-    // Ship labels — colored dots with v marker
-    if (layers.ships) {
-      const sorted = [...ships].sort((a, b) => {
-        const aW = (a.type === 'warship' || a.type === 'military') ? 1 : 0;
-        const bW = (b.type === 'warship' || b.type === 'military') ? 1 : 0;
-        return bW - aW;
-      });
-      const maxShip = performanceMode === 'low' ? 20 : 100;
-      otherLabels.push(...sorted.slice(0, maxShip).map(s => {
-        const isMil = s.type === 'warship' || s.type === 'military';
-        return {
-          lat: s.lat,
-          lng: s.lng,
-          alt: 0.001,
-          color: isMil ? 'rgba(255,100,30,1)' : 'rgba(34,221,170,0.9)',
-          size: isMil ? 0.5 : 0.3,
-          dotRadius: isMil ? 0.25 : 0.12,
-          _type: 'ship',
-          _data: s,
-          name: 'v',
-        };
-      }));
-    }
+    // Aircraft and ships rendered via HTML elements layer (airplane/ship icons)
 
     // Cap labels for performance
     const totalCap = performanceMode === 'low' ? 40 : 120;
@@ -2392,14 +2332,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements layer disabled — causes React #321 in production.
-        // Aircraft/ships rendered as colored points via pointsData instead.
-        // htmlElementsData={mergedHtmlMarkers}
-        // htmlLat={(d: object) => (d as { lat: number }).lat}
-        // htmlLng={(d: object) => (d as { lng: number }).lng}
-        // htmlAltitude={0.008}
-        // htmlElement={mergedHtmlElement}
-        // htmlTransitionDuration={0}
+        // HTML elements — aircraft/ship icons + base/nuclear/chokepoint/piracy markers
+        htmlElementsData={mergedHtmlMarkers}
+        htmlLat={(d: object) => (d as { lat: number }).lat}
+        htmlLng={(d: object) => (d as { lng: number }).lng}
+        htmlAltitude={0.008}
+        htmlElement={mergedHtmlElement}
+        htmlTransitionDuration={0}
       />
 
     </div>
