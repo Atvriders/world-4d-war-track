@@ -1546,9 +1546,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (!a.isMilitary && b.isMilitary) return 1;
       return b.altitude - a.altitude;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 25) : sorted.slice(0, 50);
+    // Scale marker limit with zoom — show more icons when zoomed in close
+    let limit: number;
+    if (performanceMode === 'low') {
+      limit = 15;
+    } else {
+      const zoomLevel = cameraAltitude < 0.4 ? 0 : cameraAltitude < 0.8 ? 1 : cameraAltitude < 1.2 ? 2 : cameraAltitude < 2.0 ? 3 : 4;
+      limit = [200, 120, 80, 40, 20][zoomLevel];
+    }
+    const limited = sorted.slice(0, limit);
     return limited.map(a => ({ ...a, _marker: 'aircraft' as const }));
-  }, [layers.aircraft, aircraft, performanceMode]);
+  }, [layers.aircraft, aircraft, performanceMode, cameraAltitude]);
 
   // ── Ship HTML markers (ship icons) ──────────────────────────────────────
   const shipHtmlMarkers = useMemo(() => {
@@ -1558,9 +1566,17 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
       return bW - aW;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted.slice(0, 30);
+    // Scale marker limit with zoom — show more icons when zoomed in close
+    let limit: number;
+    if (performanceMode === 'low') {
+      limit = 10;
+    } else {
+      const zoomLevel = cameraAltitude < 0.4 ? 0 : cameraAltitude < 0.8 ? 1 : cameraAltitude < 1.2 ? 2 : cameraAltitude < 2.0 ? 3 : 4;
+      limit = [150, 80, 50, 25, 10][zoomLevel];
+    }
+    const limited = sorted.slice(0, limit);
     return limited.map(s => ({ ...s, _marker: 'ship' as const }));
-  }, [layers.ships, ships, performanceMode]);
+  }, [layers.ships, ships, performanceMode, cameraAltitude]);
 
   // ── Shared Three.js geometries/materials (avoid per-call allocation) ───────
   // No custom THREE objects — use built-in points layer instead to avoid duplicate Three.js instances
@@ -2205,7 +2221,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
   // Arc callbacks now use module-level functions (arcStartLatAccessor, arcColorAccessor, etc.)
 
   // HTML elements layer — aircraft/ship icons + base/nuclear/chokepoint/piracy markers.
-  // Limits applied in aircraftHtmlMarkers (50) and shipHtmlMarkers (30) to cap DOM elements.
+  // Limits applied in aircraftHtmlMarkers (20–200) and shipHtmlMarkers (10–150) scaled by zoom level.
   // Custom visibility modifier prevents React #321 crash from the default isBehindGlobe check.
   const htmlVisibilityMod = useCallback((el: HTMLElement, isVisible: boolean) => {
     el.style.opacity = isVisible ? '1' : '0';
