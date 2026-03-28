@@ -1546,7 +1546,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       if (!a.isMilitary && b.isMilitary) return 1;
       return b.altitude - a.altitude;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 25) : sorted.slice(0, 80);
+    const limited = performanceMode === 'low' ? sorted.slice(0, 25) : sorted.slice(0, 50);
     return limited.map(a => ({ ...a, _marker: 'aircraft' as const }));
   }, [layers.aircraft, aircraft, performanceMode]);
 
@@ -1558,7 +1558,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       const bW = b.type === 'warship' || b.type === 'military' ? 1 : 0;
       return bW - aW;
     });
-    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted.slice(0, 50);
+    const limited = performanceMode === 'low' ? sorted.slice(0, 15) : sorted.slice(0, 30);
     return limited.map(s => ({ ...s, _marker: 'ship' as const }));
   }, [layers.ships, ships, performanceMode]);
 
@@ -2204,8 +2204,13 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
   // Arc callbacks now use module-level functions (arcStartLatAccessor, arcColorAccessor, etc.)
 
-  // HTML elements layer disabled — causes React #321 in production.
-  // Aircraft/ships rendered as points + labels instead.
+  // HTML elements layer — aircraft/ship icons + base/nuclear/chokepoint/piracy markers.
+  // Limits applied in aircraftHtmlMarkers (50) and shipHtmlMarkers (30) to cap DOM elements.
+  // Custom visibility modifier prevents React #321 crash from the default isBehindGlobe check.
+  const htmlVisibilityMod = useCallback((el: HTMLElement, isVisible: boolean) => {
+    el.style.opacity = isVisible ? '1' : '0';
+    el.style.pointerEvents = isVisible ? 'auto' : 'none';
+  }, []);
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -2338,6 +2343,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         htmlLng={(d: object) => (d as { lng: number }).lng}
         htmlAltitude={0.008}
         htmlElement={mergedHtmlElement}
+        htmlElementVisibilityModifier={htmlVisibilityMod}
         htmlTransitionDuration={0}
       />
 
