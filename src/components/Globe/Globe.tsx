@@ -1236,7 +1236,23 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
 
   // ── Merged points (empty — aircraft/ships rendered as HTML icons) ────────
-  const allPoints = useMemo(() => [] as any[], []);
+  const allPoints = useMemo(() => {
+    const pts: any[] = [];
+    // Aircraft (not on ground)
+    if (layers.aircraft) {
+      for (const a of aircraft) {
+        if (a.onGround) continue;
+        pts.push({ ...a, _type: 'aircraft' });
+      }
+    }
+    // Ships
+    if (layers.ships) {
+      for (const s of ships) {
+        pts.push({ ...s, _type: 'ship' });
+      }
+    }
+    return pts;
+  }, [aircraft, ships, layers.aircraft, layers.ships]);
 
   // ── Merged labels: satellite diamond markers floating above the globe ──
   // Discretize cameraAltitude into stable zoom tiers so the allLabels memo
@@ -1288,67 +1304,9 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Satellite labels disabled
 
-    // Aircraft labels — show at all zoom levels with ✈ icon
-    if (layers.aircraft) {
-      const airborne = aircraft.filter(a => !a.onGround && a.isMilitary);
-      const sorted = [...airborne].sort((a, b) => {
-        if (a.isMilitary && !b.isMilitary) return -1;
-        if (!a.isMilitary && b.isMilitary) return 1;
-        return b.altitude - a.altitude;
-      });
-      const maxLabels = performanceMode === 'low' ? 15 : 50;
-      const acLabels = sorted
-        .slice(0, maxLabels)
-        .map(a => {
-          const cs = a.callsign?.trim();
-          const displayName = (cs || a.icao24 || 'N/A').replace(/\?/g, '').trim() || 'N/A';
-          return {
-            name: `✈ ${displayName}`,
-            lat: a.lat,
-            lng: a.lng,
-            alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.001,
-            color: a.isMilitary ? 'rgba(255,60,60,1.0)' : 'rgba(0,200,255,0.9)',
-            size: 0.4,
-            _type: 'aircraft',
-            _data: a,
-            dotRadius: 0.15,
-          };
-        });
-      otherLabels.push(...acLabels);
-    }
-
-    // Ship labels (warships first, then civilians) — show at all zoom levels with 🚢 icon
-    if (layers.ships) {
-      const sorted = [...ships]
-        .sort((a, b) => {
-          const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
-          const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
-          return bWar - aWar;
-        });
-      const maxShipLabels = performanceMode === 'low' ? 10
-        : zoomTier === 0 ? 40
-        : zoomTier === 1 ? 25
-        : zoomTier === 2 ? 15
-        : 8;
-      const shipLabels = sorted
-        .slice(0, maxShipLabels)
-        .map(s => {
-          const shipName = (s.name?.trim() || s.mmsi || 'N/A').replace(/\?/g, '').trim() || 'N/A';
-          const isMilitaryShip = s.type === 'warship' || s.type === 'military';
-          return {
-            name: `🚢 ${shipName}`,
-            lat: s.lat,
-            lng: s.lng,
-            alt: 0.001,
-            color: isMilitaryShip ? 'rgba(255,60,60,1.0)' : 'rgba(0,140,255,0.9)',
-            size: 0.35,
-            _type: 'ship',
-            _data: s,
-            dotRadius: 0.12,
-          };
-        });
-      otherLabels.push(...shipLabels);
-    }
+    // Aircraft and ships are rendered via the HTML elements layer (htmlMarkers),
+    // NOT via the labels layer. Three.js TextGeometry cannot render emoji (✈/⚓)
+    // and substitutes '?' for every character it doesn't recognize.
 
     // Cap labels for performance
     const totalCap = performanceMode === 'low' ? 40 : 120;
@@ -2389,13 +2347,14 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
           }
         }}
 
-        // HTML elements — aircraft/ship/base/nuclear/chokepoint/piracy/csg markers
-        htmlElementsData={mergedHtmlMarkers}
-        htmlLat={(d: object) => (d as { lat: number }).lat}
-        htmlLng={(d: object) => (d as { lng: number }).lng}
-        htmlAltitude={0.008}
-        htmlElement={mergedHtmlElement}
-        htmlTransitionDuration={0}
+        // HTML elements layer disabled — causes React #321 in production.
+        // Aircraft/ships rendered as colored points via pointsData instead.
+        // htmlElementsData={mergedHtmlMarkers}
+        // htmlLat={(d: object) => (d as { lat: number }).lat}
+        // htmlLng={(d: object) => (d as { lng: number }).lng}
+        // htmlAltitude={0.008}
+        // htmlElement={mergedHtmlElement}
+        // htmlTransitionDuration={0}
       />
 
     </div>
