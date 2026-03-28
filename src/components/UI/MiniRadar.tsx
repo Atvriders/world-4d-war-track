@@ -329,8 +329,8 @@ const MiniRadar: React.FC<MiniRadarProps> = ({
     <div
       style={{
         position: 'fixed',
-        bottom: 20,
-        right: 20,
+        bottom: 170,
+        right: 8,
         zIndex: 1000,
         width: 160,
         userSelect: 'none',

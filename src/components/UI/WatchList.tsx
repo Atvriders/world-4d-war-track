@@ -47,7 +47,7 @@ const PANEL_WIDTH = 300;
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'fixed',
-    bottom: 126,
+    bottom: 130,
     right: 8,
     zIndex: 1000,
     fontFamily: "'Rajdhani', 'Share Tech Mono', sans-serif",
