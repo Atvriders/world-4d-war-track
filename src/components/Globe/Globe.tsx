@@ -1301,7 +1301,7 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
         .slice(0, maxLabels)
         .map(a => {
           const cs = a.callsign?.trim();
-          const displayName = (cs || a.icao24 || 'N/A').replace(/^\?\s*/, '');
+          const displayName = (cs || a.icao24 || 'N/A').replace(/\?/g, '').trim() || 'N/A';
           return {
             name: `✈ ${displayName}`,
             lat: a.lat,
@@ -1317,26 +1317,30 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
       otherLabels.push(...acLabels);
     }
 
-    // Ship labels (warships first) — show at all zoom levels with 🚢 icon
+    // Ship labels (warships first, then civilians) — show at all zoom levels with 🚢 icon
     if (layers.ships) {
       const sorted = [...ships]
-        .filter(s => s.type === 'warship' || s.type === 'military')
         .sort((a, b) => {
           const aWar = a.type === 'warship' || a.type === 'military' ? 1 : 0;
           const bWar = b.type === 'warship' || b.type === 'military' ? 1 : 0;
           return bWar - aWar;
         });
-      const maxShipLabels = performanceMode === 'low' ? 10 : 35;
+      const maxShipLabels = performanceMode === 'low' ? 10
+        : zoomTier === 0 ? 40
+        : zoomTier === 1 ? 25
+        : zoomTier === 2 ? 15
+        : 8;
       const shipLabels = sorted
         .slice(0, maxShipLabels)
         .map(s => {
-          const shipName = (s.name?.trim() || s.mmsi || 'N/A').replace(/^\?\s*/, '');
+          const shipName = (s.name?.trim() || s.mmsi || 'N/A').replace(/\?/g, '').trim() || 'N/A';
+          const isMilitaryShip = s.type === 'warship' || s.type === 'military';
           return {
             name: `🚢 ${shipName}`,
             lat: s.lat,
             lng: s.lng,
             alt: 0.001,
-            color: 'rgba(255,60,60,1.0)',
+            color: isMilitaryShip ? 'rgba(255,60,60,1.0)' : 'rgba(0,140,255,0.9)',
             size: 0.35,
             _type: 'ship',
             _data: s,

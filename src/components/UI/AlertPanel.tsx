@@ -253,11 +253,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
         return next;
       });
 
-      // Auto-expand if a new critical alert arrives
-      const hasCritical = alerts.some(a => incoming.has(a.id) && a.severity === 'critical');
-      if (hasCritical) {
-        setCollapsed(false);
-      }
+      // Do NOT auto-expand on critical alerts — panel stays collapsed by default
 
       // Remove "new" flag after animation completes
       const timer = setTimeout(() => {
@@ -313,7 +309,7 @@ const AlertPanel: React.FC<AlertPanelProps> = ({ alerts, onDismiss, onFlyTo }) =
 
   const panelStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: '126px',
+    bottom: '110px',
     right: '8px',
     width: collapsed ? 'auto' : '320px',
     maxWidth: 'calc(100vw - 48px)',

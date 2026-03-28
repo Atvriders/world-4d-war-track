@@ -192,7 +192,7 @@ const ConflictTicker: React.FC<ConflictTickerProps> = ({
   /* ── Styles ── */
   const outerStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: 76,
+    bottom: 0,
     left: 0,
     right: 0,
     height: 36,

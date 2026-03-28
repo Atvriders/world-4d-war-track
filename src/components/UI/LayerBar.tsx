@@ -35,7 +35,7 @@ export default function LayerBar({ layers, onToggleLayer, counts, isMobile }: La
     <div
       style={{
         position: 'fixed',
-        bottom: isMobile ? 0 : 42,
+        bottom: isMobile ? 0 : 72,
         left: isMobile ? 0 : '50%',
         right: isMobile ? 0 : undefined,
         transform: isMobile ? 'none' : 'translateX(-50%)',
