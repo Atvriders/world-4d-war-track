@@ -2159,10 +2159,8 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
     icon.style.display = 'flex';
     icon.style.alignItems = 'center';
     icon.style.justifyContent = 'center';
-    icon.style.fontSize = isWar ? '20px' : '18px';
-    icon.style.filter = `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color})`;
+    icon.style.fontSize = isWar ? '16px' : '14px';
     icon.style.color = color;
-    icon.style.textShadow = `0 0 8px ${color}`;
     icon.style.lineHeight = '1';
     icon.textContent = isWar ? '\u2693' : '\uD83D\uDEA2';
     wrapper.appendChild(icon);
