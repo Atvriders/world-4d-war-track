@@ -911,8 +911,9 @@ function labelLatAccessor(d: object) { return (d as { lat: number }).lat; }
 function labelLngAccessor(d: object) { return (d as { lng: number }).lng; }
 function labelTextAccessor(d: object) {
   const p = d as { _type?: string; name?: string };
-  if (p._type === 'aircraft') return '✈';
-  if (p._type === 'ship') return '⚓';
+  // Three.js TextGeometry can only render ASCII — no emoji
+  if (p._type === 'aircraft') return '^';
+  if (p._type === 'ship') return 'v';
   if (p._type === 'conflict') return p.name || '';
   return '';
 }
@@ -931,7 +932,9 @@ function labelColorAccessor(d: object) {
   if (p._type === 'base') return '#FF4444';
   return (d as { color: string }).color || '#44BBFF';
 }
-function labelDotRadiusAccessor() { return 0; }
+function labelDotRadiusAccessor(d: object) {
+  return (d as { dotRadius?: number }).dotRadius ?? 0;
+}
 
 function pathPointsAccessor(d: object) { return (d as PathEntry).coords; }
 function pathPointLatAccessor(pt: object) { return (pt as { lat: number }).lat; }
@@ -1304,9 +1307,51 @@ const Globe = forwardRef<GlobeRef, GlobeProps>(function Globe(
 
     // Satellite labels disabled
 
-    // Aircraft and ships are rendered via the HTML elements layer (htmlMarkers),
-    // NOT via the labels layer. Three.js TextGeometry cannot render emoji (✈/⚓)
-    // and substitutes '?' for every character it doesn't recognize.
+    // Aircraft labels — colored dots with ^ marker
+    if (layers.aircraft) {
+      const airborne = aircraft.filter(a => !a.onGround);
+      const sorted = [...airborne].sort((a, b) => {
+        if (a.isMilitary && !b.isMilitary) return -1;
+        if (!a.isMilitary && b.isMilitary) return 1;
+        return (b.altitude || 0) - (a.altitude || 0);
+      });
+      const maxAc = performanceMode === 'low' ? 30 : 120;
+      otherLabels.push(...sorted.slice(0, maxAc).map(a => ({
+        lat: a.lat,
+        lng: a.lng,
+        alt: (a.altitude && !isNaN(a.altitude)) ? a.altitude / 6_371_000 : 0.003,
+        color: a.isMilitary ? 'rgba(255,60,60,1)' : 'rgba(68,187,255,0.9)',
+        size: a.isMilitary ? 0.6 : 0.35,
+        dotRadius: a.isMilitary ? 0.3 : 0.15,
+        _type: 'aircraft',
+        _data: a,
+        name: '^',
+      })));
+    }
+
+    // Ship labels — colored dots with v marker
+    if (layers.ships) {
+      const sorted = [...ships].sort((a, b) => {
+        const aW = (a.type === 'warship' || a.type === 'military') ? 1 : 0;
+        const bW = (b.type === 'warship' || b.type === 'military') ? 1 : 0;
+        return bW - aW;
+      });
+      const maxShip = performanceMode === 'low' ? 20 : 100;
+      otherLabels.push(...sorted.slice(0, maxShip).map(s => {
+        const isMil = s.type === 'warship' || s.type === 'military';
+        return {
+          lat: s.lat,
+          lng: s.lng,
+          alt: 0.001,
+          color: isMil ? 'rgba(255,100,30,1)' : 'rgba(34,221,170,0.9)',
+          size: isMil ? 0.5 : 0.3,
+          dotRadius: isMil ? 0.25 : 0.12,
+          _type: 'ship',
+          _data: s,
+          name: 'v',
+        };
+      }));
+    }
 
     // Cap labels for performance
     const totalCap = performanceMode === 'low' ? 40 : 120;
